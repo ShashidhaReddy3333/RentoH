@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { Button } from "@/components/ui/button";
+
 export type ChatMessage = {
   id: string;
   body: string;
@@ -76,13 +78,13 @@ export default function ChatPane({ conversation, currentUserId, onSend }: ChatPa
   }
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-xl shadow-card overflow-hidden">
-      <header className="border-b px-4 py-3">
-        <div className="text-sm text-gray-500">Chatting about</div>
-        <h2 className="text-lg font-semibold text-[var(--c-dark)]">{conversation.title}</h2>
-        <p className="text-xs text-gray-500">With {conversation.otherUserName}</p>
+    <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-black/10 bg-surface shadow-glass dark:border-white/10">
+      <header className="border-b border-black/10 px-4 py-3 text-textc/70 dark:border-white/10">
+        <div className="text-sm">Chatting about</div>
+        <h2 className="text-lg font-semibold text-textc">{conversation.title}</h2>
+        <p className="text-xs">With {conversation.otherUserName}</p>
       </header>
-      <div ref={listRef} className="flex-1 overflow-y-auto bg-[var(--c-bg)] px-4 py-5 space-y-3">
+      <div ref={listRef} className="flex-1 space-y-3 overflow-y-auto bg-surface-muted px-4 py-5">
         {sortedMessages.map((message) => {
           const isMe = message.senderId === currentUserId;
           return (
@@ -90,12 +92,12 @@ export default function ChatPane({ conversation, currentUserId, onSend }: ChatPa
               key={message.id}
               className={`max-w-[70%] rounded-lg px-3 py-2 text-sm shadow-soft ${
                 isMe
-                  ? "ml-auto bg-[var(--c-primary)] text-white"
-                  : "bg-white text-[var(--c-dark)]"
+                  ? "ml-auto bg-brand.primary text-white"
+                  : "bg-surface text-textc"
               }`}
             >
               <p>{message.body}</p>
-              <time className="block text-xs text-white/80 pt-1">
+              <time className={`block pt-1 text-xs ${isMe ? "text-white/80" : "text-textc/60"}`}>
                 {new Date(message.createdAt).toLocaleTimeString([], {
                   hour: "2-digit",
                   minute: "2-digit"
@@ -105,17 +107,23 @@ export default function ChatPane({ conversation, currentUserId, onSend }: ChatPa
           );
         })}
         {isTyping && (
-          <div className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-xs text-gray-600 shadow-soft">
+          <div className="inline-flex items-center gap-2 rounded-full bg-surface px-4 py-2 text-xs text-textc/70 shadow-soft">
             <span className="flex items-center gap-1">
-              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-gray-400" />
-              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-gray-400" style={{ animationDelay: "0.1s" }} />
-              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-gray-400" style={{ animationDelay: "0.2s" }} />
+              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-textc/60" />
+              <span
+                className="h-1.5 w-1.5 animate-bounce rounded-full bg-textc/60"
+                style={{ animationDelay: "0.1s" }}
+              />
+              <span
+                className="h-1.5 w-1.5 animate-bounce rounded-full bg-textc/60"
+                style={{ animationDelay: "0.2s" }}
+              />
             </span>
             {conversation.otherUserName} is typing...
           </div>
         )}
       </div>
-      <form onSubmit={handleSend} className="border-t bg-white px-4 py-3 flex gap-2">
+      <form onSubmit={handleSend} className="flex gap-2 border-t border-black/10 bg-surface px-4 py-3 dark:border-white/10">
         <input
           className="input"
           placeholder="Write a message..."
@@ -123,9 +131,9 @@ export default function ChatPane({ conversation, currentUserId, onSend }: ChatPa
           onChange={(event) => setInput(event.target.value)}
           aria-label="Message"
         />
-        <button type="submit" className="btn btn-primary min-w-[88px]">
+        <Button type="submit" className="min-w-[88px]">
           Send
-        </button>
+        </Button>
       </form>
     </div>
   );

@@ -1,16 +1,17 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from 'next/server';
 
-export async function GET(req: NextRequest){
-  // Placeholder stub: replace with Supabase query
-  const data = [
-    { id: "1", title: "Sunny Apartment", city: "Waterloo", rent: 1800, verified: true },
-    { id: "2", title: "Modern Studio", city: "Kitchener", rent: 1450, verified: false }
-  ];
-  return NextResponse.json(data);
-}
+import { listProperties } from '@/lib/data/properties';
 
-export async function POST(req: NextRequest){
-  const body = await req.json();
-  // TODO: insert into Supabase with RLS
-  return NextResponse.json({ ok: true, body }, { status: 201 });
+export const revalidate = 60;
+export const fetchCache = 'force-cache';
+export const dynamic = 'force-dynamic';
+
+export async function GET() {
+  try {
+    const items = await listProperties();
+    return NextResponse.json({ items });
+  } catch (error) {
+    console.error('Failed to fetch properties', error);
+    return NextResponse.json({ error: 'Failed to load properties' }, { status: 500 });
+  }
 }

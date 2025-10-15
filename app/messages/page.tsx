@@ -1,8 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import ChatPane, { Conversation } from "@/components/chat-pane";
+
+import ChatPane from "@/components/chat-pane";
+import type { Conversation } from "@/components/chat-pane";
 import { useAppState } from "@/components/providers/app-provider";
+import { buttonStyles } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 
 const CURRENT_USER_ID = "u1";
 
@@ -58,39 +62,44 @@ export default function MessagesPage() {
   };
 
   return (
-    <div className="grid gap-4 md:grid-cols-[300px_1fr]">
-      <aside className="card h-full md:h-[70vh]">
-        <h1 className="text-xl font-semibold text-[var(--c-dark)]">Messages</h1>
-        <p className="text-xs text-gray-500">Stay on top of tenant and landlord conversations.</p>
-        <nav className="mt-4 space-y-2 overflow-y-auto">
-          {conversations.map((conversation) => {
-            const last = conversation.messages.at(-1);
-            const property = properties.find((item) => item.id === conversation.id);
-            return (
-              <button
-                key={conversation.id}
-                type="button"
-                onClick={() => setActiveId(conversation.id)}
-                className={`w-full rounded-lg border px-3 py-2 text-left transition ${
-                  activeId === conversation.id
-                    ? "border-[var(--c-primary)] bg-[var(--c-primary)]/10 text-[var(--c-primary)]"
-                    : "border-transparent bg-gray-50 text-gray-700 hover:border-gray-200"
-                }`}
-              >
-                <div className="text-sm font-semibold">{conversation.title}</div>
-                <div className="text-xs text-gray-500">
-                  {property?.city ?? "Unknown city"} - {last?.body.slice(0, 40) ?? "Start chatting"}
-                </div>
-              </button>
-            );
-          })}
-          {!conversations.length && (
-            <div className="rounded-lg border border-dashed border-gray-200 px-3 py-4 text-center text-sm text-gray-500">
-              No messages yet. Start a conversation from a property page.
-            </div>
-          )}
-        </nav>
-      </aside>
+    <div className="grid gap-4 text-textc md:grid-cols-[300px_1fr]">
+      <Card className="h-full md:h-[70vh]">
+        <CardContent className="flex h-full flex-col gap-4">
+          <header>
+            <h1 className="text-xl font-semibold text-textc">Messages</h1>
+            <p className="text-xs text-textc/60">
+              Stay on top of tenant and landlord conversations.
+            </p>
+          </header>
+          <nav className="flex-1 space-y-2 overflow-y-auto pr-2">
+            {conversations.map((conversation) => {
+              const last = conversation.messages.at(-1);
+              const property = properties.find((item) => item.id === conversation.id);
+              const isActive = activeId === conversation.id;
+              return (
+                <button
+                  key={conversation.id}
+                  type="button"
+                  onClick={() => setActiveId(conversation.id)}
+                  className={`${buttonStyles({ variant: isActive ? "outline" : "ghost", size: "sm" })} w-full justify-start text-left`}
+                >
+                  <div className="text-sm font-semibold text-textc">{conversation.title}</div>
+                  <div className="text-xs text-textc/60">
+                    {property?.city ?? "Unknown city"} -
+                    {" "}
+                    {last?.body.slice(0, 40) ?? "Start chatting"}
+                  </div>
+                </button>
+              );
+            })}
+            {!conversations.length ? (
+              <div className="rounded-lg border border-dashed border-black/10 px-3 py-4 text-center text-sm text-textc/60 dark:border-white/10">
+                No messages yet. Start a conversation from a property page.
+              </div>
+            ) : null}
+          </nav>
+        </CardContent>
+      </Card>
       <section className="h-full md:h-[70vh]">
         {activeConversation ? (
           <ChatPane
@@ -99,7 +108,7 @@ export default function MessagesPage() {
             onSend={(message) => handleSend(message.body)}
           />
         ) : (
-          <div className="flex h-full items-center justify-center rounded-xl border border-dashed border-gray-300 bg-white text-gray-500">
+          <div className="flex h-full items-center justify-center rounded-xl border border-dashed border-black/10 bg-surface text-textc/70 dark:border-white/10">
             Select a conversation to view messages.
           </div>
         )}

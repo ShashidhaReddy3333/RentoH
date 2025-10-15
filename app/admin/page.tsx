@@ -1,9 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import StatsCards from "@/components/stats-cards";
+
 import NotificationsPanel from "@/app/notifications/panel";
+import StatsCards from "@/components/stats-cards";
 import { useAppState } from "@/components/providers/app-provider";
+import { buttonStyles } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 
 const tabs = ["Users", "Listings", "Verifications", "Reports"] as const;
 
@@ -28,46 +31,56 @@ export default function AdminDashboardPage() {
     Users: (
       <div className="space-y-3">
         {users.map((user) => (
-          <div key={user.id} className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700">
-            <div className="flex items-center justify-between">
-              <span>{user.name}</span>
-              <span className="text-xs text-gray-500">{user.role}</span>
-            </div>
-            <div className="text-xs text-gray-400">{user.email}</div>
-          </div>
+          <Card key={user.id}>
+            <CardContent className="text-sm text-textc/80">
+              <div className="flex items-center justify-between">
+                <span>{user.name}</span>
+                <span className="text-xs text-textc/60">{user.role}</span>
+              </div>
+              <div className="text-xs text-textc/50">{user.email}</div>
+            </CardContent>
+          </Card>
         ))}
       </div>
     ),
     Listings: (
       <div className="space-y-3">
         {properties.map((property) => (
-          <div key={property.id} className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700">
-            <div className="flex items-center justify-between">
-              <span>{property.title}</span>
-              <span className="text-xs text-gray-500">${property.rent}/mo</span>
-            </div>
-            <div className="text-xs text-gray-400">
-              {property.city} - {property.type}
-            </div>
-          </div>
+          <Card key={property.id}>
+            <CardContent className="text-sm text-textc/80">
+              <div className="flex items-center justify-between">
+                <span>{property.title}</span>
+                <span className="text-xs text-textc/60">${property.rent}/mo</span>
+              </div>
+              <div className="text-xs text-textc/60">
+                {property.city} - {property.type}
+              </div>
+            </CardContent>
+          </Card>
         ))}
       </div>
     ),
     Verifications: (
-      <div className="rounded-xl border border-dashed border-gray-300 bg-white p-6 text-center text-sm text-gray-600">
-        Visit the verification queue to review pending landlords.
-      </div>
+      <Card className="border-2 border-dashed border-black/10 text-center text-sm text-textc/70 dark:border-white/10">
+        <CardContent>
+          Visit the verification queue to review pending landlords.
+        </CardContent>
+      </Card>
     ),
     Reports: (
-      <div className="space-y-3 text-sm text-gray-600">
-        <div className="rounded-lg border border-gray-200 bg-white px-3 py-2">
-          <div className="font-medium text-[var(--c-dark)]">Listing flagged: Sunny Apartment</div>
-          <p className="text-xs text-gray-500">Reason: Photos look outdated.</p>
-        </div>
-        <div className="rounded-lg border border-gray-200 bg-white px-3 py-2">
-          <div className="font-medium text-[var(--c-dark)]">User report: Tina Evans</div>
-          <p className="text-xs text-gray-500">Requested identity re-verification.</p>
-        </div>
+      <div className="space-y-3 text-sm text-textc/70">
+        <Card>
+          <CardContent>
+            <div className="font-medium text-textc">Listing flagged: Sunny Apartment</div>
+            <p className="text-xs text-textc/60">Reason: Photos look outdated.</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent>
+            <div className="font-medium text-textc">User report: Tina Evans</div>
+            <p className="text-xs text-textc/60">Requested identity re-verification.</p>
+          </CardContent>
+        </Card>
       </div>
     )
   } as const;
@@ -76,8 +89,8 @@ export default function AdminDashboardPage() {
     <div className="space-y-8">
       <header className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-semibold text-[var(--c-dark)]">Admin dashboard</h1>
-          <p className="text-sm text-gray-600">
+          <h1 className="text-3xl font-semibold text-textc">Admin dashboard</h1>
+          <p className="text-sm text-textc/70">
             Monitor platform health, moderate content, and review verifications.
           </p>
         </div>
@@ -93,11 +106,10 @@ export default function AdminDashboardPage() {
                 key={tab}
                 type="button"
                 onClick={() => setActiveTab(tab)}
-                className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-                  activeTab === tab
-                    ? "bg-[var(--c-primary)] text-white"
-                    : "bg-white text-gray-600 hover:bg-gray-100"
-                }`}
+                className={`${buttonStyles({
+                  variant: activeTab === tab ? "primary" : "ghost",
+                  size: "sm"
+                })} rounded-full`}
               >
                 {tab}
               </button>
@@ -108,16 +120,18 @@ export default function AdminDashboardPage() {
 
         <aside className="space-y-4">
           <NotificationsPanel />
-          <div className="card space-y-2 text-sm text-gray-600">
-            <h2 className="text-lg font-semibold text-[var(--c-dark)]">Activity log</h2>
-            <ul className="space-y-1 text-xs text-gray-500">
-              {messages.slice(-3).map((message) => (
-                <li key={message.id}>
-                  New message regarding {message.propertyId} - {message.body.slice(0, 40)}...
-                </li>
-              ))}
-            </ul>
-          </div>
+          <Card className="text-sm text-textc/70">
+            <CardContent className="space-y-2">
+              <h2 className="text-lg font-semibold text-textc">Activity log</h2>
+              <ul className="space-y-1 text-xs text-textc/60">
+                {messages.slice(-3).map((message) => (
+                  <li key={message.id}>
+                    New message regarding {message.propertyId} - {message.body.slice(0, 40)}...
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
         </aside>
       </div>
     </div>

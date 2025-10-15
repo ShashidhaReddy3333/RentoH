@@ -1,5 +1,6 @@
-import PropertyCard from "./property-card";
-import { Property } from "@/lib/mock";
+import { Card, CardContent } from '@/components/ui/card';
+import PropertyCard from '@/components/property-card';
+import type { Property } from '@/lib/mock';
 
 type PropertyGridProps = {
   properties: Property[];
@@ -14,9 +15,11 @@ export default function PropertyGrid({
 }: PropertyGridProps) {
   if (!properties.length) {
     return (
-      <div className="rounded-xl border border-dashed border-gray-300 bg-white p-8 text-center text-gray-600">
-        No properties match your filters right now. Try adjusting your search or check back soon!
-      </div>
+      <Card className="border-2 border-dashed border-black/10 text-center text-textc/70 dark:border-white/10">
+        <CardContent>
+          No properties match your filters right now. Try adjusting your search or check back soon!
+        </CardContent>
+      </Card>
     );
   }
 

@@ -1,3 +1,5 @@
+import { Card, CardContent } from '@/components/ui/card';
+
 type Stat = {
   title: string;
   value: number | string;
@@ -12,11 +14,13 @@ export default function StatsCards({ stats }: StatsCardsProps) {
   return (
     <div className="grid gap-4 sm:grid-cols-3">
       {stats.map((stat) => (
-        <div key={stat.title} className="card">
-          <div className="text-sm text-gray-500">{stat.title}</div>
-          <div className="text-2xl font-bold text-[var(--c-dark)] mt-1">{stat.value}</div>
-          {stat.subtext && <p className="text-xs text-gray-500 mt-2">{stat.subtext}</p>}
-        </div>
+        <Card key={stat.title} className="shadow-soft">
+          <CardContent className="space-y-2">
+            <div className="text-sm text-textc/70">{stat.title}</div>
+            <div className="text-2xl font-bold text-textc">{stat.value}</div>
+            {stat.subtext ? <p className="text-xs text-textc/60">{stat.subtext}</p> : null}
+          </CardContent>
+        </Card>
       ))}
     </div>
   );

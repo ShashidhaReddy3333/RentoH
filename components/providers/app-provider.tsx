@@ -8,12 +8,9 @@ import {
   useMemo,
   useState
 } from "react";
+
+import type { Message, Property, PropertyFilter, PropertyType, User } from "@/lib/mock";
 import {
-  Message,
-  Property,
-  PropertyFilter,
-  PropertyType,
-  User,
   filterProperties,
   getPropertyById,
   landlordProperties,

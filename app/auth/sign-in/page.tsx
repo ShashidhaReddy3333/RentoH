@@ -1,8 +1,12 @@
 "use client";
 
+import clsx from "clsx";
+import Link from "next/link";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
+
+import { buttonStyles } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 
 type TabKey = "email" | "phone";
 
@@ -16,7 +20,7 @@ export default function SignInPage() {
 
 function SignInFallback() {
   return (
-    <div className="mx-auto max-w-2xl py-12 text-center text-sm text-gray-500">
+    <div className="mx-auto max-w-2xl py-12 text-center text-sm text-textc/60">
       Loading sign-in experience...
     </div>
   );
@@ -54,54 +58,61 @@ function SignInContent() {
   return (
     <div className="mx-auto max-w-2xl space-y-8">
       <header className="space-y-2 text-center">
-        <h1 className="text-3xl font-semibold text-[var(--c-dark)]">Welcome back to Rento Bridge</h1>
-        <p className="text-sm text-gray-600">
+        <h1 className="text-3xl font-semibold text-textc">Welcome back to Rento Bridge</h1>
+        <p className="text-sm text-textc/70">
           Sign in or create an account to continue your tenant or landlord journey.
         </p>
       </header>
 
-      <div className="card space-y-6">
-        <div className="flex rounded-full border border-gray-200 bg-gray-100 p-1 text-sm font-medium">
-          {tabs.map((option) => (
-            <button
-              key={option.key}
-              role="tab"
-              type="button"
-              aria-selected={tab === option.key}
-              onClick={() => handleTabChange(option.key)}
-              className={`flex-1 rounded-full px-4 py-2 transition ${
-                tab === option.key
-                  ? "bg-white text-[var(--c-primary)] shadow-soft"
-                  : "text-gray-600 hover:text-[var(--c-primary)]"
-              }`}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-
-        {tab === "email" ? <EmailForm onStatus={setStatus} /> : <PhoneForm onStatus={setStatus} />}
-
-        <button type="button" disabled className="btn w-full border border-gray-300 bg-gray-100 text-gray-500">
-          Continue with Google (coming soon)
-        </button>
-
-        {status && (
-          <div
-            role="status"
-            className="rounded-lg border border-[var(--c-primary)]/40 bg-[var(--c-primary)]/5 px-4 py-3 text-sm text-[var(--c-primary)]"
-          >
-            {status}
+      <Card>
+        <CardContent className="space-y-6">
+          <div className="flex rounded-full border border-black/10 bg-surface-muted p-1 text-sm font-medium dark:border-white/10">
+            {tabs.map((option) => (
+              <button
+                key={option.key}
+                role="tab"
+                type="button"
+                aria-selected={tab === option.key}
+                onClick={() => handleTabChange(option.key)}
+                className={clsx(
+                  "flex-1 rounded-full px-4 py-2 transition",
+                  tab === option.key
+                    ? "bg-surface text-brand.primary shadow-soft"
+                    : "text-textc/70 hover:text-brand.primary"
+                )}
+              >
+                {option.label}
+              </button>
+            ))}
           </div>
-        )}
 
-        <p className="text-center text-sm text-gray-600">
-          Need help? {" "}
-          <Link href="/contact" className="text-[var(--c-blue)] hover:underline">
-            Contact support
-          </Link>
-        </p>
-      </div>
+          {tab === "email" ? <EmailForm onStatus={setStatus} /> : <PhoneForm onStatus={setStatus} />}
+
+          <button
+            type="button"
+            disabled
+            className={`${buttonStyles({ variant: "outline" })} w-full cursor-not-allowed bg-surface-muted text-textc/50`}
+          >
+            Continue with Google (coming soon)
+          </button>
+
+          {status ? (
+            <div
+              role="status"
+              className="rounded-lg border border-brand.primary/40 bg-brand.primary/5 px-4 py-3 text-sm text-brand.primary"
+            >
+              {status}
+            </div>
+          ) : null}
+
+          <p className="text-center text-sm text-textc/70">
+            Need help?{" "}
+            <Link href="/contact" className="text-brand.blue hover:text-brand.primary hover:underline">
+              Contact support
+            </Link>
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -118,47 +129,32 @@ function EmailForm({ onStatus }: StatusHandler) {
 
   return (
     <form onSubmit={handleSubmit} className="grid gap-4" aria-label="Email authentication form">
-      <div className="grid gap-1">
-        <label htmlFor="email-name" className="text-sm font-medium text-gray-700">
-          Name (for signup)
-        </label>
-        <input
-          id="email-name"
-          className="input"
-          placeholder="Jordan Tenant"
-          value={form.name}
-          onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))}
-        />
-      </div>
-      <div className="grid gap-1">
-        <label htmlFor="email-address" className="text-sm font-medium text-gray-700">
-          Email
-        </label>
-        <input
-          id="email-address"
-          type="email"
-          className="input"
-          placeholder="you@example.com"
-          required
-          value={form.email}
-          onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))}
-        />
-      </div>
-      <div className="grid gap-1">
-        <label htmlFor="email-password" className="text-sm font-medium text-gray-700">
-          Password
-        </label>
-        <input
-          id="email-password"
-          type="password"
-          className="input"
-          placeholder="********"
-          required
-          value={form.password}
-          onChange={(event) => setForm((prev) => ({ ...prev, password: event.target.value }))}
-        />
-      </div>
-      <button type="submit" className="btn btn-primary">
+      <InputField
+        id="email-name"
+        label="Name (for signup)"
+        value={form.name}
+        onChange={(value) => setForm((prev) => ({ ...prev, name: value }))}
+        placeholder="Jordan Tenant"
+      />
+      <InputField
+        id="email-address"
+        label="Email"
+        type="email"
+        value={form.email}
+        onChange={(value) => setForm((prev) => ({ ...prev, email: value }))}
+        placeholder="you@example.com"
+        required
+      />
+      <InputField
+        id="email-password"
+        label="Password"
+        type="password"
+        value={form.password}
+        onChange={(value) => setForm((prev) => ({ ...prev, password: value }))}
+        placeholder="********"
+        required
+      />
+      <button type="submit" className={buttonStyles({ variant: "primary" })}>
         Continue
       </button>
     </form>
@@ -186,21 +182,16 @@ function PhoneForm({ onStatus }: StatusHandler) {
 
   return (
     <form onSubmit={handleSubmit} className="grid gap-4" aria-label="Phone authentication form">
+      <InputField
+        id="phone-number"
+        label="Phone number"
+        value={form.phone}
+        onChange={(value) => setForm((prev) => ({ ...prev, phone: value }))}
+        placeholder="+1 (555) 000-1234"
+        required
+      />
       <div className="grid gap-1">
-        <label htmlFor="phone-number" className="text-sm font-medium text-gray-700">
-          Phone number
-        </label>
-        <input
-          id="phone-number"
-          className="input"
-          placeholder="+1 (555) 000-1234"
-          value={form.phone}
-          onChange={(event) => setForm((prev) => ({ ...prev, phone: event.target.value }))}
-          required
-        />
-      </div>
-      <div className="grid gap-1">
-        <label htmlFor="phone-otp" className="text-sm font-medium text-gray-700">
+        <label htmlFor="phone-otp" className="text-sm font-medium text-textc">
           One-time passcode
         </label>
         <div className="flex gap-2">
@@ -211,14 +202,55 @@ function PhoneForm({ onStatus }: StatusHandler) {
             value={form.otp}
             onChange={(event) => setForm((prev) => ({ ...prev, otp: event.target.value }))}
           />
-          <button type="button" className="btn btn-secondary whitespace-nowrap" onClick={requestOtp}>
+          <button
+            type="button"
+            className={buttonStyles({ variant: "outline" })}
+            onClick={requestOtp}
+          >
             Send OTP
           </button>
         </div>
       </div>
-      <button type="submit" className="btn btn-primary">
+      <button type="submit" className={buttonStyles({ variant: "primary" })}>
         Continue
       </button>
     </form>
+  );
+}
+
+type InputFieldProps = {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  required?: boolean;
+  type?: "text" | "email" | "password" | "tel";
+};
+
+function InputField({
+  id,
+  label,
+  value,
+  onChange,
+  placeholder,
+  required,
+  type = "text"
+}: InputFieldProps) {
+  return (
+    <div className="grid gap-1">
+      <label htmlFor={id} className="text-sm font-medium text-textc">
+        {label}
+      </label>
+      <input
+        id={id}
+        type={type}
+        className="input"
+        placeholder={placeholder}
+        value={value}
+        required={required}
+        onChange={(event) => onChange(event.target.value)}
+      />
+    </div>
   );
 }

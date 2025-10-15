@@ -1,8 +1,14 @@
-import Link from "next/link";
-import BadgeVerified from "./badge-verified";
-import { Property } from "@/lib/mock";
+import clsx from 'clsx';
+import Image from 'next/image';
+import Link from 'next/link';
+import React from 'react';
 
-type CardVariant = "default" | "plain";
+import BadgeVerified from '@/components/badge-verified';
+import { Button, buttonStyles } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import type { Property } from '@/lib/mock';
+
+type CardVariant = 'default' | 'plain';
 
 type PropertyCardProps = {
   property: Property;
@@ -12,70 +18,124 @@ type PropertyCardProps = {
   variant?: CardVariant;
 };
 
-function cn(...classes: Array<string | undefined | false>) {
-  return classes.filter(Boolean).join(" ");
-}
-
 export default function PropertyCard({
   property,
   onSave,
   saved,
   className,
-  variant = "default"
+  variant = 'default'
 }: PropertyCardProps) {
   const primaryImage = property.images[0];
-  return (
-    <article
-      className={cn(
-        "flex flex-col gap-3",
-        variant === "default"
-          ? "card"
-          : "rounded-xl border border-gray-200 bg-white p-4 shadow-soft",
-        className
-      )}
-    >
-      <div className="relative aspect-video overflow-hidden rounded-lg bg-[var(--c-bg)]">
-        {primaryImage ? (
-          <div
-            className="absolute inset-0 bg-cover bg-center"
-            style={{ backgroundImage: `url(${primaryImage})` }}
-            role="img"
-            aria-label={`${property.title} photo`}
-          />
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-center text-sm text-gray-500">
-            Image coming soon
-          </div>
+
+  if (variant === 'plain') {
+    return (
+      <div
+        className={clsx(
+          'flex flex-col gap-3 overflow-hidden rounded-2xl border border-black/10 bg-white p-4 shadow-soft dark:border-white/10 dark:bg-surface/60',
+          className
         )}
-        <div className="absolute top-3 left-3">{property.verified && <BadgeVerified />}</div>
-        <button
-          type="button"
-          onClick={() => onSave?.(property.id)}
-          className={cn(
-            "absolute top-3 right-3 rounded-full bg-white/90 px-3 py-1 text-sm font-medium shadow-soft transition hover:bg-white",
-            saved ? "text-[var(--c-primary)]" : "text-gray-600"
-          )}
-          aria-pressed={saved}
-        >
-          {saved ? "\u2665 Saved" : "\u2661 Save"}
-        </button>
+      >
+        <MediaSection
+          primaryImage={primaryImage}
+          title={property.title}
+          verified={property.verified}
+          saved={saved}
+          onSave={() => onSave?.(property.id)}
+        />
+        <DetailsSection property={property} />
+        <Actions propertyId={property.id} />
       </div>
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h3 className="text-lg font-semibold text-[var(--c-dark)]">{property.title}</h3>
-          <p className="text-sm text-gray-600">
-            {property.city} - ${property.rent}/mo
-          </p>
+    );
+  }
+
+  return (
+    <Card className={clsx('flex flex-col overflow-hidden', className)}>
+      <MediaSection
+        primaryImage={primaryImage}
+        title={property.title}
+        verified={property.verified}
+        saved={saved}
+        onSave={() => onSave?.(property.id)}
+      />
+      <CardContent className="flex flex-col gap-3">
+        <DetailsSection property={property} />
+        <Actions propertyId={property.id} />
+      </CardContent>
+    </Card>
+  );
+}
+
+function MediaSection({
+  primaryImage,
+  title,
+  verified,
+  saved,
+  onSave
+}: {
+  primaryImage?: string;
+  title: string;
+  verified?: boolean;
+  saved?: boolean;
+  onSave: () => void;
+}) {
+  return (
+    <div className="relative aspect-video w-full bg-surface-muted">
+      {primaryImage ? (
+        <Image
+          src={primaryImage}
+          alt={`${title} photo`}
+          fill
+          sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+          className="object-cover"
+        />
+      ) : (
+        <div className="absolute inset-0 flex items-center justify-center text-sm text-textc/60">
+          Image coming soon
         </div>
-      </div>
-      <div className="flex items-center gap-2">
-        <Link href={`/listings/${property.id}`} className="btn btn-secondary flex-1">
-          View details
-        </Link>
-        <Link href="/messages" className="btn flex-1">
-          Message
-        </Link>
-      </div>
-    </article>
+      )}
+      <div className="absolute left-3 top-3">{verified ? <BadgeVerified /> : null}</div>
+      <Button
+        type="button"
+        variant="ghost"
+        className={clsx(
+          'absolute right-3 top-3 rounded-full bg-surface px-3 py-1 text-xs font-medium shadow-soft hover:bg-surface-muted',
+          saved && 'text-brand.primary'
+        )}
+        aria-pressed={saved}
+        onClick={onSave}
+      >
+        {saved ? '\u2665 Saved' : '\u2661 Save'}
+      </Button>
+    </div>
+  );
+}
+
+function DetailsSection({ property }: { property: Property }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <h3 className="text-lg font-semibold text-textc">{property.title}</h3>
+      <p className="text-sm text-textc/70">
+        {property.city} - ${property.rent}/mo
+      </p>
+    </div>
+  );
+}
+
+function Actions({ propertyId }: { propertyId: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      <Link
+        href={`/listings/${propertyId}`}
+        className={clsx(buttonStyles({ variant: 'outline' }), 'flex-1 text-center')}
+      >
+        View details
+      </Link>
+      <Link
+        href="/messages"
+        className={clsx(buttonStyles({ variant: 'ghost' }), 'flex-1 text-center')}
+      >
+        Message
+      </Link>
+    </div>
   );
 }

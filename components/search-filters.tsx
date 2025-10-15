@@ -51,7 +51,7 @@ export default function SearchFilters({ defaultValues, onChange }: SearchFilters
   return (
     <form className="card grid gap-4 md:grid-cols-5" aria-label="Property search filters">
       <div className="flex flex-col gap-1">
-        <label htmlFor="filter-city" className="text-sm font-medium text-gray-700">
+        <label htmlFor="filter-city" className="text-sm font-medium text-textc">
           City
         </label>
         <input
@@ -63,7 +63,7 @@ export default function SearchFilters({ defaultValues, onChange }: SearchFilters
         />
       </div>
       <div className="flex flex-col gap-1">
-        <label htmlFor="filter-postal" className="text-sm font-medium text-gray-700">
+        <label htmlFor="filter-postal" className="text-sm font-medium text-textc">
           Postal code
         </label>
         <input
@@ -77,7 +77,7 @@ export default function SearchFilters({ defaultValues, onChange }: SearchFilters
         />
       </div>
       <div className="flex flex-col gap-1">
-        <label htmlFor="filter-type" className="text-sm font-medium text-gray-700">
+        <label htmlFor="filter-type" className="text-sm font-medium text-textc">
           Property type
         </label>
         <select
@@ -89,13 +89,13 @@ export default function SearchFilters({ defaultValues, onChange }: SearchFilters
           <option value="">Any</option>
           {propertyTypes().map((typeOption) => (
             <option key={typeOption} value={typeOption}>
-              {typeOption[0].toUpperCase() + typeOption.slice(1)}
+              {typeOption.charAt(0).toUpperCase() + typeOption.slice(1)}
             </option>
           ))}
         </select>
       </div>
       <div className="flex flex-col gap-1">
-        <label htmlFor="filter-min" className="text-sm font-medium text-gray-700">
+        <label htmlFor="filter-min" className="text-sm font-medium text-textc">
           Min rent
         </label>
         <input
@@ -109,7 +109,7 @@ export default function SearchFilters({ defaultValues, onChange }: SearchFilters
         />
       </div>
       <div className="flex flex-col gap-1">
-        <label htmlFor="filter-max" className="text-sm font-medium text-gray-700">
+        <label htmlFor="filter-max" className="text-sm font-medium text-textc">
           Max rent
         </label>
         <div className="grid grid-cols-2 gap-2">

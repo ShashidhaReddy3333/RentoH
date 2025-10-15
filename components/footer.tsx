@@ -12,11 +12,15 @@ const footLinks = [
 
 export default function Footer() {
   return (
-    <footer className="bg-white border-t border-gray-200 mt-12">
-      <div className="container py-8 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-gray-600">
+    <footer className="mt-12 border-t border-black/10 bg-surface text-textc/80 dark:border-white/10">
+      <div className="container flex flex-col items-center justify-between gap-4 py-8 text-sm text-textc/70 md:flex-row">
         <nav className="flex flex-wrap items-center gap-4">
           {footLinks.map((item) => (
-            <Link key={item.href} href={item.href} className="hover:text-[var(--c-primary)]">
+            <Link
+              key={item.href}
+              href={item.href}
+              className="transition-colors hover:text-brand.primary"
+            >
               {item.label}
             </Link>
           ))}

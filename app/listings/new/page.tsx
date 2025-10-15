@@ -1,13 +1,17 @@
-
 "use client";
 
-import { ChangeEvent, FormEvent, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import type { ChangeEvent, FormEvent } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
+
+import Checkbox from "@/components/form/checkbox";
 import Field from "@/components/form/field";
 import Toggle from "@/components/form/toggle";
-import Checkbox from "@/components/form/checkbox";
-import { propertyTypes, useAppState } from "@/components/providers/app-provider";
-import { Property } from "@/lib/mock";
+import { useAppState, propertyTypes } from "@/components/providers/app-provider";
+import { buttonStyles } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import type { Property } from "@/lib/mock";
 
 const AMENITIES = ["Wi-Fi", "Parking", "Laundry", "Air Conditioning", "Heating"];
 const CURRENT_LANDLORD_ID = "u2";
@@ -40,35 +44,29 @@ export default function NewListingPage() {
   };
 
   const handleImageUpload = (event: ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files ?? []);
-    setImages((prev) => {
-      prev.forEach((url) => URL.revokeObjectURL(url));
-      return files.slice(0, 5).map((file) => URL.createObjectURL(file));
-    });
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    setImages((prev) => [...prev, url]);
   };
 
-  useEffect(() => {
-    return () => {
-      images.forEach((url) => URL.revokeObjectURL(url));
-    };
-  }, [images]);
+  useEffect(() => () => images.forEach((src) => URL.revokeObjectURL(src)), [images]);
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
-    const property = createProperty({
+    const property: Property = createProperty({
       title: form.title,
-      rent: Number(form.rent),
+      rent: form.rent,
       address: form.address,
       city: form.city,
       postalCode: form.postalCode,
       type: form.type as Property["type"],
       furnished: form.furnished,
-      description: form.description || "Listing description coming soon.",
+      description: form.description,
       amenities: form.amenities,
+      images,
       landlordId: CURRENT_LANDLORD_ID,
-      images: images.length ? images : ["/img/placeholder.jpg"],
-      availability: form.availability ? "available" : "unavailable",
-      verified: false
+      availability: form.availability ? "available" : "unavailable"
     });
     setStatus("Property saved! Redirecting you to manage the listing...");
     setTimeout(() => {
@@ -77,167 +75,185 @@ export default function NewListingPage() {
   };
 
   return (
-    <div className="mx-auto max-w-4xl space-y-8">
+    <div className="mx-auto max-w-4xl space-y-8 text-textc">
       <header className="space-y-2">
-        <h1 className="text-3xl font-semibold text-[var(--c-dark)]">Add a new property</h1>
-        <p className="text-sm text-gray-600">
+        <h1 className="text-3xl font-semibold text-textc">Add a new property</h1>
+        <p className="text-sm text-textc/70">
           Provide key details so tenants can evaluate if your property is the right fit.
         </p>
       </header>
 
       <form onSubmit={handleSubmit} className="space-y-8">
-        <section className="card space-y-6">
-          <h2 className="text-lg font-semibold text-[var(--c-dark)]">Basics</h2>
-          <div className="grid gap-4 md:grid-cols-2">
-            <Field id="listing-title" label="Title" required>
-              <input
-                id="listing-title"
-                className="input"
-                placeholder="Light-filled 2BR condo"
-                value={form.title}
-                onChange={(event) => setForm((prev) => ({ ...prev, title: event.target.value }))}
-                required
-              />
-            </Field>
-            <Field id="listing-rent" label="Rent per month ($)" required>
-              <input
-                id="listing-rent"
-                className="input"
-                type="number"
-                min={500}
-                value={form.rent}
-                onChange={(event) =>
-                  setForm((prev) => ({ ...prev, rent: Number(event.target.value) }))
-                }
-                required
-              />
-            </Field>
-            <Field id="listing-address" label="Street address" required>
-              <input
-                id="listing-address"
-                className="input"
-                placeholder="123 King Street W"
-                value={form.address}
-                onChange={(event) => setForm((prev) => ({ ...prev, address: event.target.value }))}
-                required
-              />
-            </Field>
-            <Field id="listing-city" label="City" required>
-              <input
-                id="listing-city"
-                className="input"
-                placeholder="Waterloo"
-                value={form.city}
-                onChange={(event) => setForm((prev) => ({ ...prev, city: event.target.value }))}
-                required
-              />
-            </Field>
-            <Field id="listing-postal" label="Postal code" required>
-              <input
-                id="listing-postal"
-                className="input"
-                placeholder="N2L 3G1"
-                value={form.postalCode}
-                onChange={(event) =>
-                  setForm((prev) => ({ ...prev, postalCode: event.target.value }))
-                }
-                required
-              />
-            </Field>
-            <Field id="listing-type" label="Property type" required>
-              <select
-                id="listing-type"
-                className="input"
-                value={form.type}
-                onChange={(event) => setForm((prev) => ({ ...prev, type: event.target.value }))}
-              >
-                {propertyTypes().map((type) => (
-                  <option key={type} value={type}>
-                    {type[0].toUpperCase() + type.slice(1)}
-                  </option>
-                ))}
-              </select>
-            </Field>
-          </div>
-          <Toggle
-            id="listing-furnished"
-            checked={form.furnished}
-            onChange={(next) => setForm((prev) => ({ ...prev, furnished: next }))}
-            label={form.furnished ? "Furnished" : "Unfurnished"}
-          />
-        </section>
-
-        <section className="card space-y-6">
-          <h2 className="text-lg font-semibold text-[var(--c-dark)]">Description & amenities</h2>
-          <Field id="listing-description" label="Description">
-            <textarea
-              id="listing-description"
-              className="input min-h-[120px]"
-              placeholder="Highlight top features, proximity to transit, and what makes your property unique."
-              value={form.description}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, description: event.target.value }))
-              }
+        <Card>
+          <CardContent className="space-y-6">
+            <h2 className="text-lg font-semibold text-textc">Basics</h2>
+            <div className="grid gap-4 md:grid-cols-2">
+              <Field id="listing-title" label="Title" required>
+                <input
+                  id="listing-title"
+                  className="input"
+                  placeholder="Light-filled 2BR condo"
+                  value={form.title}
+                  onChange={(event) => setForm((prev) => ({ ...prev, title: event.target.value }))}
+                  required
+                />
+              </Field>
+              <Field id="listing-rent" label="Rent per month ($)" required>
+                <input
+                  id="listing-rent"
+                  className="input"
+                  type="number"
+                  min={500}
+                  value={form.rent}
+                  onChange={(event) =>
+                    setForm((prev) => ({ ...prev, rent: Number(event.target.value) }))
+                  }
+                  required
+                />
+              </Field>
+              <Field id="listing-address" label="Street address" required>
+                <input
+                  id="listing-address"
+                  className="input"
+                  placeholder="123 King Street W"
+                  value={form.address}
+                  onChange={(event) => setForm((prev) => ({ ...prev, address: event.target.value }))}
+                  required
+                />
+              </Field>
+              <Field id="listing-city" label="City" required>
+                <input
+                  id="listing-city"
+                  className="input"
+                  placeholder="Waterloo"
+                  value={form.city}
+                  onChange={(event) => setForm((prev) => ({ ...prev, city: event.target.value }))}
+                  required
+                />
+              </Field>
+              <Field id="listing-postal" label="Postal code" required>
+                <input
+                  id="listing-postal"
+                  className="input"
+                  placeholder="N2L 3G1"
+                  value={form.postalCode}
+                  onChange={(event) =>
+                    setForm((prev) => ({ ...prev, postalCode: event.target.value }))
+                  }
+                  required
+                />
+              </Field>
+              <Field id="listing-type" label="Property type" required>
+                <select
+                  id="listing-type"
+                  className="input"
+                  value={form.type}
+                  onChange={(event) => setForm((prev) => ({ ...prev, type: event.target.value }))}
+                >
+                  {propertyTypes().map((type) => (
+                    <option key={type} value={type}>
+                      {type.charAt(0).toUpperCase() + type.slice(1)}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            </div>
+            <Toggle
+              id="listing-furnished"
+              checked={form.furnished}
+              onChange={(next) => setForm((prev) => ({ ...prev, furnished: next }))}
+              label={form.furnished ? "Furnished" : "Unfurnished"}
             />
-          </Field>
-          <div className="grid gap-3 md:grid-cols-2">
-            {AMENITIES.map((amenity) => (
-              <Checkbox
-                key={amenity}
-                id={`amenity-${amenity}`}
-                label={amenity}
-                checked={form.amenities.includes(amenity)}
-                onChange={(checked) => handleAmenityToggle(amenity, checked)}
-              />
-            ))}
-          </div>
-        </section>
+          </CardContent>
+        </Card>
 
-        <section className="card space-y-6">
-          <h2 className="text-lg font-semibold text-[var(--c-dark)]">Media & availability</h2>
-          <Field id="listing-images" label="Upload images (up to 5)">
-            <input
-              id="listing-images"
-              className="input"
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={handleImageUpload}
-            />
-          </Field>
-          {images.length > 0 && (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {images.map((src, index) => (
-                <div key={index} className="aspect-video overflow-hidden rounded-lg bg-[var(--c-bg)]">
-                  <div
-                    className="h-full w-full bg-cover bg-center"
-                    style={{ backgroundImage: `url(${src})` }}
-                  />
-                </div>
+        <Card>
+          <CardContent className="space-y-6">
+            <h2 className="text-lg font-semibold text-textc">Description & amenities</h2>
+            <Field id="listing-description" label="Description">
+              <textarea
+                id="listing-description"
+                className="input min-h-[120px]"
+                placeholder="Highlight top features, proximity to transit, and what makes your property unique."
+                value={form.description}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, description: event.target.value }))
+                }
+              />
+            </Field>
+            <div className="grid gap-3 md:grid-cols-2">
+              {AMENITIES.map((amenity) => (
+                <Checkbox
+                  key={amenity}
+                  id={`amenity-${amenity}`}
+                  label={amenity}
+                  checked={form.amenities.includes(amenity)}
+                  onChange={(checked) => handleAmenityToggle(amenity, checked)}
+                />
               ))}
             </div>
-          )}
-          <Toggle
-            id="listing-availability"
-            checked={form.availability}
-            onChange={(next) => setForm((prev) => ({ ...prev, availability: next }))}
-            label={form.availability ? "Currently available" : "Temporarily unavailable"}
-          />
-        </section>
+          </CardContent>
+        </Card>
 
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <span className="text-sm text-gray-500">
+        <Card>
+          <CardContent className="space-y-6">
+            <h2 className="text-lg font-semibold text-textc">Media & availability</h2>
+            <div className="grid gap-4 md:grid-cols-[1fr_auto]">
+              <Field id="listing-images" label="Upload image">
+                <input
+                  id="listing-images"
+                  className="input"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                />
+              </Field>
+              <Toggle
+                id="listing-availability"
+                checked={form.availability}
+                onChange={(next) => setForm((prev) => ({ ...prev, availability: next }))}
+                label={form.availability ? "Available now" : "Waitlist"}
+              />
+            </div>
+            <div className="flex flex-wrap gap-4">
+              {images.map((src, index) => (
+                <div key={index} className="relative aspect-video w-40 overflow-hidden rounded-lg bg-surface-muted">
+                  <Image
+                src={src}
+                alt={`Upload ${index + 1}`}
+                fill
+                unoptimized
+                sizes="160px"
+                className="object-cover"
+              />
+                </div>
+              ))}
+              {!images.length ? (
+                <div className="h-24 flex items-center justify-center rounded-xl border border-dashed border-black/10 bg-surface-muted px-6 text-sm text-textc/60 dark:border-white/20">
+                  No images yet
+                </div>
+              ) : null}
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <span className="text-sm text-textc/60">
             You can edit listings later from your dashboard.
           </span>
-          <button type="submit" className="btn btn-primary md:min-w-[160px]">
+          <button
+            type="submit"
+            className={`${buttonStyles({ variant: "primary", size: "lg" })} md:min-w-[160px]`}
+          >
             Save listing
           </button>
         </div>
-        {status && (
-          <div className="rounded-lg border border-[var(--c-primary)]/40 bg-[var(--c-primary)]/5 px-4 py-3 text-sm text-[var(--c-primary)]">
+
+        {status ? (
+          <div className="rounded-lg border border-brand-primary/40 bg-brand-primary/5 px-4 py-3 text-sm text-brand-primary">
             {status}
           </div>
-        )}
+        ) : null}
       </form>
     </div>
   );

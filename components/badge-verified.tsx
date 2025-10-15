@@ -1,6 +1,6 @@
 export default function BadgeVerified() {
   return (
-    <span className="badge-verified">
+    <span className="inline-flex items-center gap-1 rounded-full bg-brand.green/10 px-2 py-0.5 text-xs font-medium text-brand.green">
       <svg
         viewBox="0 0 16 16"
         width="14"

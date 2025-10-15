@@ -17,7 +17,7 @@ export default function Field({ id, label, hint, required, children }: FieldProp
     if (!childId) {
       const nextProps: Record<string, unknown> = { id };
       if (required !== undefined) {
-        nextProps.required = required;
+        nextProps["required"] = required;
       }
       control = cloneElement(children, nextProps);
     }
@@ -25,12 +25,12 @@ export default function Field({ id, label, hint, required, children }: FieldProp
 
   return (
     <div className="flex flex-col gap-1">
-      <label htmlFor={id} className="text-sm font-medium text-gray-700">
+      <label htmlFor={id} className="text-sm font-medium text-textc">
         {label}
         {required && <span className="ml-1 text-red-500">*</span>}
       </label>
       {control}
-      {hint && <span className="text-xs text-gray-500">{hint}</span>}
+      {hint && <span className="text-xs text-textc/60">{hint}</span>}
     </div>
   );
 }

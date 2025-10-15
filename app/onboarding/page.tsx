@@ -1,11 +1,15 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { useState } from "react";
+import type { FormEvent } from "react";
 import { useRouter } from "next/navigation";
+
+import Checkbox from "@/components/form/checkbox";
 import Field from "@/components/form/field";
 import Toggle from "@/components/form/toggle";
-import Checkbox from "@/components/form/checkbox";
 import { propertyTypes } from "@/components/providers/app-provider";
+import { buttonStyles } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 
 type Role = "tenant" | "landlord";
 
@@ -32,75 +36,81 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="mx-auto max-w-3xl space-y-8">
+    <div className="mx-auto max-w-3xl space-y-8 text-textc">
       <header className="space-y-3">
-        <h1 className="text-3xl font-semibold text-[var(--c-dark)]">Complete your profile</h1>
-        <p className="text-sm text-gray-600">
+        <h1 className="text-3xl font-semibold text-textc">Complete your profile</h1>
+        <p className="text-sm text-textc/70">
           Choose your path and share a few details so we can tailor Rento Bridge to your goals.
         </p>
       </header>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <section className="card space-y-4">
-          <div>
-            <h2 className="text-lg font-semibold text-[var(--c-dark)]">I am a...</h2>
-            <div className="mt-3 flex flex-wrap gap-3">
-              {roleOptions.map((option) => (
-                <button
-                  key={option.key}
-                  type="button"
-                  onClick={() => setRole(option.key)}
-                  className={`rounded-xl border px-4 py-3 text-left transition ${
-                    role === option.key
-                      ? "border-[var(--c-primary)] bg-[var(--c-primary)]/10 text-[var(--c-primary)]"
-                      : "border-gray-200 text-gray-700 hover:border-[var(--c-primary)]"
-                  }`}
-                  aria-pressed={role === option.key}
-                >
-                  <div className="text-sm font-semibold">{option.label}</div>
-                  <p className="text-xs text-gray-500">{option.description}</p>
-                </button>
-              ))}
+        <Card>
+          <CardContent className="space-y-4">
+            <div>
+              <h2 className="text-lg font-semibold text-textc">I am a...</h2>
+              <div className="mt-3 flex flex-wrap gap-3">
+                {roleOptions.map((option) => (
+                  <button
+                    key={option.key}
+                    type="button"
+                    onClick={() => setRole(option.key)}
+                    className={`rounded-xl border px-4 py-3 text-left transition ${
+                      role === option.key
+                        ? "border-brand.primary bg-brand.primary/10 text-brand.primary"
+                        : "border-black/10 text-textc/80 hover:border-brand.primary dark:border-white/20"
+                    }`}
+                    aria-pressed={role === option.key}
+                  >
+                    <div className="text-sm font-semibold">{option.label}</div>
+                    <p className="text-xs text-textc/60">{option.description}</p>
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
 
-          {role === "tenant" ? (
-            <TenantSection prefs={tenantPrefs} onChange={setTenantPrefs} />
-          ) : (
-            <LandlordSection draft={landlordDraft} onChange={setLandlordDraft} />
-          )}
-        </section>
+            {role === "tenant" ? (
+              <TenantSection prefs={tenantPrefs} onChange={setTenantPrefs} />
+            ) : (
+              <LandlordSection draft={landlordDraft} onChange={setLandlordDraft} />
+            )}
+          </CardContent>
+        </Card>
 
-        <section className="card space-y-4">
-          <h2 className="text-lg font-semibold text-[var(--c-dark)]">Verification (optional)</h2>
-          <div className="grid gap-4 md:grid-cols-2">
-            <Field id="profile-photo" label="Profile photo">
-              <input
-                id="profile-photo"
-                type="file"
-                className="input"
-                accept="image/*"
-                onChange={(event) => {
-                  const fileName = event.target.files?.[0]?.name ?? "";
-                  setDocuments((prev) => ({ ...prev, avatar: fileName }));
-                }}
-              />
-            </Field>
-            <div className="flex flex-col justify-end gap-2">
-              <Checkbox
-                id="government-id"
-                label="I am uploading a government-issued ID"
-                checked={documents.idProvided}
-                onChange={(checked) => setDocuments((prev) => ({ ...prev, idProvided: checked }))}
-              />
-              {documents.avatar && (
-                <p className="text-xs text-gray-500">Uploaded: {documents.avatar}</p>
-              )}
+        <Card>
+          <CardContent className="space-y-4">
+            <h2 className="text-lg font-semibold text-textc">Verification (optional)</h2>
+            <div className="grid gap-4 md:grid-cols-2">
+              <Field id="profile-photo" label="Profile photo">
+                <input
+                  id="profile-photo"
+                  type="file"
+                  className="input"
+                  accept="image/*"
+                  onChange={(event) => {
+                    const fileName = event.target.files?.[0]?.name ?? "";
+                    setDocuments((prev) => ({ ...prev, avatar: fileName }));
+                  }}
+                />
+              </Field>
+              <div className="flex flex-col justify-end gap-2">
+                <Checkbox
+                  id="government-id"
+                  label="I am uploading a government-issued ID"
+                  checked={documents.idProvided}
+                  onChange={(checked) =>
+                    setDocuments((prev) => ({ ...prev, idProvided: checked }))
+                  }
+                />
+                {documents.avatar ? (
+                  <p className="text-xs text-textc/60">Uploaded: {documents.avatar}</p>
+                ) : null}
+              </div>
             </div>
-          </div>
-        </section>
+          </CardContent>
+        </Card>
 
-        <button type="submit" className="btn btn-primary w-full md:w-auto">
+        <button type="submit" className={`${buttonStyles({ variant: "primary", size: "lg" })} w-full md:w-auto`}>
           Continue
         </button>
       </form>
@@ -141,13 +151,13 @@ function TenantSection({
         >
           {propertyTypes().map((type) => (
             <option key={type} value={type}>
-              {type[0].toUpperCase() + type.slice(1)}
+              {type.charAt(0).toUpperCase() + type.slice(1)}
             </option>
           ))}
         </select>
       </Field>
       <div className="col-span-2">
-        <label htmlFor="rent-range" className="text-sm font-medium text-gray-700">
+        <label htmlFor="rent-range" className="text-sm font-medium text-textc">
           Monthly rent budget: ${prefs.rent}
         </label>
         <input
@@ -158,7 +168,7 @@ function TenantSection({
           step={50}
           value={prefs.rent}
           onChange={(event) => onChange({ ...prefs, rent: Number(event.target.value) })}
-          className="w-full"
+          className="w-full accent-brand.primary"
         />
       </div>
       <Toggle
@@ -176,9 +186,7 @@ function LandlordSection({
   onChange
 }: {
   draft: { title: string; address: string; city: string; postalCode: string };
-  onChange: (
-    next: { title: string; address: string; city: string; postalCode: string }
-  ) => void;
+  onChange: (next: { title: string; address: string; city: string; postalCode: string }) => void;
 }) {
   return (
     <div className="grid gap-4 md:grid-cols-2">
@@ -240,4 +248,3 @@ const roleOptions = [
 ];
 
 const cities = ["Waterloo", "Kitchener", "Cambridge", "Guelph", "Toronto"];
-

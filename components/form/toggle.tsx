@@ -17,13 +17,13 @@ export default function Toggle({ id, checked, onChange, label }: ToggleProps) {
       onClick={() => onChange(!checked)}
       className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-sm transition ${
         checked
-          ? "bg-[var(--c-primary)]/10 border-[var(--c-primary)] text-[var(--c-primary)]"
-          : "border-gray-300 text-gray-600"
+          ? "border-brand-primary bg-brand-primary/10 text-brand-primary"
+          : "border-black/10 text-textc/70 dark:border-white/20"
       }`}
     >
       <span
         className={`inline-block h-4 w-4 rounded-full transition ${
-          checked ? "bg-[var(--c-primary)] translate-x-0.5" : "bg-gray-300"
+          checked ? "translate-x-0.5 bg-brand-primary" : "bg-textc/30 dark:bg-white/30"
         }`}
       />
       {label}
