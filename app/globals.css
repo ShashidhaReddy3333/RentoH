@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root{
+  --c-primary:#2FB79A; --c-blue:#1E88E5; --c-green:#43A047;
+  --c-yellow:#F9A825; --c-dark:#212121; --c-bg:#F5F5F5; --c-white:#fff;
+}
+html{color:var(--c-dark); background:var(--c-bg);}
+.sticky-bar{@apply fixed bottom-0 inset-x-0 bg-white border-t border-gray-200 py-2 shadow-card}
+.btn{@apply inline-flex items-center justify-center rounded-lg px-4 py-2 font-medium transition}
+.btn-primary{@apply bg-[var(--c-primary)] text-white hover:opacity-90}
+.btn-secondary{@apply border border-[var(--c-blue)] text-[var(--c-blue)] hover:bg-[var(--c-blue)] hover:text-white}
+.card{@apply bg-white rounded-xl shadow-card p-4}
+.input{@apply w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--c-primary)]}
+.badge-verified{@apply inline-flex items-center gap-1 rounded-full bg-brand-green/10 text-brand-green px-2 py-0.5 text-xs font-medium}
+.container{@apply mx-auto max-w-6xl px-4}
