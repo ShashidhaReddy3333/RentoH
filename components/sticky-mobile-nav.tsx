@@ -16,16 +16,16 @@ const items = [
 export default function StickyMobileNav() {
   const pathname = usePathname();
   return (
-    <nav className="md:hidden fixed bottom-0 inset-x-0 border-t border-black/10 bg-surface/95 backdrop-blur dark:border-white/10">
-      <div className="container flex items-center justify-between gap-1 py-2 text-xs font-medium">
+    <nav className="fixed inset-x-0 bottom-0 border-t border-brand-dark/10 bg-brand-bg/95 backdrop-blur md:hidden">
+      <div className="mx-auto flex max-w-container items-center justify-between gap-1 px-4 py-2 text-xs font-medium sm:px-6 lg:px-8">
         {items.map((item) => {
           const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`flex flex-1 flex-col items-center gap-1 rounded-lg px-3 py-2 transition ${
-                active ? "bg-brand.primary/10 text-brand.primary" : "text-textc/70"
+              className={`flex flex-1 flex-col items-center gap-1 rounded-card px-3 py-2 transition ${
+                active ? "bg-brand-teal/10 text-brand-teal" : "text-brand-dark/70"
               }`}
             >
               <span aria-hidden>{item.icon}</span>

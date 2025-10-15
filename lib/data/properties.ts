@@ -1,7 +1,12 @@
+import { hasSupabaseEnv } from '@/lib/env';
 import { supabaseServer } from '@/lib/supabase/server';
 import type { Property } from '@/lib/types';
 
 export async function listProperties(): Promise<Property[]> {
+  if (!hasSupabaseEnv) {
+    return [];
+  }
+
   const sb = supabaseServer();
   const { data, error } = await sb
     .from('properties')

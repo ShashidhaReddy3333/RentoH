@@ -13,19 +13,19 @@ const navItems = [
   { label: "Browse", href: "/browse" },
   { label: "Dashboard", href: "/dashboard" },
   { label: "Messages", href: "/messages" },
-  { label: "Profile", href: "/profile" }
+  { label: "Profile", href: "/profile" },
 ] as const satisfies readonly NavItem[];
 
 export default function Header() {
   const pathname = usePathname();
 
   return (
-    <header className="sticky top-0 z-40 border-b border-black/10 bg-surface/90 backdrop-blur dark:border-white/10">
-      <div className="container h-16 flex items-center justify-between gap-4">
-        <Link href="/" className="text-2xl font-black tracking-tight text-brand.primary">
+    <header className="sticky top-0 z-40 border-b border-brand-dark/10 bg-brand-bg/90 backdrop-blur">
+      <div className="mx-auto flex h-20 max-w-container items-center justify-between gap-6 px-4 sm:px-6 lg:px-8">
+        <Link href="/" className="text-xl font-black tracking-tight text-brand-teal">
           RENTO
         </Link>
-        <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-textc/80">
+        <nav className="hidden items-center gap-6 text-sm font-medium text-brand-dark/80 md:flex">
           {navItems.map((item) => {
             const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
             return (
@@ -34,8 +34,8 @@ export default function Header() {
                 href={item.href}
                 className={
                   active
-                    ? "text-brand.primary"
-                    : "transition-colors hover:text-brand.primary"
+                    ? "text-brand-teal"
+                    : "transition-colors hover:text-brand-blue"
                 }
               >
                 {item.label}
@@ -43,7 +43,7 @@ export default function Header() {
             );
           })}
         </nav>
-        <div className="hidden md:flex items-center gap-3">
+        <div className="hidden items-center gap-3 md:flex">
           <Link
             href="/auth/sign-in"
             className={`${buttonStyles({ variant: "outline", size: "sm" })} min-w-[104px]`}

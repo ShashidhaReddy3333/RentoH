@@ -7,19 +7,19 @@ const footLinks = [
   { label: "About", href: "/about" },
   { label: "Contact", href: "/contact" },
   { label: "Terms", href: "/terms" },
-  { label: "Privacy", href: "/privacy" }
+  { label: "Privacy", href: "/privacy" },
 ] as const satisfies readonly FooterLink[];
 
 export default function Footer() {
   return (
-    <footer className="mt-12 border-t border-black/10 bg-surface text-textc/80 dark:border-white/10">
-      <div className="container flex flex-col items-center justify-between gap-4 py-8 text-sm text-textc/70 md:flex-row">
-        <nav className="flex flex-wrap items-center gap-4">
+    <footer className="border-t border-brand-dark/10 bg-brand-bg">
+      <div className="mx-auto flex max-w-container flex-col items-center justify-between gap-4 px-4 py-10 text-sm text-brand-dark/70 sm:px-6 lg:px-8 md:flex-row">
+        <nav className="flex flex-wrap items-center gap-5">
           {footLinks.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="transition-colors hover:text-brand.primary"
+              className="transition-colors hover:text-brand-teal"
             >
               {item.label}
             </Link>

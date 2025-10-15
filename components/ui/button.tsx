@@ -1,20 +1,20 @@
-import React from 'react';
+import React from "react";
 
-import { cva, type VariantProps } from 'class-variance-authority';
-import clsx from 'clsx';
+import { cva, type VariantProps } from "class-variance-authority";
+import clsx from "clsx";
 
 export const buttonStyles = cva(
-  'inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium shadow-soft transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+  "inline-flex items-center justify-center rounded-full px-5 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
   {
     variants: {
       variant: {
-        primary: 'bg-brand.primary text-white hover:shadow-glass',
-        outline: 'border border-border bg-surface text-textc hover:bg-surface-muted',
-        ghost: 'hover:bg-surface-muted'
+        primary: "bg-brand-teal text-white hover:brightness-90",
+        outline: "border border-brand-dark/20 text-brand-dark hover:bg-white/40",
+        ghost: "text-brand-dark hover:bg-white/40"
       },
-      size: { sm: 'h-9', md: 'h-10', lg: 'h-12 text-base' }
+      size: { sm: "h-9 px-4", md: "h-11 px-5 text-base", lg: "h-12 px-6 text-base" }
     },
-    defaultVariants: { variant: 'primary', size: 'md' }
+    defaultVariants: { variant: "primary", size: "md" }
   }
 );
 
@@ -31,4 +31,4 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   )
 );
 
-Button.displayName = 'Button';
+Button.displayName = "Button";

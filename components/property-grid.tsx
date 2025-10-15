@@ -1,6 +1,6 @@
-import { Card, CardContent } from '@/components/ui/card';
-import PropertyCard from '@/components/property-card';
-import type { Property } from '@/lib/mock';
+import CardGlass from "@/components/CardGlass";
+import PropertyCard from "@/components/property-card";
+import type { Property } from "@/lib/mock";
 
 type PropertyGridProps = {
   properties: Property[];
@@ -11,20 +11,22 @@ type PropertyGridProps = {
 export default function PropertyGrid({
   properties,
   toggleFavorite,
-  favorites = []
+  favorites = [],
 }: PropertyGridProps) {
   if (!properties.length) {
     return (
-      <Card className="border-2 border-dashed border-black/10 text-center text-textc/70 dark:border-white/10">
-        <CardContent>
-          No properties match your filters right now. Try adjusting your search or check back soon!
-        </CardContent>
-      </Card>
+      <CardGlass className="text-center">
+        <div className="space-y-2 p-6">
+          <p className="text-body text-brand-dark/70">
+            No properties match your filters right now. Try adjusting your search or check back soon!
+          </p>
+        </div>
+      </CardGlass>
     );
   }
 
   return (
-    <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {properties.map((property) => (
         <PropertyCard
           key={property.id}

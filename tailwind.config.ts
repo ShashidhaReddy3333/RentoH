@@ -1,44 +1,30 @@
-import type { Config } from 'tailwindcss';
-
+import type { Config } from "tailwindcss";
 const config: Config = {
-  darkMode: 'class',
-  content: ['./app/**/*.{ts,tsx}', './components/**/*.{ts,tsx}', './lib/**/*.{ts,tsx}'],
+  content: ["./app/**/*.{ts,tsx,js,jsx,mdx}", "./components/**/*.{ts,tsx,js,jsx,mdx}", "./lib/**/*.{ts,tsx,js,jsx,mdx}"],
   theme: {
     extend: {
       colors: {
         brand: {
-          primary: '#2FB79A',
-          blue: '#1E88E5',
-          green: '#43A047',
-          yellow: '#F9A825',
-          dark: '#212121',
-          bg: '#F5F5F5',
-          white: '#FFFFFF'
+          teal: "var(--brand-teal)",
+          blue: "var(--brand-blue)",
+          green: "var(--brand-green)",
+          yellow: "var(--brand-yellow)",
+          dark: "var(--brand-dark)",
+          bg: "var(--brand-bg)",
         },
-        surface: {
-          DEFAULT: 'rgb(var(--surface) / <alpha-value>)',
-          muted: 'rgb(var(--surface-muted) / <alpha-value>)'
-        },
-        textc: {
-          DEFAULT: 'rgb(var(--text) / <alpha-value>)',
-          muted: 'rgb(var(--text-muted) / <alpha-value>)'
-        },
-        border: 'rgb(0 0 0 / 0.12)'
       },
-      borderRadius: {
-        xl: '1rem',
-        '2xl': '1.25rem',
-        lg: '12px',
-        md: '8px'
+      borderRadius: { card: "var(--radius-card)" },
+      maxWidth: { container: "var(--container)" },
+      spacing: { section: "var(--section-y)" },
+      fontFamily: { sans: ["Inter", "system-ui", "sans-serif"] },
+      fontSize: {
+        h1: ["48px", { lineHeight: "56px", fontWeight: "800" }],
+        h2: ["36px", { lineHeight: "44px", fontWeight: "700" }],
+        h3: ["28px", { lineHeight: "36px", fontWeight: "700" }],
+        body: ["16px", { lineHeight: "26px", fontWeight: "400" }],
       },
-      boxShadow: {
-        soft: '0 8px 24px rgba(0,0,0,0.08)',
-        glass: 'inset 0 1px 0 rgba(255,255,255,0.2), 0 8px 24px rgba(0,0,0,0.15)',
-        card: '0 4px 24px rgba(0,0,0,0.06)'
-      }
-    }
+    },
   },
-  plugins: []
+  plugins: [],
 };
-
 export default config;

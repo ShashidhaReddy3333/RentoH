@@ -2,7 +2,7 @@ import Image from "next/image";
 import { listProperties } from "@/lib/data/properties";
 
 export const metadata = {
-  title: "Rento — Browse rentals",
+  title: "Rento - Browse rentals",
   description: "Find verified rentals and chat with landlords."
 };
 
