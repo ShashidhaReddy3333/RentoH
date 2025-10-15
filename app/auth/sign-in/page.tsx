@@ -3,8 +3,10 @@
 import clsx from "clsx";
 import Link from "next/link";
 import { Suspense, useEffect, useMemo, useState } from "react";
+import type { FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
+import EmailOtpForm from "@/components/auth/EmailOtpForm";
 import { buttonStyles } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -86,7 +88,7 @@ function SignInContent() {
             ))}
           </div>
 
-          {tab === "email" ? <EmailForm onStatus={setStatus} /> : <PhoneForm onStatus={setStatus} />}
+          {tab === "email" ? <EmailOtpForm /> : <PhoneForm onStatus={setStatus} />}
 
           <button
             type="button"
@@ -119,48 +121,6 @@ function SignInContent() {
 
 type StatusHandler = { onStatus: (message: string | null) => void };
 
-function EmailForm({ onStatus }: StatusHandler) {
-  const [form, setForm] = useState({ name: "", email: "", password: "" });
-
-  const handleSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
-    onStatus(`Thanks ${form.name || "there"}! Check your inbox to confirm your account.`);
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="grid gap-4" aria-label="Email authentication form">
-      <InputField
-        id="email-name"
-        label="Name (for signup)"
-        value={form.name}
-        onChange={(value) => setForm((prev) => ({ ...prev, name: value }))}
-        placeholder="Jordan Tenant"
-      />
-      <InputField
-        id="email-address"
-        label="Email"
-        type="email"
-        value={form.email}
-        onChange={(value) => setForm((prev) => ({ ...prev, email: value }))}
-        placeholder="you@example.com"
-        required
-      />
-      <InputField
-        id="email-password"
-        label="Password"
-        type="password"
-        value={form.password}
-        onChange={(value) => setForm((prev) => ({ ...prev, password: value }))}
-        placeholder="********"
-        required
-      />
-      <button type="submit" className={buttonStyles({ variant: "primary" })}>
-        Continue
-      </button>
-    </form>
-  );
-}
-
 function PhoneForm({ onStatus }: StatusHandler) {
   const [form, setForm] = useState({ phone: "", otp: "" });
   const [otpSent, setOtpSent] = useState(false);
@@ -171,7 +131,7 @@ function PhoneForm({ onStatus }: StatusHandler) {
     onStatus("OTP sent! Enter the code we texted you to continue.");
   };
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
     if (!otpSent) {
       onStatus("Please request an OTP before continuing.");
