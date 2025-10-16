@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import type { Route } from "next";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
 import type { FormEvent } from "react";
+import { Suspense, useMemo, useState } from "react";
 
 import { buttonStyles } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,6 +15,22 @@ const OTP_LENGTH = 6;
 type Stage = "collect" | "verify";
 
 export default function SignUpPage() {
+  return (
+    <Suspense fallback={<SignUpFallback />}>
+      <SignUpContent />
+    </Suspense>
+  );
+}
+
+function SignUpFallback() {
+  return (
+    <div className="mx-auto max-w-2xl py-12 text-center text-sm text-textc/60">
+      Loading sign-up experience...
+    </div>
+  );
+}
+
+function SignUpContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const next = searchParams.get("next");
@@ -28,7 +45,9 @@ export default function SignUpPage() {
   const [message, setMessage] = useState<string | null>(null);
 
   const redirectTo = () => {
-    router.replace(next && next.startsWith("/") ? next : "/dashboard");
+    const target: Route =
+      next && next.startsWith("/") ? (next as Route) : "/dashboard";
+    router.replace(target);
     router.refresh();
   };
 
@@ -51,7 +70,9 @@ export default function SignUpPage() {
 
       setStage("verify");
       setToken("");
-      setMessage(`We sent a 6-digit code to ${email}. Enter it below to verify your account.`);
+      setMessage(
+        `We sent a 6-digit code to ${email}. Enter it below to verify your account.`
+      );
     } finally {
       setBusy(false);
     }
@@ -78,7 +99,10 @@ export default function SignUpPage() {
       let session = data.session ?? null;
 
       if (!session) {
-        const { data: fallbackData, error: fallbackError } = await supabase.auth.signInWithPassword({
+        const {
+          data: fallbackData,
+          error: fallbackError
+        } = await supabase.auth.signInWithPassword({
           email,
           password
         });
@@ -135,18 +159,28 @@ export default function SignUpPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-8">
       <header className="space-y-2 text-center">
-        <h1 className="text-3xl font-semibold text-textc">Create your account</h1>
+        <h1 className="text-3xl font-semibold text-textc">
+          Create your account
+        </h1>
         <p className="text-sm text-textc/70">
-          Sign up with your email and confirm with the 6-digit code sent to your inbox.
+          Sign up with your email and confirm with the 6-digit code sent to your
+          inbox.
         </p>
       </header>
 
       <Card>
         <CardContent className="space-y-6">
           {stage === "collect" ? (
-            <form onSubmit={handleSignUp} className="space-y-4" aria-label="Create account form">
+            <form
+              onSubmit={handleSignUp}
+              className="space-y-4"
+              aria-label="Create account form"
+            >
               <div className="space-y-1">
-                <label htmlFor="signup-email" className="text-sm font-medium text-textc">
+                <label
+                  htmlFor="signup-email"
+                  className="text-sm font-medium text-textc"
+                >
                   Email
                 </label>
                 <input
@@ -162,7 +196,10 @@ export default function SignUpPage() {
               </div>
 
               <div className="space-y-1">
-                <label htmlFor="signup-password" className="text-sm font-medium text-textc">
+                <label
+                  htmlFor="signup-password"
+                  className="text-sm font-medium text-textc"
+                >
                   Password
                 </label>
                 <input
@@ -187,9 +224,16 @@ export default function SignUpPage() {
               </button>
             </form>
           ) : (
-            <form onSubmit={handleVerify} className="space-y-4" aria-label="Verify email form">
+            <form
+              onSubmit={handleVerify}
+              className="space-y-4"
+              aria-label="Verify email form"
+            >
               <div className="space-y-1">
-                <label htmlFor="signup-otp" className="text-sm font-medium text-textc">
+                <label
+                  htmlFor="signup-otp"
+                  className="text-sm font-medium text-textc"
+                >
                   6-digit code
                 </label>
                 <input
@@ -202,7 +246,9 @@ export default function SignUpPage() {
                   className="input tracking-widest"
                   value={token}
                   onChange={(event) =>
-                    setToken(event.target.value.replace(/\D/g, "").slice(0, OTP_LENGTH))
+                    setToken(
+                      event.target.value.replace(/\D/g, "").slice(0, OTP_LENGTH)
+                    )
                   }
                   placeholder="Enter your code"
                 />
@@ -238,7 +284,10 @@ export default function SignUpPage() {
           )}
 
           {error ? (
-            <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+            <p
+              role="alert"
+              className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600"
+            >
               {error}
             </p>
           ) : null}
@@ -251,7 +300,10 @@ export default function SignUpPage() {
 
           <p className="text-center text-sm text-textc/70">
             Already have an account?{" "}
-            <Link href="/auth/sign-in" className="text-brand.blue hover:text-brand.primary hover:underline">
+            <Link
+              href="/auth/sign-in"
+              className="text-brand.blue hover:text-brand.primary hover:underline"
+            >
               Sign in
             </Link>
           </p>
@@ -263,7 +315,10 @@ export default function SignUpPage() {
 
 function friendlySignUpError(message: string) {
   const normalized = message.toLowerCase();
-  if (normalized.includes("user already registered") || normalized.includes("already registered")) {
+  if (
+    normalized.includes("user already registered") ||
+    normalized.includes("already registered")
+  ) {
     return "An account already exists for this email. Try signing in instead.";
   }
   if (normalized.includes("password should be at least")) {
