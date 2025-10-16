@@ -19,11 +19,18 @@ export default function EmailOtpForm() {
       await sendEmailOtp(email);
       setMsg("Check your inbox for the sign-in link (and Spam/Promotions).");
     } catch (error: unknown) {
+      let friendly = "Could not send OTP. Try again.";
       if (error instanceof Error) {
-        setErr(error.message || "Could not send OTP. Try again.");
-      } else {
-        setErr("Could not send OTP. Try again.");
+        const msg = error.message || friendly;
+        if (msg.toLowerCase().includes("confirmation email") || msg.toLowerCase().includes("smtp")) {
+          friendly = "Email sending failed. Check Supabase Auth → Email settings (custom SMTP or use default).";
+        } else if (msg.toLowerCase().includes("redirect")) {
+          friendly = "Redirect not allowed. Add /auth/callback to Supabase Allowed Redirect URLs.";
+        } else {
+          friendly = msg;
+        }
       }
+      setErr(friendly);
     } finally {
       setBusy(false);
     }
