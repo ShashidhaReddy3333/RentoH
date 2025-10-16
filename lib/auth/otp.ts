@@ -26,6 +26,7 @@ export async function sendEmailOtp(email: string) {
       message: error.message,
       name: error.name,
       status: error.status,
+      code: (error as unknown as { code?: string })?.code,
       redirectTo,
       siteUrl,
     });
