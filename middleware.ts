@@ -1,18 +1,36 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
 
-export function middleware(req: NextRequest) {
-  const isAuthed = req.cookies.get('rento_auth')?.value === '1';
-  const protectedPaths = ['/dashboard', '/messages'];
+const PROTECTED_ROUTES = ['/dashboard', '/messages'];
+const AUTH_ROUTES = ['/auth/sign-in', '/auth/sign-up'];
 
-  if (protectedPaths.some((p) => req.nextUrl.pathname.startsWith(p)) && !isAuthed) {
-    const url = req.nextUrl.clone();
-    url.pathname = '/auth/sign-in';
-    url.searchParams.set('next', req.nextUrl.pathname);
-    return NextResponse.redirect(url);
-  }
-
-  return NextResponse.next();
+function matchesRoute(pathname: string, routes: readonly string[]) {
+  return routes.some((route) => pathname === route || pathname.startsWith(`${route}/`));
 }
 
-export const config = { matcher: ['/dashboard/:path*', '/messages/:path*'] };
+export async function middleware(req: NextRequest) {
+  const res = NextResponse.next();
+  const supabase = createMiddlewareClient({ req, res });
+  const {
+    data: { session }
+  } = await supabase.auth.getSession();
+  const { pathname } = req.nextUrl;
+
+  if (!session && matchesRoute(pathname, PROTECTED_ROUTES)) {
+    const redirectUrl = req.nextUrl.clone();
+    redirectUrl.pathname = '/auth/sign-in';
+    redirectUrl.searchParams.set('next', pathname);
+    return NextResponse.redirect(redirectUrl);
+  }
+
+  if (session && matchesRoute(pathname, AUTH_ROUTES)) {
+    return NextResponse.redirect(new URL('/dashboard', req.url));
+  }
+
+  return res;
+}
+
+export const config = {
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)']
+};

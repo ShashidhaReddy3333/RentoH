@@ -1,5 +1,5 @@
 import { hasSupabaseEnv } from '@/lib/env';
-import { supabaseServer } from '@/lib/supabase/server';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 import type { Property } from '@/lib/types';
 
 export async function listProperties(): Promise<Property[]> {
@@ -8,7 +8,7 @@ export async function listProperties(): Promise<Property[]> {
   }
 
   try {
-    const sb = supabaseServer();
+    const sb = createSupabaseServerClient();
     const { data, error } = await sb
       .from('properties')
       .select('id,title,price,image_url,city,created_at,landlord_id')

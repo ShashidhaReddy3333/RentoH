@@ -1,116 +1,111 @@
 "use client";
 
-import clsx from "clsx";
 import Link from "next/link";
-import { Suspense, useEffect, useMemo, useState } from "react";
-import type { FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useMemo, useState } from "react";
+import type { FormEvent } from "react";
 
-import EmailOtpForm from "@/components/auth/EmailOtpForm";
 import { buttonStyles } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-
-type TabKey = "email" | "phone";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export default function SignInPage() {
-  return (
-    <Suspense fallback={<SignInFallback />}>
-      <SignInContent />
-    </Suspense>
-  );
-}
-
-function SignInFallback() {
-  return (
-    <div className="mx-auto max-w-2xl py-12 text-center text-sm text-textc/60">
-      Loading sign-in experience...
-    </div>
-  );
-}
-
-function SignInContent() {
-  const searchParams = useSearchParams();
   const router = useRouter();
-  const [tab, setTab] = useState<TabKey>("email");
-  const [status, setStatus] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const param = searchParams.get("tab");
-    if (param === "phone" || param === "email") {
-      setTab(param);
+  const next = searchParams.get("next");
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setBusy(true);
+    setError(null);
+
+    try {
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (signInError) {
+        setError(friendlyAuthError(signInError.message));
+        return;
+      }
+
+      router.replace(next && next.startsWith("/") ? next : "/dashboard");
+      router.refresh();
+    } finally {
+      setBusy(false);
     }
-  }, [searchParams]);
-
-  const tabs = useMemo(
-    () => [
-      { key: "email" as const, label: "Email" },
-      { key: "phone" as const, label: "Phone" }
-    ],
-    []
-  );
-
-  const handleTabChange = (next: TabKey) => {
-    setTab(next);
-    const nextParams = new URLSearchParams(searchParams.toString());
-    nextParams.set("tab", next);
-    router.replace(`?${nextParams.toString()}`, { scroll: false });
-    setStatus(null);
   };
 
   return (
     <div className="mx-auto max-w-2xl space-y-8">
       <header className="space-y-2 text-center">
-        <h1 className="text-3xl font-semibold text-textc">Welcome back to Rento Bridge</h1>
+        <h1 className="text-3xl font-semibold text-textc">Welcome back</h1>
         <p className="text-sm text-textc/70">
-          Sign in or create an account to continue your tenant or landlord journey.
+          Enter your credentials to access the dashboard.
         </p>
       </header>
 
       <Card>
         <CardContent className="space-y-6">
-          <div className="flex rounded-full border border-black/10 bg-surface-muted p-1 text-sm font-medium dark:border-white/10">
-            {tabs.map((option) => (
-              <button
-                key={option.key}
-                role="tab"
-                type="button"
-                aria-selected={tab === option.key}
-                onClick={() => handleTabChange(option.key)}
-                className={clsx(
-                  "flex-1 rounded-full px-4 py-2 transition",
-                  tab === option.key
-                    ? "bg-surface text-brand.primary shadow-soft"
-                    : "text-textc/70 hover:text-brand.primary"
-                )}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-
-          {tab === "email" ? <EmailOtpForm /> : <PhoneForm onStatus={setStatus} />}
-
-          <button
-            type="button"
-            disabled
-            className={`${buttonStyles({ variant: "outline" })} w-full cursor-not-allowed bg-surface-muted text-textc/50`}
-          >
-            Continue with Google (coming soon)
-          </button>
-
-          {status ? (
-            <div
-              role="status"
-              className="rounded-lg border border-brand.primary/40 bg-brand.primary/5 px-4 py-3 text-sm text-brand.primary"
-            >
-              {status}
+          <form onSubmit={handleSubmit} className="space-y-4" aria-label="Email sign-in form">
+            <div className="space-y-1">
+              <label htmlFor="email" className="text-sm font-medium text-textc">
+                Email
+              </label>
+              <input
+                id="email"
+                type="email"
+                required
+                autoComplete="email"
+                className="input"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="you@example.com"
+              />
             </div>
+
+            <div className="space-y-1">
+              <label htmlFor="password" className="text-sm font-medium text-textc">
+                Password
+              </label>
+              <input
+                id="password"
+                type="password"
+                required
+                autoComplete="current-password"
+                className="input"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder="••••••••"
+              />
+            </div>
+
+            <button
+              type="submit"
+              className={`${buttonStyles({ variant: "primary" })} w-full`}
+              disabled={busy}
+            >
+              {busy ? "Signing in..." : "Sign in"}
+            </button>
+          </form>
+
+          {error ? (
+            <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+              {error}
+            </p>
           ) : null}
 
           <p className="text-center text-sm text-textc/70">
-            Need help?{" "}
-            <Link href="/contact" className="text-brand.blue hover:text-brand.primary hover:underline">
-              Contact support
+            New to Rento Bridge?{" "}
+            <Link href="/auth/sign-up" className="text-brand.blue hover:text-brand.primary hover:underline">
+              Create an account
             </Link>
           </p>
         </CardContent>
@@ -119,98 +114,16 @@ function SignInContent() {
   );
 }
 
-type StatusHandler = { onStatus: (message: string | null) => void };
-
-function PhoneForm({ onStatus }: StatusHandler) {
-  const [form, setForm] = useState({ phone: "", otp: "" });
-  const [otpSent, setOtpSent] = useState(false);
-
-  const requestOtp = () => {
-    if (!form.phone) return;
-    setOtpSent(true);
-    onStatus("OTP sent! Enter the code we texted you to continue.");
-  };
-
-  const handleSubmit = (event: FormEvent) => {
-    event.preventDefault();
-    if (!otpSent) {
-      onStatus("Please request an OTP before continuing.");
-      return;
-    }
-    onStatus("Success! Your phone number is verified and you are signed in.");
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="grid gap-4" aria-label="Phone authentication form">
-      <InputField
-        id="phone-number"
-        label="Phone number"
-        value={form.phone}
-        onChange={(value) => setForm((prev) => ({ ...prev, phone: value }))}
-        placeholder="+1 (555) 000-1234"
-        required
-      />
-      <div className="grid gap-1">
-        <label htmlFor="phone-otp" className="text-sm font-medium text-textc">
-          One-time passcode
-        </label>
-        <div className="flex gap-2">
-          <input
-            id="phone-otp"
-            className="input"
-            placeholder="Enter code"
-            value={form.otp}
-            onChange={(event) => setForm((prev) => ({ ...prev, otp: event.target.value }))}
-          />
-          <button
-            type="button"
-            className={buttonStyles({ variant: "outline" })}
-            onClick={requestOtp}
-          >
-            Send OTP
-          </button>
-        </div>
-      </div>
-      <button type="submit" className={buttonStyles({ variant: "primary" })}>
-        Continue
-      </button>
-    </form>
-  );
-}
-
-type InputFieldProps = {
-  id: string;
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
-  required?: boolean;
-  type?: "text" | "email" | "password" | "tel";
-};
-
-function InputField({
-  id,
-  label,
-  value,
-  onChange,
-  placeholder,
-  required,
-  type = "text"
-}: InputFieldProps) {
-  return (
-    <div className="grid gap-1">
-      <label htmlFor={id} className="text-sm font-medium text-textc">
-        {label}
-      </label>
-      <input
-        id={id}
-        type={type}
-        className="input"
-        placeholder={placeholder}
-        value={value}
-        required={required}
-        onChange={(event) => onChange(event.target.value)}
-      />
-    </div>
-  );
+function friendlyAuthError(message: string) {
+  const normalized = message.toLowerCase();
+  if (normalized.includes("invalid login credentials")) {
+    return "Incorrect email or password.";
+  }
+  if (normalized.includes("email not confirmed")) {
+    return "Please confirm your email using the code we sent before signing in.";
+  }
+  if (normalized.includes("over email rate limit")) {
+    return "Too many attempts. Wait a moment and try again.";
+  }
+  return message;
 }
