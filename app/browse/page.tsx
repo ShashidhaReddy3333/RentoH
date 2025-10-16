@@ -6,6 +6,9 @@ export const metadata = {
   description: "Find verified rentals and chat with landlords."
 };
 
+// Avoid build-time prerender so missing tables don't fail the build
+export const dynamic = 'force-dynamic';
+
 export default async function BrowsePage() {
   const properties = await listProperties();
   return (
