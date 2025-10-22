@@ -88,49 +88,53 @@ export default function DashboardClient() {
             <span className="text-sm text-textc/60">{listings.length} active</span>
           </header>
 
-          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {listings.map((property) => (
-              <Card key={property.id}>
-                <CardContent className="space-y-4">
-                  <PropertyCard
-                    property={property}
-                    onSave={toggleFavorite}
-                    saved={favorites.includes(property.id)}
-                    variant="plain"
-                    className="border-none bg-transparent p-0 shadow-none"
-                  />
-                  <div className="flex gap-2">
-                    <Link
-                      href={`/listings/${property.id}/manage`}
-                      className={`${buttonStyles({ variant: "outline" })} flex-1 text-center`}
-                    >
-                      Manage
-                    </Link>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      className="flex-1"
-                      onClick={() => deleteProperty(property.id)}
-                    >
-                      Delete
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-            <Card className="border-2 border-dashed border-black/10 text-center text-textc/70 transition hover:border-brand.primary/60 hover:text-brand.primary dark:border-white/10">
-              <CardContent className="flex min-h-[280px] flex-col items-center justify-center space-y-2">
-                <span className="text-3xl">+</span>
-                <p className="font-medium">Create a new listing</p>
-                <Link
-                  href="/listings/new"
-                  className={`${buttonStyles({ variant: "primary" })} mt-2`}
-                >
-                  Start
+          {listings.length > 0 ? (
+            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+              {listings.map((property) => (
+                <Card key={property.id}>
+                  <CardContent className="space-y-4">
+                    <PropertyCard
+                      property={property}
+                      onSave={toggleFavorite}
+                      saved={favorites.includes(property.id)}
+                      variant="plain"
+                      className="border-none bg-transparent p-0 shadow-none"
+                    />
+                    <div className="flex gap-2">
+                      <Link
+                        href={`/listings/${property.id}/manage`}
+                        className={`${buttonStyles({ variant: "outline" })} flex-1 text-center`}
+                      >
+                        Manage
+                      </Link>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="flex-1"
+                        onClick={() => {
+                          const isConfirmed = window.confirm(
+                            `Are you sure you want to delete "${property.title}"? This action cannot be undone.`
+                          );
+                          if (isConfirmed) deleteProperty(property.id);
+                        }}
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <Card className="border-2 border-dashed border-black/10 text-center text-textc/70 dark:border-white/10">
+              <CardContent className="flex min-h-[280px] flex-col items-center justify-center space-y-4">
+                <p className="text-lg font-medium">You have no active listings.</p>
+                <Link href="/listings/new" className={`${buttonStyles({ variant: "primary" })}`}>
+                  Create your first listing
                 </Link>
               </CardContent>
             </Card>
-          </div>
+          )}
         </section>
       </section>
     </div>
