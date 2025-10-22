@@ -1,21 +1,26 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const code = searchParams.get("code");
+export async function POST(request: Request) {
+  const supabase = createSupabaseServerClient();
+  const { event, session } = await request.json();
 
-  if (code) {
-    const supabase = createRouteHandlerClient({ cookies });
-    try {
-      await supabase.auth.exchangeCodeForSession(code);
-    } catch (error) {
-      console.error("[OTP] exchange failed", error);
+  if (
+    event === "SIGNED_IN" ||
+    event === "TOKEN_REFRESHED" ||
+    event === "INITIAL_SESSION"
+  ) {
+    if (session?.access_token && session?.refresh_token) {
+      await supabase.auth.setSession({
+        access_token: session.access_token,
+        refresh_token: session.refresh_token
+      });
+    } else {
+      await supabase.auth.signOut();
     }
+  } else if (event === "SIGNED_OUT") {
+    await supabase.auth.signOut();
   }
 
-  const redirectTo = new URL("/dashboard", request.url);
-  return NextResponse.redirect(redirectTo);
+  return NextResponse.json({ success: true });
 }
-

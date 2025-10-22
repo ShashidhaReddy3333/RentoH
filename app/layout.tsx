@@ -6,6 +6,7 @@ import ThemeProvider from "@/app/theme-provider";
 import Footer from "@/components/footer";
 import Header from "@/components/header";
 import { AppProvider } from "@/components/providers/app-provider";
+import { SupabaseListener } from "@/components/providers/supabase-listener";
 import StickyMobileNav from "@/components/sticky-mobile-nav";
 
 export const metadata: Metadata = {
@@ -27,6 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <AppProvider>
             <div className="flex min-h-screen flex-col">
               <Header />
+              <SupabaseListener />
               <main id="main" className="flex-1 pb-section">
                 {children}
               </main>
