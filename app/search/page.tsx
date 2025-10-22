@@ -3,7 +3,6 @@ import type { Metadata } from "next";
 import { SearchView } from "@/components/search/search-view";
 import { parseSearchParams } from "@/lib/search/params";
 import { searchListings } from "@/lib/search/service";
-import type { SearchFilters } from "@/lib/search/types";
 
 export const metadata: Metadata = {
   title: "Search rentals | Rento Bridge",

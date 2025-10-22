@@ -159,7 +159,7 @@ function computeBounds(items: ListingSummary[]): LngLatBoundsLike | null {
   if (!coordinates.length) return null;
 
   const longitudes = coordinates.map(([lng]) => lng);
-  const latitudes = coordinates.map(([_, lat]) => lat);
+  const latitudes = coordinates.map(([, lat]) => lat);
 
   const west = Math.min(...longitudes);
   const south = Math.min(...latitudes);
