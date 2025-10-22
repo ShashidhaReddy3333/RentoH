@@ -53,6 +53,18 @@ function SignInContent() {
         return;
       }
 
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        await fetch('/auth/callback', {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ event: 'SIGNED_IN', session: data.session })
+        });
+      }
+
       const target: Route =
         next && next.startsWith('/') ? (next as Route) : '/dashboard';
       router.replace(target);

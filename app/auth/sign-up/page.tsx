@@ -1,18 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import type { Route } from "next";
-import { useRouter, useSearchParams } from "next/navigation";
 import type { FormEvent } from "react";
 import { Suspense, useMemo, useState } from "react";
 
 import { buttonStyles } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-
-const OTP_LENGTH = 6;
-
-type Stage = "collect" | "verify";
 
 export default function SignUpPage() {
   return (
@@ -31,25 +25,13 @@ function SignUpFallback() {
 }
 
 function SignUpContent() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const next = searchParams.get("next");
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
 
-  const [stage, setStage] = useState<Stage>("collect");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [token, setToken] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-
-  const redirectTo = () => {
-    const target: Route =
-      next && next.startsWith("/") ? (next as Route) : "/dashboard";
-    router.replace(target);
-    router.refresh();
-  };
 
   const handleSignUp = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -60,7 +42,13 @@ function SignUpContent() {
     try {
       const { error: signUpError } = await supabase.auth.signUp({
         email,
-        password
+        password,
+        options: {
+          emailRedirectTo:
+            typeof window !== "undefined"
+              ? `${window.location.origin}/auth/callback`
+              : undefined
+        }
       });
 
       if (signUpError) {
@@ -68,59 +56,9 @@ function SignUpContent() {
         return;
       }
 
-      setStage("verify");
-      setToken("");
       setMessage(
-        `We sent a 6-digit code to ${email}. Enter it below to verify your account.`
+        `We just sent a magic link to ${email}. Follow it to confirm your account, then sign in.`
       );
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const handleVerify = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setBusy(true);
-    setError(null);
-    setMessage(null);
-
-    try {
-      const { data, error: verifyError } = await supabase.auth.verifyOtp({
-        type: "signup",
-        email,
-        token
-      });
-
-      if (verifyError) {
-        setError(friendlySignUpError(verifyError.message));
-        return;
-      }
-
-      let session = data.session ?? null;
-
-      if (!session) {
-        const {
-          data: fallbackData,
-          error: fallbackError
-        } = await supabase.auth.signInWithPassword({
-          email,
-          password
-        });
-
-        if (fallbackError) {
-          setError(friendlySignUpError(fallbackError.message));
-          return;
-        }
-
-        session = fallbackData.session ?? null;
-      }
-
-      if (!session) {
-        setError("We could not start a session. Please try signing in.");
-        return;
-      }
-
-      redirectTo();
     } finally {
       setBusy(false);
     }
@@ -133,9 +71,14 @@ function SignUpContent() {
     setMessage(null);
 
     try {
-      const { error: resendError } = await supabase.auth.resend({
-        type: "signup",
-        email
+      const { error: resendError } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo:
+            typeof window !== "undefined"
+              ? `${window.location.origin}/auth/callback`
+              : undefined
+        }
       });
 
       if (resendError) {
@@ -150,10 +93,11 @@ function SignUpContent() {
   };
 
   const resetFlow = () => {
-    setStage("collect");
-    setToken("");
+    setEmail("");
+    setPassword("");
     setMessage(null);
     setError(null);
+    setBusy(false);
   };
 
   return (
@@ -163,125 +107,67 @@ function SignUpContent() {
           Create your account
         </h1>
         <p className="text-sm text-textc/70">
-          Sign up with your email and confirm with the 6-digit code sent to your
-          inbox.
+          Sign up with your email and we&apos;ll send a magic link so you can verify
+          your account in one tap.
         </p>
       </header>
 
       <Card>
         <CardContent className="space-y-6">
-          {stage === "collect" ? (
-            <form
-              onSubmit={handleSignUp}
-              className="space-y-4"
-              aria-label="Create account form"
-            >
-              <div className="space-y-1">
-                <label
-                  htmlFor="signup-email"
-                  className="text-sm font-medium text-textc"
-                >
-                  Email
-                </label>
-                <input
-                  id="signup-email"
-                  type="email"
-                  required
-                  autoComplete="email"
-                  className="input"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  placeholder="you@example.com"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label
-                  htmlFor="signup-password"
-                  className="text-sm font-medium text-textc"
-                >
-                  Password
-                </label>
-                <input
-                  id="signup-password"
-                  type="password"
-                  required
-                  minLength={6}
-                  autoComplete="new-password"
-                  className="input"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  placeholder="Choose a secure password"
-                />
-              </div>
-
-              <button
-                type="submit"
-                className={`${buttonStyles({ variant: "primary" })} w-full`}
-                disabled={busy}
+          <form
+            onSubmit={handleSignUp}
+            className="space-y-4"
+            aria-label="Create account form"
+          >
+            <div className="space-y-1">
+              <label
+                htmlFor="signup-email"
+                className="text-sm font-medium text-textc"
               >
-                {busy ? "Creating account..." : "Continue"}
-              </button>
-            </form>
-          ) : (
-            <form
-              onSubmit={handleVerify}
-              className="space-y-4"
-              aria-label="Verify email form"
-            >
-              <div className="space-y-1">
-                <label
-                  htmlFor="signup-otp"
-                  className="text-sm font-medium text-textc"
-                >
-                  6-digit code
-                </label>
-                <input
-                  id="signup-otp"
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  maxLength={OTP_LENGTH}
-                  required
-                  className="input tracking-widest"
-                  value={token}
-                  onChange={(event) =>
-                    setToken(
-                      event.target.value.replace(/\D/g, "").slice(0, OTP_LENGTH)
-                    )
-                  }
-                  placeholder="Enter your code"
-                />
-              </div>
+                Email
+              </label>
+              <input
+                id="signup-email"
+                type="email"
+                required
+                autoComplete="email"
+                className="input"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="you@example.com"
+                disabled={busy || Boolean(message)}
+              />
+            </div>
 
-              <button
-                type="submit"
-                className={`${buttonStyles({ variant: "primary" })} w-full`}
-                disabled={busy || token.length !== OTP_LENGTH}
+            <div className="space-y-1">
+              <label
+                htmlFor="signup-password"
+                className="text-sm font-medium text-textc"
               >
-                {busy ? "Verifying..." : "Verify and continue"}
-              </button>
+                Password
+              </label>
+              <input
+                id="signup-password"
+                type="password"
+                required
+                minLength={6}
+                autoComplete="new-password"
+                className="input"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder="Choose a secure password"
+                disabled={busy || Boolean(message)}
+              />
+            </div>
 
-              <div className="flex items-center justify-between text-sm text-textc/70">
-                <button
-                  type="button"
-                  className="text-brand.blue hover:text-brand.primary hover:underline"
-                  onClick={handleResend}
-                  disabled={busy}
-                >
-                  Resend code
-                </button>
-                <button
-                  type="button"
-                  className="hover:underline"
-                  onClick={resetFlow}
-                  disabled={busy}
-                >
-                  Use a different email
-                </button>
-              </div>
-            </form>
-          )}
+            <button
+              type="submit"
+              className={`${buttonStyles({ variant: "primary" })} w-full`}
+              disabled={busy}
+            >
+              {busy ? "Creating account..." : "Send magic link"}
+            </button>
+          </form>
 
           {error ? (
             <p
@@ -297,6 +183,25 @@ function SignUpContent() {
               {message}
             </p>
           ) : null}
+
+          <div className="flex items-center justify-between text-sm text-textc/70">
+            <button
+              type="button"
+              className="text-brand.blue hover:text-brand.primary hover:underline"
+              onClick={handleResend}
+              disabled={busy || !email}
+            >
+              Resend magic link
+            </button>
+            <button
+              type="button"
+              className="hover:underline"
+              onClick={resetFlow}
+              disabled={busy}
+            >
+              Use a different email
+            </button>
+          </div>
 
           <p className="text-center text-sm text-textc/70">
             Already have an account?{" "}
@@ -325,10 +230,10 @@ function friendlySignUpError(message: string) {
     return "Passwords must be at least 6 characters.";
   }
   if (normalized.includes("otp") && normalized.includes("expired")) {
-    return "That code has expired. Request a new one and try again.";
+    return "That magic link has expired. Request a new one and try again.";
   }
   if (normalized.includes("invalid otp")) {
-    return "That code didn't work. Double-check and try again.";
+    return "That magic link didn't work. Request a fresh link and try again.";
   }
   if (normalized.includes("rate limit")) {
     return "Too many attempts. Please wait a moment before trying again.";
