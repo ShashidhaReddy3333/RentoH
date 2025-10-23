@@ -23,17 +23,17 @@ export default async function Page() {
 
       <section className="px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-container">
-          <Card className="rounded-3xl border-brand-dark/10 bg-white px-6 py-10 shadow-sm transition-shadow hover:shadow-md md:px-12 md:py-16 dark:border-white/10 dark:bg-slate-900/70">
+          <Card className="rounded-3xl border-brand-dark/10 bg-surface px-6 py-10 shadow-sm transition-shadow hover:shadow-lg md:px-12 md:py-16">
             <CardContent className="p-0">
               <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
                 <div className="space-y-6">
                   <span className="inline-flex items-center rounded-full bg-brand-teal/10 px-4 py-1 text-sm font-semibold text-brand-teal">
                     Rental matchmaking made simple
                   </span>
-                  <h2 className="text-4xl font-bold text-brand-dark sm:text-5xl dark:text-white">
+                  <h2 className="text-4xl font-bold text-textc sm:text-5xl">
                     Manage listings and renters with clarity.
                   </h2>
-                  <p className="text-base text-brand-dark/70 dark:text-slate-300">
+                  <p className="text-base text-text-muted">
                     Whether you&apos;re listing a new property or searching for your next home,
                     Rento Bridge keeps applications, messaging, and insights together so you can
                     move forward with confidence.
@@ -52,7 +52,7 @@ export default async function Page() {
                       Manage my listings
                     </Link>
                   </div>
-                  <div className="flex items-center gap-4 text-sm text-brand-dark/60 dark:text-slate-300">
+                  <div className="flex items-center gap-4 text-sm text-text-muted">
                     <div className="flex -space-x-2" aria-hidden>
                       {["T", "L", "P"].map((initial) => (
                         <span
@@ -67,7 +67,7 @@ export default async function Page() {
                   </div>
                 </div>
 
-                <div className="space-y-4 rounded-2xl border border-brand-dark/10 bg-brand-bg p-6 dark:border-white/10 dark:bg-slate-900/60">
+                <div className="space-y-4 rounded-2xl border border-brand-dark/10 bg-surface-muted p-6">
                   <StatCard title="Verified listings" value="120+">
                     Explore homes that are reviewed by our team and ready for move-in.
                   </StatCard>
@@ -86,10 +86,10 @@ export default async function Page() {
       <section className="px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-container space-y-6">
           <div className="max-w-2xl space-y-2">
-            <h2 className="text-3xl font-semibold text-brand-dark dark:text-white">
+            <h2 className="text-3xl font-semibold text-textc">
               Why renters choose Rento Bridge
             </h2>
-            <p className="text-sm text-brand-dark/70 dark:text-slate-300">
+            <p className="text-sm text-text-muted">
               Explore verified rentals and stay in control from your first search to the signed
               lease.
             </p>
@@ -103,10 +103,10 @@ export default async function Page() {
                     className="h-8 w-8 text-brand-teal"
                     ariaLabel={`${benefit.title} icon`}
                   />
-                  <h3 className="text-lg font-semibold text-brand-dark dark:text-white">
+                  <h3 className="text-lg font-semibold text-textc">
                     {benefit.title}
                   </h3>
-                  <p className="text-sm text-brand-dark/70 dark:text-slate-300">{benefit.copy}</p>
+                  <p className="text-sm text-text-muted">{benefit.copy}</p>
                 </CardContent>
               </Card>
             ))}
@@ -123,10 +123,10 @@ function FeaturedSection({ featured }: { featured: ListingSummary[] }) {
       <div className="mx-auto max-w-container space-y-8">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
-            <h2 className="text-3xl font-semibold text-brand-dark dark:text-white">
+            <h2 className="text-3xl font-semibold text-textc">
               Featured rentals
             </h2>
-            <p className="text-sm text-brand-dark/70 dark:text-slate-300">
+            <p className="text-sm text-text-muted">
               Explore verified rentals curated for convenience, community, and comfort.
             </p>
           </div>
@@ -146,7 +146,7 @@ function FeaturedSection({ featured }: { featured: ListingSummary[] }) {
           </div>
         ) : (
           <Card className="border-dashed">
-            <CardContent className="p-6 text-sm text-brand-dark/70 dark:text-slate-300">
+            <CardContent className="p-6 text-sm text-text-muted">
               No featured rentals yet. Check back soon for new highlights.
             </CardContent>
           </Card>
@@ -182,12 +182,12 @@ const benefits: readonly Benefit[] = [
 
 function StatCard({ title, value, children }: { title: string; value: string; children: ReactNode }) {
   return (
-    <div className="rounded-2xl bg-white p-5 shadow-sm dark:bg-slate-900/80">
-      <div className="text-xs font-semibold uppercase tracking-wide text-brand-dark/60 dark:text-slate-400">
+    <div className="rounded-2xl bg-surface p-5 shadow-sm">
+      <div className="text-xs font-semibold uppercase tracking-wide text-text-muted">
         {title}
       </div>
-      <div className="text-3xl font-bold text-brand-dark dark:text-white">{value}</div>
-      <p className="text-sm text-brand-dark/70 dark:text-slate-300">{children}</p>
+      <div className="text-3xl font-bold text-textc">{value}</div>
+      <p className="text-sm text-text-muted">{children}</p>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import clsx from "clsx";
 
 import { Button } from "@/components/ui/button";
 
@@ -30,6 +31,7 @@ export default function ChatPane({ conversation, currentUserId, onSend }: ChatPa
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
+  const otherInitials = getInitials(conversation.otherUserName);
 
   useEffect(() => {
     setMessages(conversation.messages);
@@ -78,50 +80,67 @@ export default function ChatPane({ conversation, currentUserId, onSend }: ChatPa
   }
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-black/10 bg-surface shadow-glass dark:border-white/10">
-      <header className="border-b border-black/10 px-4 py-3 text-textc/70 dark:border-white/10">
-        <div className="text-sm">Chatting about</div>
+    <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-brand-dark/10 bg-surface shadow-soft transition-colors dark:border-white/10">
+      <header className="border-b border-brand-dark/10 bg-surface px-5 py-4 text-text-muted dark:border-white/10">
+        <div className="text-xs font-semibold uppercase tracking-wide text-text-muted">
+          Chatting about
+        </div>
         <h2 className="text-lg font-semibold text-textc">{conversation.title}</h2>
-        <p className="text-xs">With {conversation.otherUserName}</p>
+        <p className="text-xs text-text-muted">With {conversation.otherUserName}</p>
       </header>
       <div
         ref={listRef}
         role="log"
         aria-live="polite"
         aria-relevant="additions"
-        className="flex-1 space-y-3 overflow-y-auto bg-surface-muted px-4 py-5"
+        className="flex-1 space-y-4 overflow-y-auto bg-surface-muted px-5 py-6"
       >
         {sortedMessages.map((message) => {
           const isMe = message.senderId === currentUserId;
+          const timestamp = formatTimestamp(message.createdAt);
+
           return (
             <div
               key={message.id}
-              className={`max-w-[70%] rounded-lg px-3 py-2 text-sm shadow-soft ${
-                isMe
-                  ? "ml-auto bg-brand.primary text-white"
-                  : "bg-surface text-textc"
-              }`}
+              className={clsx("flex gap-3", isMe ? "flex-row-reverse text-right" : "flex-row")}
             >
-              <p>{message.body}</p>
-              <time className={`block pt-1 text-xs ${isMe ? "text-white/80" : "text-textc/60"}`}>
-                {new Date(message.createdAt).toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit"
-                })}
-              </time>
+              <div
+                className={clsx(
+                  "mt-1 flex h-9 w-9 items-center justify-center rounded-full text-xs font-semibold uppercase",
+                  isMe ? "bg-brand-teal text-white" : "bg-brand-teal/10 text-brand-teal"
+                )}
+                aria-hidden
+              >
+                {isMe ? "You" : otherInitials}
+              </div>
+              <div className="max-w-[70%] space-y-1">
+                <div
+                  className={clsx(
+                    "rounded-2xl px-4 py-3 text-sm shadow-soft transition-colors",
+                    isMe ? "bg-brand-teal text-white" : "bg-surface text-textc dark:bg-surface"
+                  )}
+                >
+                  <p className="whitespace-pre-line break-words">{message.body}</p>
+                </div>
+                <time
+                  className={clsx("block text-xs", isMe ? "text-white/80" : "text-text-muted")}
+                >
+                  {timestamp}
+                </time>
+              </div>
             </div>
           );
         })}
         {isTyping && (
-          <div className="inline-flex items-center gap-2 rounded-full bg-surface px-4 py-2 text-xs text-textc/70 shadow-soft">
-            <span className="flex items-center gap-1">
-              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-textc/60" />
+          <div className="inline-flex items-center gap-2 rounded-full bg-surface px-4 py-2 text-xs text-text-muted shadow-soft">
+            <span className="flex items-center gap-1" aria-hidden>
+              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-text-muted/80" />
               <span
-                className="h-1.5 w-1.5 animate-bounce rounded-full bg-textc/60"
+                className="h-1.5 w-1.5 animate-bounce rounded-full bg-text-muted/80"
                 style={{ animationDelay: "0.1s" }}
               />
               <span
-                className="h-1.5 w-1.5 animate-bounce rounded-full bg-textc/60"
+                className="h-1.5 w-1.5 animate-bounce rounded-full bg-text-muted/80"
                 style={{ animationDelay: "0.2s" }}
               />
             </span>
@@ -129,7 +148,10 @@ export default function ChatPane({ conversation, currentUserId, onSend }: ChatPa
           </div>
         )}
       </div>
-      <form onSubmit={handleSend} className="flex gap-2 border-t border-black/10 bg-surface px-4 py-3 dark:border-white/10">
+      <form
+        onSubmit={handleSend}
+        className="flex gap-2 border-t border-brand-dark/10 bg-surface px-5 py-4 dark:border-white/10"
+      >
         <input
           className="input"
           placeholder="Write a message..."
@@ -143,4 +165,15 @@ export default function ChatPane({ conversation, currentUserId, onSend }: ChatPa
       </form>
     </div>
   );
+}
+
+function getInitials(name: string) {
+  const parts = name.trim().split(/\s+/);
+  const initials = parts.slice(0, 2).map((part) => part.charAt(0).toUpperCase());
+  return initials.join("") || "RB";
+}
+
+function formatTimestamp(timestamp: string) {
+  const date = new Date(timestamp);
+  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }

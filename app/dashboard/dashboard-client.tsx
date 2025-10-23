@@ -3,7 +3,9 @@
 import Link from "next/link";
 import type { Route } from "next";
 import type { UrlObject } from "url";
-import { useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { usePathname } from "next/navigation";
+import clsx from "clsx";
 
 import BadgeVerified from "@/components/badge-verified";
 import { useAppState } from "@/components/providers/app-provider";
@@ -21,6 +23,8 @@ export default function DashboardClient() {
     () => users.find((user) => user.id === CURRENT_LANDLORD_ID),
     [users]
   );
+  const pathname = usePathname();
+  const [activeLink, setActiveLink] = useState<string>("/dashboard");
 
   const stats = useMemo(
     () => [
@@ -30,6 +34,56 @@ export default function DashboardClient() {
     ],
     [listings.length]
   );
+
+  const handleLocalNavigation = useCallback((event: React.MouseEvent<HTMLAnchorElement>) => {
+    if (!("hash" in event.currentTarget)) return;
+    const hash = event.currentTarget.hash;
+    if (!hash) return;
+    const targetId = hash.replace("#", "");
+    const target = document.getElementById(targetId);
+    if (target) {
+      event.preventDefault();
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+      setActiveLink(`/dashboard${hash}`);
+      history.replaceState(null, "", `#${targetId}`);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const setSectionFromScroll = () => {
+      const listingsSection = document.getElementById("listings");
+      if (!listingsSection) return;
+      const rect = listingsSection.getBoundingClientRect();
+      const offsetTop = 120;
+      if (rect.top - offsetTop <= 0) {
+        setActiveLink("/dashboard#listings");
+      } else {
+        setActiveLink("/dashboard");
+      }
+    };
+
+    const syncFromLocation = () => {
+      const hash = window.location.hash;
+      if (hash === "#listings") {
+        setActiveLink("/dashboard#listings");
+      } else if (window.location.pathname === "/dashboard") {
+        setActiveLink("/dashboard");
+      }
+    };
+
+    syncFromLocation();
+    setSectionFromScroll();
+
+    window.addEventListener("scroll", setSectionFromScroll, { passive: true });
+    window.addEventListener("hashchange", syncFromLocation);
+
+    return () => {
+      window.removeEventListener("scroll", setSectionFromScroll);
+      window.removeEventListener("hashchange", syncFromLocation);
+    };
+  }, [pathname]);
 
   return (
     <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
@@ -46,15 +100,22 @@ export default function DashboardClient() {
         <Card>
           <CardContent className="space-y-2 text-sm font-medium text-textc/70">
             {sidebarLinks.map((item) => {
-              const key =
-                typeof item.href === "string"
-                  ? item.href
-                  : `${item.href.pathname ?? ""}#${item.href.hash ?? ""}`;
+              const key = typeof item.href === "string" ? item.href : buildSidebarKey(item.href);
+              const isActive = activeLink === key;
               return (
                 <Link
                   key={key}
                   href={item.href}
-                  className="block rounded-lg px-3 py-2 transition hover:bg-brand.primary/10 hover:text-brand.primary"
+                  onClick={
+                    typeof item.href === "object" && item.href.hash ? handleLocalNavigation : undefined
+                  }
+                  className={clsx(
+                    "block rounded-lg px-3 py-2 font-medium transition",
+                    isActive
+                      ? "bg-brand-teal/15 text-brand-teal"
+                      : "text-text-muted hover:bg-brand-teal/10 hover:text-brand-teal"
+                  )}
+                  aria-current={isActive ? "page" : undefined}
                 >
                   {item.label}
                 </Link>
@@ -149,3 +210,9 @@ const sidebarLinks: readonly SidebarLink[] = [
   { label: "Messages", href: "/messages" },
   { label: "Settings", href: "/profile" }
 ];
+
+function buildSidebarKey(href: UrlObject) {
+  const pathname = href.pathname ?? "";
+  const hash = href.hash ? `#${href.hash}` : "";
+  return `${pathname}${hash}`;
+}

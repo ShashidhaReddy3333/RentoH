@@ -2,26 +2,47 @@
 @tailwind components;
 @tailwind utilities;
 
-:root{
-  --brand-teal:#2FB79A;
-  --brand-blue:#1E88E5;
-  --brand-green:#43A047;
-  --brand-yellow:#F9A825;
-  --brand-dark:#212121;
-  --brand-bg:#F5F5F5;
+:root {
+  --brand-teal: #2FB79A;
+  --brand-blue: #1E88E5;
+  --brand-green: #43A047;
+  --brand-yellow: #F9A825;
+  --brand-dark: #1F2A37;
+  --brand-bg: #F5F7FA;
 
-  --radius-card:1.25rem;
-  --section-y:6rem;      /* 96px */
-  --container:72rem;     /* 1152px */
+  --color-text-primary: 31 42 55;
+  --color-text-muted: 94 110 132;
+  --color-surface: 255 255 255;
+  --color-surface-muted: 240 244 248;
+  --border-subtle: rgba(31, 42, 55, 0.12);
+
+  --radius-card: 1.25rem;
+  --section-y: 6rem;      /* 96px */
+  --container: 72rem;     /* 1152px */
 }
 
-html,body{ background:var(--brand-bg); }
+.dark {
+  --brand-bg: #0F172A;
+  --brand-dark: #E2E8F0;
+
+  --color-text-primary: 226 232 240;
+  --color-text-muted: 148 163 184;
+  --color-surface: 24 33 45;
+  --color-surface-muted: 34 45 58;
+  --border-subtle: rgba(226, 232, 240, 0.18);
+}
+
+html,
+body {
+  background: var(--brand-bg);
+}
 
 body {
-  color: var(--brand-dark);
+  color: rgb(var(--color-text-primary));
   font-family: var(--font-sans, "Inter", "Segoe UI", system-ui, -apple-system, sans-serif);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  transition: background-color 200ms ease, color 200ms ease;
 }
 
 a {
@@ -38,11 +59,12 @@ a:focus-visible {
 .input {
   width: 100%;
   border-radius: 0.75rem;
-  border: 1px solid rgba(33, 33, 33, 0.12);
-  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--border-subtle);
+  background: rgb(var(--color-surface));
   padding: 0.625rem 0.75rem;
-  color: var(--brand-dark);
-  transition: border-color 150ms ease, box-shadow 150ms ease;
+  color: rgb(var(--color-text-primary));
+  transition: border-color 150ms ease, box-shadow 150ms ease, background-color 200ms ease,
+    color 200ms ease;
 }
 
 .input:focus-visible {

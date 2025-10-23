@@ -79,12 +79,12 @@ export default function Header() {
   const themeLabel = `Switch to ${isDark ? "light" : "dark"} mode`;
 
   return (
-    <header className="sticky top-0 z-40 border-b border-brand-dark/10 bg-white/90 backdrop-blur supports-[backdrop-filter]:backdrop-blur dark:border-white/10 dark:bg-slate-950/80">
+    <header className="sticky top-0 z-40 border-b border-brand-dark/10 bg-surface/95 backdrop-blur supports-[backdrop-filter]:backdrop-blur dark:border-white/10">
       <div className="mx-auto flex h-20 max-w-container items-center justify-between gap-6 px-4 sm:px-6 lg:px-8">
         <Link href="/" className="text-xl font-black tracking-tight text-brand-teal">
           RENTO
         </Link>
-        <nav className="hidden items-center gap-6 text-sm font-medium text-brand-dark/80 md:flex">
+        <nav className="hidden items-center gap-6 text-sm font-medium text-text-muted md:flex">
           {navItems.map((item) => {
             const active =
               pathname === item.href || pathname.startsWith(`${item.href}/`);
@@ -95,7 +95,7 @@ export default function Header() {
                 className={
                   active
                     ? "text-brand-teal dark:text-brand-teal"
-                    : "text-brand-dark/70 transition-colors hover:text-brand-teal dark:text-slate-200/80"
+                    : "text-text-muted transition-colors hover:text-brand-teal"
                 }
               >
                 {item.label}

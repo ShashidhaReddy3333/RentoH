@@ -18,7 +18,7 @@ const items = [
 export default function StickyMobileNav() {
   const pathname = usePathname();
   return (
-    <nav className="fixed inset-x-0 bottom-0 border-t border-brand-dark/10 bg-white/95 backdrop-blur md:hidden dark:bg-slate-900/95">
+    <nav className="fixed inset-x-0 bottom-0 border-t border-brand-dark/10 bg-surface/95 backdrop-blur md:hidden">
       <div className="mx-auto flex max-w-container items-center justify-between gap-1 px-4 py-2 text-xs font-medium sm:px-6 lg:px-8">
         {items.map((item) => {
           const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
@@ -27,7 +27,7 @@ export default function StickyMobileNav() {
               key={item.href}
               href={item.href}
               className={`flex flex-1 flex-col items-center justify-center gap-1 rounded-card px-3 py-2 transition min-h-[64px] ${
-                active ? "bg-brand-teal/10 text-brand-teal" : "text-brand-dark/70 dark:text-slate-200"
+                active ? "bg-brand-teal/10 text-brand-teal" : "text-text-muted"
               }`}
             >
               <Icon

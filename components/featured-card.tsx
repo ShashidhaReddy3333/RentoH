@@ -24,8 +24,8 @@ export function FeaturedCard({ listing }: FeaturedCardProps) {
     "Location coming soon";
 
   return (
-    <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-brand-dark/10 bg-white shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-lg dark:border-white/10 dark:bg-slate-900/80">
-      <div className="relative aspect-video w-full overflow-hidden bg-brand-bg">
+    <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-brand-dark/10 bg-surface shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-lg dark:border-white/10 dark:bg-surface">
+      <div className="relative aspect-video w-full overflow-hidden bg-surface-muted">
         {listing.thumbnail_url ? (
           <div className="absolute inset-0">
             <ImageWithSkeleton
@@ -45,8 +45,8 @@ export function FeaturedCard({ listing }: FeaturedCardProps) {
 
       <div className="flex flex-1 flex-col gap-4 p-6">
         <div className="space-y-2">
-          <h3 className="text-lg font-semibold text-brand-dark dark:text-white">{listing.title}</h3>
-          <p className="text-sm text-brand-dark/70 dark:text-slate-300">{location}</p>
+          <h3 className="text-lg font-semibold text-textc">{listing.title}</h3>
+          <p className="text-sm text-text-muted">{location}</p>
         </div>
         <div className="mt-auto flex flex-col gap-3 sm:flex-row">
           <Link

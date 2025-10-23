@@ -35,12 +35,14 @@ export default function PropertyCard({
   variant = "default"
 }: PropertyCardProps) {
   const primaryImage = property.images[0];
+  const isPlain = variant === "plain";
 
   return (
     <div
       className={clsx(
-        "flex h-full flex-col overflow-hidden rounded-2xl border border-brand-dark/10 bg-white shadow-sm dark:border-white/10 dark:bg-slate-900/80",
-        variant === "default" && "transition duration-200 hover:-translate-y-1 hover:shadow-lg",
+        "flex h-full flex-col overflow-hidden rounded-2xl border border-brand-dark/10 bg-surface shadow-sm transition-colors dark:border-white/10 dark:bg-surface",
+        !isPlain && "duration-200 hover:-translate-y-1 hover:shadow-lg",
+        isPlain && "border-transparent bg-transparent shadow-none hover:translate-y-0 hover:shadow-none",
         className
       )}
     >
@@ -50,6 +52,7 @@ export default function PropertyCard({
         verified={property.verified}
         saved={saved}
         rent={property.rent}
+        disabledSave={!onSave}
         onSave={() => onSave?.(property.id)}
       />
       <div className="flex flex-1 flex-col gap-4 p-6">
@@ -66,6 +69,7 @@ function MediaSection({
   verified,
   saved,
   rent,
+  disabledSave,
   onSave
 }: {
   primaryImage?: string;
@@ -73,10 +77,11 @@ function MediaSection({
   verified?: boolean;
   saved?: boolean;
   rent: number;
+  disabledSave?: boolean;
   onSave: () => void;
 }) {
   return (
-    <div className="relative aspect-video w-full overflow-hidden bg-brand-bg">
+    <div className="relative aspect-video w-full overflow-hidden rounded-b-2xl bg-surface-muted">
       {primaryImage ? (
         <div className="absolute inset-0">
           <ImageWithSkeleton
@@ -96,12 +101,14 @@ function MediaSection({
       <button
         type="button"
         className={clsx(
-          "absolute right-3 top-16 inline-flex h-11 w-11 items-center justify-center rounded-full border border-brand-dark/15 bg-white text-brand-dark shadow-sm transition hover:border-brand-teal hover:text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:border-white/20 dark:bg-slate-900 dark:text-slate-100 sm:top-3 sm:right-16",
-          saved && "border-brand-teal bg-brand-teal/10 text-brand-teal"
+          "absolute right-3 top-16 inline-flex h-11 w-11 items-center justify-center rounded-full border border-brand-dark/15 bg-surface text-textc shadow-sm transition hover:border-brand-teal hover:text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:border-white/20 sm:top-3 sm:right-16",
+          saved && "border-brand-teal bg-brand-teal/10 text-brand-teal",
+          disabledSave && "cursor-default opacity-60 hover:border-brand-dark/15 hover:text-textc"
         )}
         aria-pressed={saved}
         aria-label={saved ? "Remove from saved rentals" : "Save this rental"}
-        onClick={onSave}
+        onClick={disabledSave ? undefined : onSave}
+        disabled={disabledSave}
       >
         <Icon
           name="heart"
@@ -117,11 +124,11 @@ function DetailsSection({ property }: { property: Property }) {
   const location = [property.city, property.postalCode].filter(Boolean).join(", ");
   return (
     <div className="space-y-2">
-      <H3 className="text-xl font-semibold text-brand-dark dark:text-white">{property.title}</H3>
-      <p className="text-sm text-brand-dark/70 dark:text-slate-300">
+      <H3 className="text-xl font-semibold text-textc">{property.title}</H3>
+      <p className="text-sm text-text-muted">
         {location || "Location updating soon"}
       </p>
-      <p className="text-base font-semibold text-brand-dark dark:text-white">
+      <p className="text-base font-semibold text-textc">
         {formatRent(property.rent)}
       </p>
     </div>

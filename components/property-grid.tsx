@@ -17,7 +17,7 @@ export default function PropertyGrid({
     return (
       <Card className="text-center">
         <CardContent className="space-y-2">
-          <p className="text-sm text-brand-dark/70 dark:text-slate-300">
+          <p className="text-sm text-text-muted">
             No properties match your filters right now. Try adjusting your search or check back soon!
           </p>
         </CardContent>

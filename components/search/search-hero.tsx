@@ -38,7 +38,7 @@ export function SearchHero({ className, defaultLocation }: SearchHeroProps) {
   return (
     <section
       className={clsx(
-        "relative overflow-hidden rounded-3xl border border-brand-dark/10 bg-white py-12 shadow-sm transition-[shadow,transform] hover:shadow-md dark:border-white/10 dark:bg-slate-900",
+        "relative overflow-hidden rounded-3xl border border-brand-dark/10 bg-surface py-12 shadow-sm transition-[shadow,transform] hover:shadow-md dark:border-white/10",
         className
       )}
     >
@@ -48,10 +48,10 @@ export function SearchHero({ className, defaultLocation }: SearchHeroProps) {
           <span className="text-sm font-semibold uppercase tracking-wide text-brand-teal">
             Your next home is a search away
           </span>
-          <h1 className="text-4xl font-extrabold text-brand-dark sm:text-5xl lg:text-6xl dark:text-white">
+          <h1 className="text-4xl font-extrabold text-textc sm:text-5xl lg:text-6xl">
             Find rentals that move with your lifestyle.
           </h1>
-          <p className="max-w-2xl text-lg text-brand-dark/80 dark:text-slate-200">
+          <p className="max-w-2xl text-lg text-text-muted">
             Search by city, postal code, or neighborhood to explore verified homes with the right
             mix of price, amenities, and convenience.
           </p>
@@ -59,12 +59,12 @@ export function SearchHero({ className, defaultLocation }: SearchHeroProps) {
 
         <form
           onSubmit={handleSubmit}
-          className="flex flex-col gap-3 rounded-2xl border border-brand-dark/10 bg-brand-bg p-4 shadow-sm dark:border-white/10 dark:bg-slate-900/80 sm:flex-row sm:items-end"
+          className="flex flex-col gap-3 rounded-2xl border border-brand-dark/10 bg-surface-muted p-4 shadow-sm dark:border-white/15 sm:flex-row sm:items-end"
         >
           <div className="flex w-full flex-1 flex-col gap-2">
             <label
               htmlFor="hero-location"
-              className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-dark/70 dark:text-slate-400"
+              className="text-xs font-semibold uppercase tracking-[0.2em] text-text-muted"
             >
               Location
             </label>
@@ -72,7 +72,7 @@ export function SearchHero({ className, defaultLocation }: SearchHeroProps) {
               id="hero-location"
               type="search"
               placeholder="Search by city, postal code, or neighborhood"
-              className="w-full rounded-xl border border-brand-dark/15 bg-white px-4 py-3 text-base text-brand-dark transition focus:border-brand-teal focus:outline-none focus:ring-2 focus:ring-brand-teal/30 dark:border-white/15 dark:bg-slate-900 dark:text-slate-100"
+              className="input"
               value={location}
               onChange={(event) => setLocation(event.target.value)}
             />
@@ -92,7 +92,7 @@ export function SearchHero({ className, defaultLocation }: SearchHeroProps) {
         </form>
 
         <div className="space-y-3">
-          <span className="text-sm font-semibold uppercase tracking-wide text-brand-dark/70 dark:text-slate-300">
+          <span className="text-sm font-semibold uppercase tracking-wide text-text-muted">
             Trending areas
           </span>
           <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
