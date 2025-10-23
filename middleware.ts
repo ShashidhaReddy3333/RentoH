@@ -1,10 +1,84 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+import { env } from './lib/env';
 import { createSupabaseMiddlewareClient } from './lib/supabase/middleware';
 
 const PROTECTED_ROUTES = ['/dashboard', '/messages'];
 const AUTH_ROUTES = ['/auth/sign-in', '/auth/sign-up'];
+
+const supabaseHost = (() => {
+  const url = env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!url) return null;
+  try {
+    return new URL(url).host;
+  } catch {
+    return null;
+  }
+})();
+
+const connectSrc = [
+  "'self'",
+  'https://api.mapbox.com',
+  'https://events.mapbox.com'
+];
+
+if (supabaseHost) {
+  connectSrc.push(`https://${supabaseHost}`);
+}
+
+const imgSrc = [
+  "'self'",
+  'data:',
+  'blob:',
+  'https://images.unsplash.com',
+  'https://api.mapbox.com',
+  'https://events.mapbox.com',
+  'https://*.tiles.mapbox.com'
+];
+
+if (supabaseHost) {
+  imgSrc.push(`https://${supabaseHost}`);
+}
+
+const fontSrc = ["'self'", 'data:', 'https://api.mapbox.com'];
+if (supabaseHost) {
+  fontSrc.push(`https://${supabaseHost}`);
+}
+
+const csp = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "frame-ancestors 'none'",
+  "form-action 'self'",
+  "object-src 'none'",
+  "style-src 'self' 'unsafe-inline' https://api.mapbox.com",
+  `connect-src ${connectSrc.join(' ')}`,
+  `img-src ${imgSrc.join(' ')}`,
+  `font-src ${fontSrc.join(' ')}`,
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+  "worker-src 'self' blob:",
+  "frame-src 'self'",
+  "media-src 'self' blob:",
+  "manifest-src 'self'",
+  'upgrade-insecure-requests'
+].join('; ');
+
+const SECURITY_HEADERS: Record<string, string> = {
+  'Content-Security-Policy': csp,
+  'Strict-Transport-Security': 'max-age=63072000; includeSubDomains; preload',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'X-Frame-Options': 'DENY',
+  'X-Content-Type-Options': 'nosniff',
+  'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=()'
+};
+
+function applySecurityHeaders(res: NextResponse) {
+  Object.entries(SECURITY_HEADERS).forEach(([key, value]) => {
+    res.headers.set(key, value);
+  });
+  return res;
+}
 
 export async function middleware(req: NextRequest) {
   const { supabase, response } = createSupabaseMiddlewareClient(req);
@@ -21,16 +95,16 @@ export async function middleware(req: NextRequest) {
     const redirectUrl = req.nextUrl.clone();
     redirectUrl.pathname = '/auth/sign-in';
     redirectUrl.searchParams.set('next', pathname);
-    return NextResponse.redirect(redirectUrl);
+    return applySecurityHeaders(NextResponse.redirect(redirectUrl));
   }
 
   if (session && isAuthRoute) {
-    return NextResponse.redirect(new URL('/dashboard', req.url));
+    return applySecurityHeaders(NextResponse.redirect(new URL('/dashboard', req.url)));
   }
 
   // This will refresh the session cookie if it's expired.
   // It's important to return the response from the client to set the cookie.
-  return response;
+  return applySecurityHeaders(response);
 }
 
 export const config = {

@@ -1,30 +1,66 @@
-import { z } from 'zod';
+import { z } from "zod";
 
-const schema = z.object({
-  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
-  NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(20)
+const serverSchema = z.object({
+  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  NEXT_PUBLIC_SUPABASE_URL: z.string().url().optional(),
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(20).optional(),
+  NEXT_PUBLIC_SITE_URL: z.string().url().optional(),
+  NEXT_PUBLIC_MAPBOX_TOKEN: z.string().min(1).optional(),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
+  SUPABASE_JWT_SECRET: z.string().min(1).optional(),
+  SUPABASE_STORAGE_BUCKET_LISTINGS: z.string().min(1).default("listing-media"),
+  EMAIL_FROM_ADDRESS: z.string().email().optional()
 });
 
-const rawEnv = {
+const clientSchema = z.object({
+  NEXT_PUBLIC_SUPABASE_URL: z.string().url().optional(),
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(20).optional(),
+  NEXT_PUBLIC_SITE_URL: z.string().url().optional(),
+  NEXT_PUBLIC_MAPBOX_TOKEN: z.string().min(1).optional()
+});
+
+const rawServerEnv = {
   NODE_ENV: process.env.NODE_ENV,
-  NEXT_PUBLIC_SUPABASE_URL: process.env['NEXT_PUBLIC_SUPABASE_URL'],
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY']
+  NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
+  NEXT_PUBLIC_MAPBOX_TOKEN: process.env.NEXT_PUBLIC_MAPBOX_TOKEN,
+  SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+  SUPABASE_JWT_SECRET: process.env.SUPABASE_JWT_SECRET,
+  SUPABASE_STORAGE_BUCKET_LISTINGS: process.env.SUPABASE_STORAGE_BUCKET_LISTINGS,
+  EMAIL_FROM_ADDRESS: process.env.EMAIL_FROM_ADDRESS
 };
 
-const parsed = schema.safeParse(rawEnv);
+const serverParsed = serverSchema.safeParse(rawServerEnv);
 
-if (!parsed.success) {
-  if (process.env.NODE_ENV !== 'test') {
-    console.warn('Supabase environment variables are not fully configured. Falling back to placeholder values.');
-  }
+if (!serverParsed.success) {
+  console.error("[env] Invalid environment variables", serverParsed.error.flatten().fieldErrors);
+  throw new Error("Invalid environment variables. Check your .env files.");
 }
 
-const fallback = schema.parse({
-  NODE_ENV: rawEnv.NODE_ENV ?? 'development',
-  NEXT_PUBLIC_SUPABASE_URL: rawEnv.NEXT_PUBLIC_SUPABASE_URL ?? 'http://localhost:54321',
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: rawEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? 'local-anon-key-placeholder-123456'
+const env = Object.freeze(serverParsed.data);
+
+const clientParsed = clientSchema.safeParse({
+  NEXT_PUBLIC_SUPABASE_URL: env.NEXT_PUBLIC_SUPABASE_URL,
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  NEXT_PUBLIC_SITE_URL: env.NEXT_PUBLIC_SITE_URL,
+  NEXT_PUBLIC_MAPBOX_TOKEN: env.NEXT_PUBLIC_MAPBOX_TOKEN
 });
 
-export const env = parsed.success ? parsed.data : fallback;
-export const hasSupabaseEnv = parsed.success;
+if (!clientParsed.success) {
+  console.error("[env] Invalid public environment variables", clientParsed.error.flatten().fieldErrors);
+  throw new Error("Invalid public environment variables. Check NEXT_PUBLIC_* keys.");
+}
+
+const clientEnv = Object.freeze(clientParsed.data);
+
+export { env, clientEnv };
+
+export const hasSupabaseEnv =
+  Boolean(clientEnv.NEXT_PUBLIC_SUPABASE_URL && clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+
+if (!hasSupabaseEnv && env.NODE_ENV !== "test") {
+  console.warn(
+    "[env] NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY missing. Supabase features are disabled."
+  );
+}

@@ -2,12 +2,18 @@
 
 import { createBrowserClient } from '@supabase/ssr';
 
-import { env } from '@/lib/env';
+import { clientEnv } from '@/lib/env';
 
 export function createSupabaseBrowserClient() {
-  return createBrowserClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_ANON_KEY, {
-    auth: { persistSession: true, autoRefreshToken: true }
-  });
-}
+  if (!clientEnv.NEXT_PUBLIC_SUPABASE_URL || !clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    throw new Error('Supabase public environment variables are not configured.');
+  }
 
-export const supabaseBrowser = createSupabaseBrowserClient();
+  return createBrowserClient(
+    clientEnv.NEXT_PUBLIC_SUPABASE_URL,
+    clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    {
+      auth: { persistSession: true, autoRefreshToken: true }
+    }
+  );
+}

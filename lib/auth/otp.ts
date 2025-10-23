@@ -2,9 +2,11 @@
 
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
+import { clientEnv } from "@/lib/env";
+
 export async function sendEmailOtp(email: string) {
   const supabase = createClientComponentClient();
-  const siteUrl = process.env["NEXT_PUBLIC_SITE_URL"];
+  const siteUrl = clientEnv.NEXT_PUBLIC_SITE_URL;
 
   if (!siteUrl) {
     console.error("[OTP] config missing", {

@@ -6,6 +6,7 @@ import type { LngLatBoundsLike } from "mapbox-gl";
 import Map, { Marker, NavigationControl, type MapRef } from "react-map-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 
+import { clientEnv } from "@/lib/env";
 import type { ListingSummary } from "@/lib/search/types";
 
 type ListingsMapProps = {
@@ -21,7 +22,7 @@ const defaultCenter = {
   zoom: 10.5
 };
 
-const mapboxToken = process.env["NEXT_PUBLIC_MAPBOX_TOKEN"];
+const mapboxToken = clientEnv.NEXT_PUBLIC_MAPBOX_TOKEN;
 
 export function ListingsMap({ items, selectedId, onSelect, isLoading }: ListingsMapProps) {
   const mapRef = useRef<MapRef | null>(null);

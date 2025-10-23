@@ -3,13 +3,16 @@
 import { useEffect } from "react";
 
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { hasSupabaseEnv } from "@/lib/env";
 
 const CALLBACK_ENDPOINT = "/auth/callback";
 
 export function SupabaseListener() {
-  const supabase = createSupabaseBrowserClient();
+  const supabase = hasSupabaseEnv ? createSupabaseBrowserClient() : null;
 
   useEffect(() => {
+    if (!supabase) return;
+
     const {
       data: { subscription }
     } = supabase.auth.onAuthStateChange(async (event, session) => {

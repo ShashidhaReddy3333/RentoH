@@ -6,6 +6,7 @@ import { Suspense, useMemo, useState } from "react";
 
 import { buttonStyles } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { hasSupabaseEnv } from "@/lib/env";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export default function SignUpPage() {
@@ -25,7 +26,10 @@ function SignUpFallback() {
 }
 
 function SignUpContent() {
-  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
+  const supabase = useMemo(
+    () => (hasSupabaseEnv ? createSupabaseBrowserClient() : null),
+    []
+  );
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -40,6 +44,11 @@ function SignUpContent() {
     setMessage(null);
 
     try {
+      if (!supabase) {
+        setError("Supabase credentials are not configured.");
+        return;
+      }
+
       const { error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -71,6 +80,11 @@ function SignUpContent() {
     setMessage(null);
 
     try {
+      if (!supabase) {
+        setError("Supabase credentials are not configured.");
+        return;
+      }
+
       const { error: resendError } = await supabase.auth.signInWithOtp({
         email,
         options: {
@@ -99,6 +113,20 @@ function SignUpContent() {
     setError(null);
     setBusy(false);
   };
+
+  if (!supabase) {
+    return (
+      <Card className="mx-auto max-w-2xl border border-dashed border-red-200 bg-red-50">
+        <CardContent className="space-y-3 text-center text-sm text-red-600">
+          <p>Supabase credentials are not configured.</p>
+          <p className="text-xs text-red-500/80">
+            Set <code>NEXT_PUBLIC_SUPABASE_URL</code> and <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code>{" "}
+            to enable sign-up.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-2xl space-y-8">

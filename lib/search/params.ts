@@ -96,16 +96,18 @@ export function parseSearchParams(params: ReadonlyParams | null | undefined): Se
 
     const value = get(paramKey);
     if (!value) return;
+    const normalizedValue = value.trim();
+    if (!normalizedValue) return;
 
     if (numberParams.has(paramKey)) {
-      const numeric = Number(value);
+      const numeric = Number(normalizedValue);
       if (!Number.isNaN(numeric)) {
         assign(filters, paramKey, numeric);
       }
       return;
     }
 
-    assign(filters, paramKey, value);
+    assign(filters, paramKey, normalizedValue);
   });
 
   return filters;

@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 
 import { Button, buttonStyles } from "@/components/ui/button";
+import { hasSupabaseEnv } from "@/lib/env";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 type NavItem = { label: string; href: Route };
@@ -22,18 +23,33 @@ const navItems = [
 export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
-  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
+  const supabase = useMemo(
+    () => (hasSupabaseEnv ? createSupabaseBrowserClient() : null),
+    []
+  );
   const [session, setSession] = useState<Session | null>(null);
   const [initialising, setInitialising] = useState(true);
 
   useEffect(() => {
     let active = true;
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!active) return;
-      setSession(session);
+    if (!supabase) {
       setInitialising(false);
-    });
+      return;
+    }
+
+    supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => {
+        if (!active) return;
+        setSession(session);
+        setInitialising(false);
+      })
+      .catch(() => {
+        if (!active) return;
+        setInitialising(false);
+        setSession(null);
+      });
 
     const {
       data: { subscription }
@@ -48,6 +64,7 @@ export default function Header() {
   }, [supabase]);
 
   const handleSignOut = async () => {
+    if (!supabase) return;
     await supabase.auth.signOut();
     setSession(null);
     router.replace("/");
