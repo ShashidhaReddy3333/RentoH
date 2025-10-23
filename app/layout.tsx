@@ -2,7 +2,7 @@ import "./globals.css";
 
 import type { Metadata } from "next";
 
-import Footer from "@/components/Footer";
+import Footer from "@/components/footer";
 import Header from "@/components/Header";
 import { SupabaseListener } from "@/components/providers/supabase-listener";
 import StickyMobileNav from "@/components/StickyMobileNav";
