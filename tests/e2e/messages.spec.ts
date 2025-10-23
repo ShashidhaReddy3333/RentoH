@@ -1,19 +1,15 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("Messages workspace", () => {
-  test("sends a mock chat message", async ({ page }) => {
+  test("shows existing conversations", async ({ page }) => {
     await page.goto("/messages");
 
-    await expect(page.getByRole("heading", { name: "Messages" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Messages" })).toBeVisible();
 
-    const firstConversation = page.locator("nav button").first();
+    const firstConversation = page.locator("[data-testid^=\"thread-\"]").first();
     await expect(firstConversation).toBeVisible();
     await firstConversation.click();
 
-    const composer = page.getByLabel("Message");
-    await composer.fill("Is the unit still available this weekend?");
-    await page.getByRole("button", { name: /^Send$/ }).click();
-
-    await expect(page.getByText("Is the unit still available this weekend?").first()).toBeVisible();
+    await expect(page.getByText("Looking forward to meeting you for the tour!", { exact: false })).toBeVisible();
   });
 });

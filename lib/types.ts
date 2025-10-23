@@ -1,3 +1,8 @@
+export type Coordinates = {
+  lat: number;
+  lng: number;
+};
+
 export type Property = {
   id: string;
   title: string;
@@ -11,6 +16,16 @@ export type Property = {
   pets: boolean;
   furnished: boolean;
   createdAt: string;
+  address?: string;
+  description?: string;
+  amenities?: string[];
+  area?: number;
+  availableFrom?: string;
+  neighborhood?: string;
+  coordinates?: Coordinates;
+  walkthroughVideoUrl?: string;
+  walkScore?: number;
+  transitScore?: number;
 };
 
 export type Message = {

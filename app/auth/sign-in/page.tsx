@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import type { Route } from 'next';
@@ -148,7 +148,7 @@ function SignInContent() {
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 aria-describedby="signin-password-hint"
-                placeholder="••••••••"
+                placeholder="********"
               />
               <p id="signin-password-hint" className="sr-only">
                 Minimum 8 characters. Do not share your password.
@@ -201,3 +201,6 @@ function friendlyAuthError(message: string) {
   }
   return message;
 }
+
+
+

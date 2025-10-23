@@ -23,6 +23,9 @@ export default defineConfig({
       "npm run dev -- --hostname 127.0.0.1 --port 3000",
     url: process.env["PLAYWRIGHT_BASE_URL"] ?? "http://localhost:3000",
     reuseExistingServer: !isCI,
-    timeout: 120_000
+    timeout: 120_000,
+    env: {
+      BYPASS_SUPABASE_AUTH: "1"
+    }
   }
 });

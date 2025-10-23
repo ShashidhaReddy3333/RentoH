@@ -4,6 +4,7 @@ const now = new Date();
 
 const hoursAgo = (hours: number) => new Date(now.getTime() - hours * 60 * 60 * 1000).toISOString();
 const daysAgo = (days: number) => new Date(now.getTime() - days * 24 * 60 * 60 * 1000).toISOString();
+const daysFromNow = (days: number) => new Date(now.getTime() + days * 24 * 60 * 60 * 1000).toISOString();
 
 export const mockProperties: Property[] = [
   {
@@ -18,7 +19,24 @@ export const mockProperties: Property[] = [
     verified: true,
     pets: true,
     furnished: true,
-    createdAt: daysAgo(1)
+    createdAt: daysAgo(1),
+    address: "215 King St S, Waterloo, ON",
+    neighborhood: "Uptown Waterloo",
+    description:
+      "Bright two-bedroom corner unit with 12 foot ceilings, floor-to-ceiling windows, and a private balcony facing King Street. Ideal for remote work with dedicated fibre internet.",
+    amenities: [
+      "In-suite laundry",
+      "Underground parking",
+      "Private balcony",
+      "Secure smart entry",
+      "Fitness centre access"
+    ],
+    area: 1080,
+    availableFrom: daysFromNow(14),
+    coordinates: { lat: 43.464259, lng: -80.52041 },
+    walkScore: 88,
+    transitScore: 72,
+    walkthroughVideoUrl: "https://www.youtube.com/watch?v=ysz5S6PUM-U"
   },
   {
     id: "prop_green-meadows",
@@ -32,7 +50,23 @@ export const mockProperties: Property[] = [
     verified: true,
     pets: false,
     furnished: false,
-    createdAt: daysAgo(2)
+    createdAt: daysAgo(2),
+    address: "68 Cedarcrest Drive, Kitchener, ON",
+    neighborhood: "Forest Heights",
+    description:
+      "Spacious detached family home with a fenced backyard, finished basement, and a chef's kitchen featuring quartz counters and a walk-in pantry.",
+    amenities: [
+      "Two-car garage",
+      "Fenced backyard",
+      "Gas fireplace",
+      "Dedicated home office",
+      "Smart thermostat"
+    ],
+    area: 2400,
+    availableFrom: daysFromNow(30),
+    coordinates: { lat: 43.427312, lng: -80.518901 },
+    walkScore: 61,
+    transitScore: 54
   },
   {
     id: "prop_lakeview",
@@ -46,7 +80,23 @@ export const mockProperties: Property[] = [
     verified: false,
     pets: true,
     furnished: true,
-    createdAt: daysAgo(3)
+    createdAt: daysAgo(3),
+    address: "12 Water St N, Cambridge, ON",
+    neighborhood: "Galt",
+    description:
+      "Corner apartment overlooking the Grand River with curated furnishings, a dedicated workspace, and inclusive utilities.",
+    amenities: [
+      "Rooftop terrace",
+      "Bike storage",
+      "Utilities included",
+      "Dedicated workspace",
+      "Pet washing station"
+    ],
+    area: 900,
+    availableFrom: daysFromNow(10),
+    coordinates: { lat: 43.360081, lng: -80.312699 },
+    walkScore: 82,
+    transitScore: 58
   },
   {
     id: "prop_downtown-suite",
@@ -60,7 +110,23 @@ export const mockProperties: Property[] = [
     verified: true,
     pets: false,
     furnished: true,
-    createdAt: daysAgo(4)
+    createdAt: daysAgo(4),
+    address: "32 Regina St N, Waterloo, ON",
+    neighborhood: "Downtown Innovation District",
+    description:
+      "Designer-finished suite with bespoke cabinetry, built-in storage, and an expansive kitchen island. Steps from the LRT and innovation hub.",
+    amenities: [
+      "Concierge service",
+      "Coworking lounge",
+      "Electric vehicle chargers",
+      "Floor-to-ceiling windows",
+      "Quartz waterfall island"
+    ],
+    area: 1025,
+    availableFrom: daysFromNow(21),
+    coordinates: { lat: 43.467023, lng: -80.522873 },
+    walkScore: 91,
+    transitScore: 78
   },
   {
     id: "prop_riverwalk",
@@ -74,7 +140,23 @@ export const mockProperties: Property[] = [
     verified: false,
     pets: true,
     furnished: false,
-    createdAt: daysAgo(5)
+    createdAt: daysAgo(5),
+    address: "155 Riverwalk Place, Kitchener, ON",
+    neighborhood: "Victoria Park",
+    description:
+      "Modern one-bedroom with 10 foot ceilings, exposed concrete accents, and panoramic city views from the 18th floor.",
+    amenities: [
+      "24 hour concierge",
+      "Outdoor pool",
+      "Guest suites",
+      "Party room",
+      "Yoga studio"
+    ],
+    area: 760,
+    availableFrom: daysFromNow(45),
+    coordinates: { lat: 43.44681, lng: -80.49691 },
+    walkScore: 84,
+    transitScore: 70
   },
   {
     id: "prop_southridge",
@@ -88,7 +170,23 @@ export const mockProperties: Property[] = [
     verified: true,
     pets: true,
     furnished: false,
-    createdAt: daysAgo(6)
+    createdAt: daysAgo(6),
+    address: "109 Southridge Drive, Guelph, ON",
+    neighborhood: "Westminster Woods",
+    description:
+      "Bright garden home with a sunroom, landscaped backyard, and updated kitchen featuring stainless steel appliances and butcher-block counters.",
+    amenities: [
+      "Heated sunroom",
+      "Two-tier deck",
+      "Primary ensuite",
+      "Finished basement",
+      "Community trails access"
+    ],
+    area: 1950,
+    availableFrom: daysFromNow(18),
+    coordinates: { lat: 43.500732, lng: -80.189741 },
+    walkScore: 52,
+    transitScore: 46
   },
   {
     id: "prop_midtown",
@@ -102,7 +200,23 @@ export const mockProperties: Property[] = [
     verified: false,
     pets: false,
     furnished: true,
-    createdAt: daysAgo(7)
+    createdAt: daysAgo(7),
+    address: "91 Bridgeport Rd E, Waterloo, ON",
+    neighborhood: "Midtown",
+    description:
+      "Thoughtfully planned studio with custom Murphy bed, integrated storage, and a sunset-facing balcony.",
+    amenities: [
+      "Furnished with Murphy bed",
+      "Heated floors",
+      "Bike locker",
+      "Shared rooftop patio",
+      "Secure mail room"
+    ],
+    area: 540,
+    availableFrom: daysFromNow(7),
+    coordinates: { lat: 43.472137, lng: -80.529501 },
+    walkScore: 87,
+    transitScore: 69
   },
   {
     id: "prop_townhouse",
@@ -116,7 +230,23 @@ export const mockProperties: Property[] = [
     verified: true,
     pets: true,
     furnished: false,
-    createdAt: daysAgo(8)
+    createdAt: daysAgo(8),
+    address: "12 Allen St E, Waterloo, ON",
+    neighborhood: "Central Waterloo",
+    description:
+      "Three-bedroom townhouse with private rooftop terrace, main-floor powder room, and two parking spots. One block from the LRT stop.",
+    amenities: [
+      "Private rooftop terrace",
+      "Two parking spots",
+      "Main floor powder room",
+      "Energy efficient appliances",
+      "Lockable bike storage"
+    ],
+    area: 1680,
+    availableFrom: daysFromNow(12),
+    coordinates: { lat: 43.47293, lng: -80.52114 },
+    walkScore: 93,
+    transitScore: 82
   }
 ];
 
@@ -133,7 +263,7 @@ export let mockThreads: MessageThread[] = [
     id: "thread_priya",
     otherPartyName: "Priya Kapoor",
     otherPartyAvatar: "/images/avatars/priya.png",
-    lastMessage: "Application received — let's review details.",
+    lastMessage: "Application received - let's review details.",
     unreadCount: 0,
     updatedAt: hoursAgo(8)
   },
@@ -166,7 +296,7 @@ export let mockMessages: Message[] = [
     id: "msg_003",
     threadId: "thread_leo",
     senderId: "user_current",
-    text: "Yes please — evenings work best for me.",
+    text: "Yes please - evenings work best for me.",
     createdAt: hoursAgo(25)
   },
   {

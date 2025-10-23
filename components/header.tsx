@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
+import { MagnifyingGlassIcon, ShieldCheckIcon } from "@heroicons/react/24/outline";
 
+import { SignOutButton } from "@/components/auth/SignOutButton";
 import { getProfile } from "@/lib/data-access/profile";
 import { buttonStyles } from "@/components/ui/button";
 
@@ -79,12 +80,7 @@ async function ProfileMenu() {
 
   return (
     <div className="flex items-center gap-3">
-      <Link
-        href={{ pathname: "/auth/sign-in" }}
-        className="hidden rounded-full px-3 py-2 text-sm font-medium text-text-muted transition hover:text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg md:inline-flex"
-      >
-        Sign out
-      </Link>
+      <SignOutButton className="hidden md:inline-flex" />
       <Link
         href={{ pathname: "/profile" }}
         className="group flex items-center gap-2 rounded-full border border-transparent bg-surface px-2 py-1 shadow-sm transition hover:border-brand-teal/40 hover:bg-brand-teal/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg"
@@ -98,15 +94,16 @@ async function ProfileMenu() {
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={profile.avatarUrl}
-              alt={profile.name}
+              alt={`${profile.name} profile picture`}
               className="h-10 w-10 rounded-full object-cover"
             />
           ) : (
             initials || "U"
           )}
           {profile.verificationStatus === "verified" && (
-            <span className="absolute -bottom-1 -right-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-brand-green text-[10px] text-white shadow-soft">
-              ?
+            <span className="absolute -bottom-1 -right-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-brand-green text-white shadow-soft">
+              <ShieldCheckIcon className="h-3.5 w-3.5" aria-hidden="true" />
+              <span className="sr-only">Verified account</span>
             </span>
           )}
         </span>
@@ -139,3 +136,4 @@ function SignInButtons() {
     </div>
   );
 }
+

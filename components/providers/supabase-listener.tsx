@@ -23,17 +23,24 @@ export function SupabaseListener() {
         .find((cookie) => cookie.startsWith("rento_csrf="))
         ?.split("=")[1];
 
-      if (!csrf) return;
+      if (!csrf) {
+        console.warn("[auth] Missing CSRF token. Skipping auth state sync.");
+        return;
+      }
 
       // Keep the Next.js server session in sync by posting to our callback route.
-      await fetch(CALLBACK_ENDPOINT, {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ event, session, csrf })
-      });
+      try {
+        await fetch(CALLBACK_ENDPOINT, {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ event, session, csrf })
+        });
+      } catch (error) {
+        console.error("[auth] Failed to sync auth state", error);
+      }
     });
 
     return () => {

@@ -5,6 +5,9 @@ import type { Property } from "@/lib/types";
 
 import { buttonStyles } from "@/components/ui/button";
 
+const SHEET_ID_PREFIX = "filters-sheet";
+const DESKTOP_ID_PREFIX = "filters-desktop";
+
 export type FiltersState = {
   city: string;
   min: number | null;
@@ -38,6 +41,8 @@ export default function FiltersSheet({
   onClear,
   renderStatic = false
 }: FiltersSheetProps) {
+  const sheetCityInputId = `${SHEET_ID_PREFIX}-city`;
+
   useEffect(() => {
     if (!open) return;
     const previous = document.body.style.overflow;
@@ -46,6 +51,24 @@ export default function FiltersSheet({
       document.body.style.overflow = previous;
     };
   }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onOpenChange(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    const focusTimer = window.setTimeout(() => {
+      document.getElementById(sheetCityInputId)?.focus();
+    }, 100);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.clearTimeout(focusTimer);
+    };
+  }, [open, onOpenChange, sheetCityInputId]);
 
   return (
     <>
@@ -56,6 +79,7 @@ export default function FiltersSheet({
             onChange={onChange}
             onApply={onApply}
             onClear={onClear}
+            idPrefix={DESKTOP_ID_PREFIX}
           />
         </div>
       )}
@@ -82,6 +106,7 @@ export default function FiltersSheet({
                 onOpenChange(false);
               }}
               onClear={onClear}
+              idPrefix={SHEET_ID_PREFIX}
             />
           </div>
         </div>
@@ -95,9 +120,19 @@ type ContentProps = {
   onChange: (values: FiltersState) => void;
   onApply: () => void;
   onClear: () => void;
+  idPrefix?: string;
 };
 
-export function FiltersContent({ values, onChange, onApply, onClear }: ContentProps) {
+export function FiltersContent({
+  values,
+  onChange,
+  onApply,
+  onClear,
+  idPrefix = "filters"
+}: ContentProps) {
+  const cityInputId = `${idPrefix}-city`;
+  const toggleId = (suffix: string) => `${idPrefix}-${suffix}`;
+
   const handleNumber =
     (field: keyof FiltersState) =>
     (event: ChangeEvent<HTMLInputElement>) => {
@@ -114,9 +149,10 @@ export function FiltersContent({ values, onChange, onApply, onClear }: ContentPr
   return (
     <div className="flex flex-col gap-6 px-4 py-6 text-sm text-text-muted">
       <div className="grid gap-4">
-        <label className="grid gap-2">
+        <label className="grid gap-2" htmlFor={cityInputId}>
           <span className="text-xs font-semibold uppercase tracking-wide">City</span>
           <input
+            id={cityInputId}
             value={values.city}
             onChange={(event) => onChange({ ...values, city: event.target.value })}
             placeholder="Neighbourhood or city"
@@ -198,19 +234,19 @@ export function FiltersContent({ values, onChange, onApply, onClear }: ContentPr
 
       <div className="grid gap-3">
         <Toggle
-          id="filter-pets"
+          id={toggleId("pets")}
           label="Pet-friendly"
           checked={values.pets}
           onChange={handleCheckbox("pets")}
         />
         <Toggle
-          id="filter-furnished"
+          id={toggleId("furnished")}
           label="Furnished"
           checked={values.furnished}
           onChange={handleCheckbox("furnished")}
         />
         <Toggle
-          id="filter-verified"
+          id={toggleId("verified")}
           label="Verified listings only"
           checked={values.verified}
           onChange={handleCheckbox("verified")}
@@ -268,3 +304,5 @@ function Toggle({
     </label>
   );
 }
+
+

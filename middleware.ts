@@ -30,7 +30,8 @@ const supabaseHost = (() => {
 const connectSrc = [
   "'self'",
   'https://api.mapbox.com',
-  'https://events.mapbox.com'
+  'https://events.mapbox.com',
+  'https://*.tiles.mapbox.com'
 ];
 
 if (supabaseHost) {
@@ -42,8 +43,11 @@ const imgSrc = [
   'data:',
   'blob:',
   'https://images.unsplash.com',
+  'https://picsum.photos',
+  'https://api.dicebear.com',
   'https://api.mapbox.com',
   'https://events.mapbox.com',
+  'https://*.tiles.mapbox.com',
   'https://*.tiles.mapbox.com'
 ];
 
@@ -56,17 +60,30 @@ if (supabaseHost) {
   fontSrc.push(`https://${supabaseHost}`);
 }
 
+const styleSrc = ["'self'", 'https://api.mapbox.com'];
+if (supabaseHost) {
+  styleSrc.push(`https://${supabaseHost}`);
+}
+
+const scriptSrc = ["'self'", 'https://api.mapbox.com', 'https://events.mapbox.com'];
+if (supabaseHost) {
+  scriptSrc.push(`https://${supabaseHost}`);
+}
+
 const csp = [
   "default-src 'self'",
   "base-uri 'self'",
   "frame-ancestors 'none'",
   "form-action 'self'",
   "object-src 'none'",
-  "style-src 'self' 'unsafe-inline' https://api.mapbox.com",
+  `style-src ${styleSrc.join(' ')}`,
+  `style-src-elem ${styleSrc.join(' ')}`,
   `connect-src ${connectSrc.join(' ')}`,
   `img-src ${imgSrc.join(' ')}`,
   `font-src ${fontSrc.join(' ')}`,
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:",
+  `script-src ${scriptSrc.join(' ')}`,
+  `script-src-elem ${scriptSrc.join(' ')}`,
+  "script-src-attr 'none'",
   "worker-src 'self' blob:",
   "frame-src 'self'",
   "media-src 'self' blob:",
@@ -86,16 +103,22 @@ const SECURITY_HEADERS: Record<string, string> = {
   'Permissions-Policy': 'interest-cohort=(), camera=(), microphone=(), geolocation=(), payment=()'
 };
 
-function applySecurityHeaders(res: NextResponse) {
+const CSRF_COOKIE = 'rento_csrf';
+
+function applySecurityHeaders(req: NextRequest, res: NextResponse) {
   Object.entries(SECURITY_HEADERS).forEach(([key, value]) => {
     res.headers.set(key, value);
   });
+  ensureCsrfCookie(req, res);
   return res;
 }
 
 export async function middleware(req: NextRequest) {
+  if (process.env["BYPASS_SUPABASE_AUTH"] === "1") {
+    return applySecurityHeaders(req, NextResponse.next());
+  }
   if (!hasSupabaseEnv) {
-    return applySecurityHeaders(NextResponse.next());
+    return applySecurityHeaders(req, NextResponse.next());
   }
 
   const { supabase, response } = createSupabaseMiddlewareClient(req);
@@ -113,24 +136,26 @@ export async function middleware(req: NextRequest) {
     const redirectUrl = req.nextUrl.clone();
     redirectUrl.pathname = '/auth/sign-in';
     redirectUrl.searchParams.set('next', pathname);
-    return applySecurityHeaders(NextResponse.redirect(redirectUrl));
+    return applySecurityHeaders(req, NextResponse.redirect(redirectUrl));
   }
 
   if (isAdminRoute) {
-    const role = req.cookies.get('rento_role')?.value;
+    const role =
+      (session?.user?.app_metadata?.["role"] as string | undefined) ??
+      (session?.user?.user_metadata?.["role"] as string | undefined);
     if (role !== 'admin') {
       const redirectUrl = new URL('/auth/sign-in?next=/admin', req.url);
-      return applySecurityHeaders(NextResponse.redirect(redirectUrl));
+      return applySecurityHeaders(req, NextResponse.redirect(redirectUrl));
     }
   }
 
   if (session && isAuthRoute) {
-    return applySecurityHeaders(NextResponse.redirect(new URL('/dashboard', req.url)));
+    return applySecurityHeaders(req, NextResponse.redirect(new URL('/dashboard', req.url)));
   }
 
   // This will refresh the session cookie if it's expired.
   // It's important to return the response from the client to set the cookie.
-  return applySecurityHeaders(response);
+  return applySecurityHeaders(req, response);
 }
 
 export const config = {
@@ -144,3 +169,39 @@ function compilePattern(pattern: string): RegExp {
     .replace(/\\:[^/]+/g, '[^/]+');
   return new RegExp(`^${withWildcards}`);
 }
+
+function ensureCsrfCookie(req: NextRequest, res: NextResponse) {
+  const existingCookie = req.cookies.get(CSRF_COOKIE)?.value ?? res.cookies.get(CSRF_COOKIE)?.value;
+  if (existingCookie) {
+    return;
+  }
+
+  const value = generateCsrfToken();
+  const secure = req.nextUrl.protocol === 'https:';
+  res.cookies.set({
+    name: CSRF_COOKIE,
+    value,
+    path: '/',
+    httpOnly: false,
+    sameSite: 'lax',
+    secure,
+    maxAge: 60 * 60 * 24 * 30
+  });
+}
+
+function generateCsrfToken(): string {
+  const globalCrypto = globalThis.crypto as Crypto | undefined;
+  if (globalCrypto?.randomUUID) {
+    return globalCrypto.randomUUID().replace(/-/g, '');
+  }
+
+  if (globalCrypto?.getRandomValues) {
+    const bytes = globalCrypto.getRandomValues(new Uint8Array(32));
+    return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+  }
+
+  return Array.from({ length: 32 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
+}
+
+
+

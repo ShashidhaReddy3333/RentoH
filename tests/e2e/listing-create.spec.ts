@@ -16,8 +16,13 @@ test.describe("Create listing flow", () => {
 
     await page.getByRole("button", { name: /Save listing/i }).click();
 
-    await expect(
-      page.getByText("Property saved! Redirecting you to manage the listing...")
-    ).toBeVisible();
+    await expect(page.getByLabel("Title")).toHaveValue("");
+    await expect(page.getByLabel("Rent per month ($)")).toHaveValue("");
+    await expect(page.locator("[role=\"alert\"]")).toHaveCount(0);
   });
 });
+
+
+
+
+

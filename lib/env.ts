@@ -54,13 +54,16 @@ if (!clientParsed.success) {
 
 const clientEnv = Object.freeze(clientParsed.data);
 
+const bypassSupabase = process.env["BYPASS_SUPABASE_AUTH"] === "1";
+
 export { env, clientEnv };
 
 export const hasSupabaseEnv =
-  Boolean(clientEnv.NEXT_PUBLIC_SUPABASE_URL && clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+  !bypassSupabase && Boolean(clientEnv.NEXT_PUBLIC_SUPABASE_URL && clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
 if (!hasSupabaseEnv && env.NODE_ENV !== "test") {
   console.warn(
     "[env] NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY missing. Supabase features are disabled."
   );
 }
+

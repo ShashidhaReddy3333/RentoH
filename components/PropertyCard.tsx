@@ -8,6 +8,7 @@ import {
 } from "@heroicons/react/24/solid";
 
 import type { Property } from "@/lib/types";
+import { formatCurrency } from "@/lib/utils/format";
 
 type PropertyCardProps = {
   property: Property;
@@ -28,6 +29,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
             src={property.images[0]}
             alt={property.title}
             fill
+            loading="lazy"
             className="object-cover transition duration-500 group-hover:scale-105"
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
             priority={false}
@@ -40,7 +42,8 @@ export default function PropertyCard({ property }: PropertyCardProps) {
         <button
           type="button"
           aria-label="Save listing"
-          className="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-brand-teal shadow-soft transition hover:bg-white"
+          aria-pressed="false"
+          className="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-brand-teal shadow-soft transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal focus-visible:ring-offset-2 focus-visible:ring-offset-white"
           data-testid="property-save"
         >
           <HeartIcon className="h-5 w-5" aria-hidden="true" />
@@ -55,12 +58,13 @@ export default function PropertyCard({ property }: PropertyCardProps) {
       <div className="flex flex-1 flex-col gap-4 p-4 sm:p-6">
         <div>
           <p className="text-lg font-semibold text-textc">
-            ${property.price.toLocaleString()}
+            {formatCurrency(property.price)}
             <span className="ml-1 text-sm font-medium text-text-muted">/month</span>
           </p>
           <Link
             href={`/property/${property.id}`}
             className="line-clamp-2 text-base font-semibold text-brand-dark transition hover:text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal"
+            prefetch
           >
             {property.title}
           </Link>

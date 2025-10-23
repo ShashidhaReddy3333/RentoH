@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import type { Route } from "next";
 import { usePathname, useRouter } from "next/navigation";
 import { AdjustmentsHorizontalIcon, MapIcon, Squares2X2Icon } from "@heroicons/react/24/outline";
@@ -58,14 +58,24 @@ export default function BrowseClient({
   const [nextPageState, setNextPageState] = useState<number | undefined>(nextPage);
   const [isSheetOpen, setIsSheetOpen] = useState(filtersOpen);
   const [isLoadingMore, startTransition] = useTransition();
+  const prefetchedIds = useRef<Set<string>>(new Set());
 
   useEffect(() => {
+    prefetchedIds.current.clear();
     setProperties(initialProperties);
     setFilters(initialFilters);
     setCurrentSort(sort);
     setCurrentView(view);
     setNextPageState(nextPage);
   }, [initialFilters, initialProperties, nextPage, page, sort, view]);
+
+  useEffect(() => {
+    properties.slice(0, 6).forEach((property) => {
+      if (prefetchedIds.current.has(property.id)) return;
+      prefetchedIds.current.add(property.id);
+      router.prefetch(`/property/${property.id}` as Route);
+    });
+  }, [properties, router]);
 
   const appliedFilters = useMemo(() => queryFilters, [queryFilters]);
 
@@ -111,6 +121,7 @@ export default function BrowseClient({
     <div className="grid gap-6 lg:grid-cols-[320px_1fr] lg:gap-10">
       <div className="hidden lg:block">
         <FiltersContent
+          idPrefix="filters-desktop"
           values={filters}
           onChange={setFilters}
           onApply={handleApplyFilters}
@@ -254,3 +265,5 @@ function buildSearchParams(
 
   return search;
 }
+
+

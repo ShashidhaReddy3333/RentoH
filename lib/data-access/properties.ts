@@ -23,7 +23,44 @@ type SupabasePropertyRow = {
   furnished?: boolean | null;
   images?: string[] | string | null;
   created_at?: string | null;
+  address?: string | null;
+  description?: string | null;
+  amenities?: string[] | string | null;
+  area?: number | null;
+  available_from?: string | null;
+  neighborhood?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  walk_score?: number | null;
+  transit_score?: number | null;
+  walkthrough_video_url?: string | null;
 };
+
+const PROPERTY_COLUMNS = `
+  id,
+  title,
+  price,
+  beds,
+  baths,
+  type,
+  city,
+  verified,
+  pets,
+  furnished,
+  images,
+  created_at,
+  address,
+  description,
+  amenities,
+  area,
+  available_from,
+  neighborhood,
+  latitude,
+  longitude,
+  walk_score,
+  transit_score,
+  walkthrough_video_url
+`;
 
 export async function getFeatured(): Promise<Property[]> {
   if (hasSupabaseEnv) {
@@ -31,9 +68,7 @@ export async function getFeatured(): Promise<Property[]> {
       const supabase = createSupabaseServerClient();
       const { data, error } = await supabase
         .from("properties")
-        .select(
-          "id,title,price,beds,baths,type,city,verified,pets,furnished,images,created_at"
-        )
+        .select(PROPERTY_COLUMNS)
         .eq("is_featured", true)
         .order("created_at", { ascending: false })
         .limit(6);
@@ -64,10 +99,7 @@ async function fetchManyFromSupabase(
   const supabase = createSupabaseServerClient();
   let query = supabase
     .from("properties")
-    .select(
-      "id,title,price,beds,baths,type,city,verified,pets,furnished,images,created_at",
-      { count: "exact" }
-    );
+    .select(PROPERTY_COLUMNS, { count: "exact" });
 
   if (filters.city) {
     query = query.ilike("city", `%${filters.city}%`);
@@ -146,7 +178,7 @@ function mapPropertyFromSupabase(record: SupabasePropertyRow): Property {
   return {
     id: record.id,
     title: record.title,
-    images: Array.isArray(record.images) ? record.images : record.images ? [record.images] : [],
+    images: toStringArray(record.images),
     price: record.price,
     beds: record.beds,
     baths: record.baths,
@@ -155,7 +187,20 @@ function mapPropertyFromSupabase(record: SupabasePropertyRow): Property {
     verified: Boolean(record.verified),
     pets: Boolean(record.pets),
     furnished: Boolean(record.furnished),
-    createdAt: record.created_at ?? new Date().toISOString()
+    createdAt: record.created_at ?? new Date().toISOString(),
+    address: record.address ?? undefined,
+    description: record.description ?? undefined,
+    amenities: toStringArray(record.amenities),
+    area: record.area ?? undefined,
+    availableFrom: record.available_from ?? undefined,
+    neighborhood: record.neighborhood ?? undefined,
+    coordinates:
+      typeof record.latitude === "number" && typeof record.longitude === "number"
+        ? { lat: record.latitude, lng: record.longitude }
+        : undefined,
+    walkScore: record.walk_score ?? undefined,
+    transitScore: record.transit_score ?? undefined,
+    walkthroughVideoUrl: record.walkthrough_video_url ?? undefined
   };
 }
 
@@ -227,4 +272,53 @@ function applySortToQuery<T extends SortableQuery<T>>(query: T, sort: PropertySo
   }
 
   return query.order("created_at", { ascending: false });
+}
+
+export async function getById(id: string): Promise<Property | null> {
+  if (!id) {
+    return null;
+  }
+
+  if (hasSupabaseEnv) {
+    try {
+      const supabase = createSupabaseServerClient();
+      const { data, error } = await supabase
+        .from("properties")
+        .select(PROPERTY_COLUMNS)
+        .eq("id", id)
+        .maybeSingle();
+
+      if (!error && data) {
+        return mapPropertyFromSupabase(data);
+      }
+    } catch (error) {
+      console.warn("[properties] Failed to load property by id, falling back to mocks", error);
+    }
+  }
+
+  const fallback = mockProperties.find((property) => property.id === id);
+  return fallback ? cloneProperty(fallback) : null;
+}
+
+function toStringArray(value: string[] | string | null | undefined): string[] {
+  if (Array.isArray(value)) {
+    return value.filter((item): item is string => typeof item === "string" && item.length > 0);
+  }
+
+  if (typeof value === "string") {
+    return value
+      .split(",")
+      .map((part) => part.trim())
+      .filter((part) => part.length > 0);
+  }
+
+  return [];
+}
+
+function cloneProperty(property: Property): Property {
+  if (typeof structuredClone === "function") {
+    return structuredClone(property);
+  }
+
+  return JSON.parse(JSON.stringify(property)) as Property;
 }
