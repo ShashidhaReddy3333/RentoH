@@ -9,6 +9,7 @@ import ChatPane from "@/components/chat-pane";
 import type { Conversation } from "@/components/chat-pane";
 import { useAppState } from "@/components/providers/app-provider";
 import { buttonStyles } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
 import { Card, CardContent } from "@/components/ui/card";
 
 const CURRENT_TENANT_ID = "u1";
@@ -108,18 +109,23 @@ export default function PropertyDetailClient({ id }: PropertyDetailClientProps) 
           <div className="flex gap-2">
             <button
               type="button"
-              className={buttonStyles({ variant: "outline" })}
+              className={buttonStyles({ variant: "primary" })}
               onClick={handleContact}
             >
               Contact landlord
             </button>
             <button
               type="button"
-              className={buttonStyles({ variant: "ghost" })}
+              className={`${buttonStyles({ variant: "outline" })} gap-2`}
               onClick={() => toggleFavorite(property.id)}
               aria-pressed={isFavorite(property.id)}
             >
-              {isFavorite(property.id) ? "\u2665 Saved" : "\u2661 Save"}
+              <Icon
+                name="heart"
+                variant={isFavorite(property.id) ? "solid" : "outline"}
+                className={`h-5 w-5 ${isFavorite(property.id) ? "text-brand-teal" : "text-brand-dark/60"}`}
+              />
+              <span>{isFavorite(property.id) ? "Saved" : "Save"}</span>
             </button>
           </div>
         </div>

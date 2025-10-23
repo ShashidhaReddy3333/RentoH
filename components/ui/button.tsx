@@ -4,15 +4,22 @@ import { cva, type VariantProps } from "class-variance-authority";
 import clsx from "clsx";
 
 export const buttonStyles = cva(
-  "inline-flex items-center justify-center rounded-full px-5 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+  "inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:opacity-60 dark:focus-visible:ring-offset-slate-900",
   {
     variants: {
       variant: {
-        primary: "bg-brand-teal text-white hover:brightness-90",
-        outline: "border border-brand-dark/20 text-brand-dark hover:bg-white/40",
-        ghost: "text-brand-dark hover:bg-white/40"
+        primary:
+          "bg-brand-teal text-white shadow-sm hover:bg-brand-teal/90 focus-visible:ring-brand-teal/80",
+        outline:
+          "border border-brand-teal/30 bg-white text-brand-teal hover:border-brand-teal hover:bg-brand-teal/10 dark:border-brand-teal/40 dark:bg-slate-900 dark:text-brand-teal",
+        ghost:
+          "text-brand-dark hover:bg-brand-teal/10 dark:text-slate-100"
       },
-      size: { sm: "h-9 px-4", md: "h-11 px-5 text-base", lg: "h-12 px-6 text-base" }
+      size: {
+        sm: "px-4 text-sm",
+        md: "px-5 text-base",
+        lg: "px-6 text-lg"
+      }
     },
     defaultVariants: { variant: "primary", size: "md" }
   }
