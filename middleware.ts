@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-import { env } from './lib/env';
+import { env, hasSupabaseEnv } from './lib/env';
 import { createSupabaseMiddlewareClient } from './lib/supabase/middleware';
 
 const PROTECTED_ROUTES = [
@@ -94,6 +94,10 @@ function applySecurityHeaders(res: NextResponse) {
 }
 
 export async function middleware(req: NextRequest) {
+  if (!hasSupabaseEnv) {
+    return applySecurityHeaders(NextResponse.next());
+  }
+
   const { supabase, response } = createSupabaseMiddlewareClient(req);
   const {
     data: { session }

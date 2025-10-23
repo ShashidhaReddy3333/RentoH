@@ -1,5 +1,3 @@
-import { unstable_cache } from "next/cache";
-
 import { hasSupabaseEnv } from "@/lib/env";
 import { mockProperties } from "@/lib/mock";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -27,32 +25,22 @@ type SupabasePropertyRow = {
   created_at?: string | null;
 };
 
-const fetchFeaturedFromSupabase = unstable_cache(
-  async () => {
-    const supabase = createSupabaseServerClient();
-    const { data, error } = await supabase
-      .from("properties")
-      .select(
-        "id,title,price,beds,baths,type,city,verified,pets,furnished,images,created_at"
-      )
-      .eq("is_featured", true)
-      .order("created_at", { ascending: false })
-      .limit(6);
-
-    if (error || !data) {
-      throw error ?? new Error("Failed to load featured properties");
-    }
-
-    return data.map(mapPropertyFromSupabase);
-  },
-  ["properties:featured"],
-  { revalidate: 3600, tags: ["properties:featured"] }
-);
-
 export async function getFeatured(): Promise<Property[]> {
   if (hasSupabaseEnv) {
     try {
-      return await fetchFeaturedFromSupabase();
+      const supabase = createSupabaseServerClient();
+      const { data, error } = await supabase
+        .from("properties")
+        .select(
+          "id,title,price,beds,baths,type,city,verified,pets,furnished,images,created_at"
+        )
+        .eq("is_featured", true)
+        .order("created_at", { ascending: false })
+        .limit(6);
+
+      if (!error && data) {
+        return data.map(mapPropertyFromSupabase);
+      }
     } catch (error) {
       console.warn("[properties] Falling back to mock featured listings", error);
     }
@@ -140,16 +128,8 @@ export async function getMany(
   page = 1
 ): Promise<PaginatedResult<Property>> {
   if (hasSupabaseEnv) {
-    const cacheKey = serializeFilters(filters);
     try {
-      return await unstable_cache(
-        () => fetchManyFromSupabase(filters, sort, page),
-        ["properties:list", cacheKey, sort, String(page)],
-        {
-          revalidate: 120,
-          tags: ["properties:list"]
-        }
-      )();
+      return await fetchManyFromSupabase(filters, sort, page);
     } catch (error) {
       console.warn("[properties] Falling back to mock listings", error);
     }
@@ -247,9 +227,4 @@ function applySortToQuery<T extends SortableQuery<T>>(query: T, sort: PropertySo
   }
 
   return query.order("created_at", { ascending: false });
-}
-
-function serializeFilters(filters: PropertyFilters) {
-  const entries = Object.entries(filters).sort(([a], [b]) => a.localeCompare(b));
-  return JSON.stringify(Object.fromEntries(entries));
 }

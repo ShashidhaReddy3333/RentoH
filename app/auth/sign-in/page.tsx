@@ -114,7 +114,7 @@ function SignInContent() {
           <form
             onSubmit={handleSubmit}
             className="space-y-4"
-            aria-label="Email sign-in form"
+            aria-label="Sign-in form"
           >
             <div className="space-y-1">
               <label htmlFor="email" className="text-sm font-medium text-textc">
