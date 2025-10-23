@@ -2,41 +2,39 @@ import "./globals.css";
 
 import type { Metadata } from "next";
 
-import ThemeProvider from "@/app/theme-provider";
-import Footer from "@/components/footer";
-import Header from "@/components/header";
-import { AppProvider } from "@/components/providers/app-provider";
+import Footer from "@/components/Footer";
+import Header from "@/components/Header";
 import { SupabaseListener } from "@/components/providers/supabase-listener";
-import StickyMobileNav from "@/components/sticky-mobile-nav";
+import StickyMobileNav from "@/components/StickyMobileNav";
 
 export const metadata: Metadata = {
-  title: "Rento Bridge",
-  description: "Find or list rentals with confidence on Rento Bridge.",
+  title: "Rento",
+  description: "Find verified rentals, message landlords, and manage your journey with Rento."
 };
+
+export const dynamic = "force-dynamic";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-brand-bg font-sans text-textc transition-colors">
+      <body className="bg-brand-bg font-sans text-textc">
         <a
           href="#main"
           className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 rounded-full bg-brand-blue px-4 py-2 text-white transition"
         >
           Skip to content
         </a>
-        <ThemeProvider>
-          <AppProvider>
-            <div className="flex min-h-screen flex-col">
-              <Header />
-              <SupabaseListener />
-              <main id="main" className="flex-1 pb-section">
-                {children}
-              </main>
-              <Footer />
-              <StickyMobileNav />
+        <div className="flex min-h-screen flex-col">
+          <Header />
+          <SupabaseListener />
+          <main id="main" className="flex-1">
+            <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-10">
+              {children}
             </div>
-          </AppProvider>
-        </ThemeProvider>
+          </main>
+          <Footer />
+          <StickyMobileNav />
+        </div>
       </body>
     </html>
   );

@@ -1,17 +1,17 @@
-import { NextResponse } from 'next/server';
+import { NextResponse } from "next/server";
 
-import { listProperties } from '@/lib/data/properties';
+import { getMany } from "@/lib/data-access/properties";
 
 export const revalidate = 60;
-export const fetchCache = 'force-cache';
-export const dynamic = 'force-dynamic';
+export const fetchCache = "force-cache";
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const items = await listProperties();
-    return NextResponse.json({ items });
+    const result = await getMany({}, "newest", 1);
+    return NextResponse.json({ items: result.items });
   } catch (error) {
-    console.error('Failed to fetch properties', error);
-    return NextResponse.json({ error: 'Failed to load properties' }, { status: 500 });
+    console.error("Failed to fetch properties", error);
+    return NextResponse.json({ error: "Failed to load properties" }, { status: 500 });
   }
 }

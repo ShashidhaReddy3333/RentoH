@@ -1,220 +1,253 @@
-export type PropertyType = "apartment" | "house" | "studio";
+import type { Message, MessageThread, Profile, Property } from "./types";
 
-export type Property = {
-  id: string;
-  title: string;
-  address?: string;
-  city: string;
-  postalCode: string;
-  type: PropertyType;
-  furnished: boolean;
-  rent: number;
-  images: string[];
-  verified: boolean;
-  landlordId: string;
-  amenities: string[];
-  description: string;
-  availability: "available" | "unavailable";
-};
+const now = new Date();
 
-export type UserRole = "tenant" | "landlord" | "admin";
+const hoursAgo = (hours: number) => new Date(now.getTime() - hours * 60 * 60 * 1000).toISOString();
+const daysAgo = (days: number) => new Date(now.getTime() - days * 24 * 60 * 60 * 1000).toISOString();
 
-export type User = {
-  id: string;
-  name: string;
-  role: UserRole;
-  avatar?: string;
-  verified?: boolean;
-  email?: string;
-};
-
-export type Message = {
-  id: string;
-  propertyId: string;
-  senderId: string;
-  recipientId: string;
-  body: string;
-  createdAt: string;
-};
-
-export const properties: Property[] = [
+export const mockProperties: Property[] = [
   {
-    id: "p1",
-    title: "Sunny Apartment",
+    id: "prop_royal-loft",
+    title: "Sunlit Loft near King Street",
+    images: ["/images/listings/loft-1.jpg", "/images/listings/loft-1b.jpg"],
+    price: 2450,
+    beds: 2,
+    baths: 2,
+    type: "condo",
     city: "Waterloo",
-    address: "12 King Street W",
-    postalCode: "N2L 3G1",
-    type: "apartment",
-    furnished: true,
-    rent: 1800,
-    images: ["/img/1.jpg", "/img/1b.jpg", "/img/1c.jpg"],
     verified: true,
-    landlordId: "u2",
-    amenities: ["Wi-Fi", "Parking", "Laundry"],
-    description:
-      "Bright south-facing apartment close to the LRT, with updated kitchen and in-unit laundry.",
-    availability: "available"
+    pets: true,
+    furnished: true,
+    createdAt: daysAgo(1)
   },
   {
-    id: "p2",
-    title: "Modern Studio",
-    city: "Kitchener",
-    address: "410 Queen Street S",
-    postalCode: "N2G 1A1",
-    type: "studio",
-    furnished: false,
-    rent: 1450,
-    images: ["/img/2.jpg", "/img/2b.jpg"],
-    verified: false,
-    landlordId: "u2",
-    amenities: ["Wi-Fi", "Gym Access"],
-    description:
-      "Efficient studio with floor-to-ceiling windows, perfect for young professionals.",
-    availability: "available"
-  },
-  {
-    id: "p3",
-    title: "Family Home",
-    city: "Cambridge",
-    address: "78 River Drive",
-    postalCode: "N1P 1A5",
+    id: "prop_green-meadows",
+    title: "Green Meadows Family Home",
+    images: ["/images/listings/home-1.jpg", "/images/listings/home-1b.jpg"],
+    price: 3200,
+    beds: 4,
+    baths: 3,
     type: "house",
-    furnished: true,
-    rent: 2350,
-    images: ["/img/3.jpg", "/img/3b.jpg", "/img/3c.jpg"],
+    city: "Kitchener",
     verified: true,
-    landlordId: "u3",
-    amenities: ["Parking", "Backyard", "Air Conditioning"],
-    description:
-      "Spacious 3-bedroom home with finished basement, large backyard, and double garage.",
-    availability: "available"
-  },
-  {
-    id: "p4",
-    title: "Downtown Loft",
-    city: "Waterloo",
-    address: "22 Bridgeport Road",
-    postalCode: "N2J 2H1",
-    type: "apartment",
+    pets: false,
     furnished: false,
-    rent: 2100,
-    images: ["/img/4.jpg", "/img/4b.jpg"],
-    verified: true,
-    landlordId: "u4",
-    amenities: ["Wi-Fi", "Parking", "Gym Access"],
-    description:
-      "Industrial loft with exposed brick, 12ft ceilings, and secure parking spot.",
-    availability: "unavailable"
-  }
-];
-
-export const users: User[] = [
-  {
-    id: "u1",
-    name: "Tina Evans",
-    role: "tenant",
-    avatar: "/img/avatars/tenant1.png",
-    verified: true,
-    email: "tina@example.com"
+    createdAt: daysAgo(2)
   },
   {
-    id: "u2",
-    name: "Leo Bridges",
-    role: "landlord",
-    avatar: "/img/avatars/landlord1.png",
-    verified: true,
-    email: "leo@example.com"
-  },
-  {
-    id: "u3",
-    name: "Priya Kapoor",
-    role: "landlord",
-    avatar: "/img/avatars/landlord2.png",
+    id: "prop_lakeview",
+    title: "Lakeview Corner Apartment",
+    images: ["/images/listings/apartment-1.jpg"],
+    price: 2100,
+    beds: 2,
+    baths: 1,
+    type: "apartment",
+    city: "Cambridge",
     verified: false,
-    email: "priya@example.com"
+    pets: true,
+    furnished: true,
+    createdAt: daysAgo(3)
   },
   {
-    id: "u4",
-    name: "Admin Rento",
-    role: "admin",
-    avatar: "/img/avatars/admin.png",
+    id: "prop_downtown-suite",
+    title: "Downtown Designer Suite",
+    images: ["/images/listings/apartment-2.jpg"],
+    price: 2750,
+    beds: 2,
+    baths: 2,
+    type: "apartment",
+    city: "Waterloo",
     verified: true,
-    email: "admin@rento.io"
+    pets: false,
+    furnished: true,
+    createdAt: daysAgo(4)
+  },
+  {
+    id: "prop_riverwalk",
+    title: "Riverwalk Modern Condo",
+    images: ["/images/listings/condo-1.jpg"],
+    price: 2350,
+    beds: 1,
+    baths: 1,
+    type: "condo",
+    city: "Kitchener",
+    verified: false,
+    pets: true,
+    furnished: false,
+    createdAt: daysAgo(5)
+  },
+  {
+    id: "prop_southridge",
+    title: "Southridge Garden Home",
+    images: ["/images/listings/home-2.jpg"],
+    price: 2950,
+    beds: 3,
+    baths: 2,
+    type: "house",
+    city: "Guelph",
+    verified: true,
+    pets: true,
+    furnished: false,
+    createdAt: daysAgo(6)
+  },
+  {
+    id: "prop_midtown",
+    title: "Midtown Studio with Balcony",
+    images: ["/images/listings/studio-1.jpg"],
+    price: 1850,
+    beds: 1,
+    baths: 1,
+    type: "apartment",
+    city: "Waterloo",
+    verified: false,
+    pets: false,
+    furnished: true,
+    createdAt: daysAgo(7)
+  },
+  {
+    id: "prop_townhouse",
+    title: "Townhouse Steps from LRT",
+    images: ["/images/listings/townhouse-1.jpg"],
+    price: 2650,
+    beds: 3,
+    baths: 2,
+    type: "house",
+    city: "Waterloo",
+    verified: true,
+    pets: true,
+    furnished: false,
+    createdAt: daysAgo(8)
   }
 ];
 
-export const messages: Message[] = [
+export let mockThreads: MessageThread[] = [
   {
-    id: "m1",
-    propertyId: "p1",
-    senderId: "u1",
-    recipientId: "u2",
-    body: "Hi Leo, is the apartment available for a July 1st move-in?",
-    createdAt: new Date().toISOString()
+    id: "thread_leo",
+    otherPartyName: "Leo Bridges",
+    otherPartyAvatar: "/images/avatars/leo.png",
+    lastMessage: "Looking forward to meeting you for the tour!",
+    unreadCount: 1,
+    updatedAt: hoursAgo(2)
   },
   {
-    id: "m2",
-    propertyId: "p1",
-    senderId: "u2",
-    recipientId: "u1",
-    body: "Hi Tina! Yes, it's still available. Would you like to schedule a viewing?",
-    createdAt: new Date().toISOString()
+    id: "thread_priya",
+    otherPartyName: "Priya Kapoor",
+    otherPartyAvatar: "/images/avatars/priya.png",
+    lastMessage: "Application received — let's review details.",
+    unreadCount: 0,
+    updatedAt: hoursAgo(8)
   },
   {
-    id: "m3",
-    propertyId: "p3",
-    senderId: "u1",
-    recipientId: "u3",
-    body: "Can you tell me more about the neighborhood schools?",
-    createdAt: new Date().toISOString()
+    id: "thread_hailey",
+    otherPartyName: "Hailey Chen",
+    otherPartyAvatar: "/images/avatars/hailey.png",
+    lastMessage: "Can we confirm the move-in date?",
+    unreadCount: 0,
+    updatedAt: hoursAgo(28)
   }
 ];
 
-export type PropertyFilter = {
-  city?: string;
-  postalCode?: string;
-  type?: PropertyType;
-  min?: number;
-  max?: number;
-  furnished?: boolean;
+export let mockMessages: Message[] = [
+  {
+    id: "msg_001",
+    threadId: "thread_leo",
+    senderId: "user_current",
+    text: "Hi Leo! Thanks for sharing the listing. Is the unit still available?",
+    createdAt: hoursAgo(30)
+  },
+  {
+    id: "msg_002",
+    threadId: "thread_leo",
+    senderId: "user_leo",
+    text: "Absolutely! We have an opening July 15. Would you like to tour?",
+    createdAt: hoursAgo(26)
+  },
+  {
+    id: "msg_003",
+    threadId: "thread_leo",
+    senderId: "user_current",
+    text: "Yes please — evenings work best for me.",
+    createdAt: hoursAgo(25)
+  },
+  {
+    id: "msg_004",
+    threadId: "thread_leo",
+    senderId: "user_leo",
+    text: "Perfect, let's meet Thursday at 6pm.",
+    createdAt: hoursAgo(2)
+  },
+  {
+    id: "msg_005",
+    threadId: "thread_priya",
+    senderId: "user_priya",
+    text: "Thanks for submitting your application!",
+    createdAt: hoursAgo(16)
+  },
+  {
+    id: "msg_006",
+    threadId: "thread_priya",
+    senderId: "user_current",
+    text: "Great, let me know if you need anything else from me.",
+    createdAt: hoursAgo(12)
+  },
+  {
+    id: "msg_007",
+    threadId: "thread_hailey",
+    senderId: "user_current",
+    text: "Hi Hailey, can we keep the August 1 date?",
+    createdAt: hoursAgo(54)
+  },
+  {
+    id: "msg_008",
+    threadId: "thread_hailey",
+    senderId: "user_hailey",
+    text: "Yes that works, just bring ID for the tour.",
+    createdAt: hoursAgo(50)
+  }
+];
+
+export let mockProfile: Profile = {
+  id: "user_current",
+  name: "Tina Evans",
+  email: "tina.evans@example.com",
+  phone: "+1 (519) 555-7421",
+  avatarUrl: "/images/avatars/tina.png",
+  prefs: {
+    budgetMin: 1800,
+    budgetMax: 2500,
+    beds: 2,
+    baths: 1,
+    pets: true,
+    furnished: true,
+    areas: ["Waterloo", "Downtown Kitchener"]
+  },
+  notifications: {
+    newMatches: true,
+    messages: true,
+    applicationUpdates: false
+  },
+  verificationStatus: "verified"
 };
 
-export function filterProperties(all: Property[], q: PropertyFilter): Property[] {
-  const city = q.city?.trim().toLowerCase();
-  const postal = q.postalCode?.trim().toLowerCase();
-  return all.filter((p) => {
-    const matchesCity =
-      !city ||
-      p.city.toLowerCase().includes(city) ||
-      p.postalCode.toLowerCase().includes(city);
-    const matchesPostal = !postal || p.postalCode.toLowerCase().includes(postal);
-    const matchesType = !q.type || p.type === q.type;
-    const matchesMin = q.min == null || p.rent >= q.min;
-    const matchesMax = q.max == null || p.rent <= q.max;
-    const matchesFurnished =
-      q.furnished == null ? true : p.furnished === q.furnished;
-    return (
-      matchesCity &&
-      matchesPostal &&
-      matchesType &&
-      matchesMin &&
-      matchesMax &&
-      matchesFurnished
-    );
-  });
+export const mockCurrentUser = {
+  id: mockProfile.id,
+  role: "tenant" as const
+};
+
+export function appendMockMessage(message: Message) {
+  mockMessages = [...mockMessages, message];
 }
 
-export function landlordProperties(
-  landlordId: string,
-  list: Property[]
-): Property[] {
-  return list.filter((p) => p.landlordId === landlordId);
+export function updateMockThread(threadId: string, updater: (thread: MessageThread) => MessageThread) {
+  mockThreads = mockThreads.map((thread) => (thread.id === threadId ? updater(thread) : thread));
 }
 
-export function getPropertyById(list: Property[], id: string): Property | undefined {
-  return list.find((p) => p.id === id);
+export function setMockProfile(nextProfile: Profile) {
+  mockProfile = nextProfile;
 }
 
-export function getUserById(list: User[], id: string): User | undefined {
-  return list.find((u) => u.id === id);
+export function addMockThread(thread: MessageThread) {
+  const exists = mockThreads.some((item) => item.id === thread.id);
+  if (exists) return;
+  mockThreads = [...mockThreads, thread];
 }

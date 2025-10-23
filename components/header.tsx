@@ -1,160 +1,141 @@
-"use client";
-
 import Link from "next/link";
-import type { Route } from "next";
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
-import type { Session } from "@supabase/supabase-js";
+import { Suspense } from "react";
+import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 
-import { useTheme } from "@/app/theme-provider";
-import { Button, buttonStyles } from "@/components/ui/button";
-import { Icon } from "@/components/ui/icon";
-import { hasSupabaseEnv } from "@/lib/env";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { getProfile } from "@/lib/data-access/profile";
+import { buttonStyles } from "@/components/ui/button";
 
-type NavItem = { label: string; href: Route };
-
-const navItems = [
-  { label: "Home", href: "/" },
-  { label: "Browse", href: "/browse" },
-  { label: "Dashboard", href: "/dashboard" },
-  { label: "Messages", href: "/messages" },
-  { label: "Profile", href: "/profile" }
-] as const satisfies readonly NavItem[];
+const navLinks = [
+  { href: "/browse" as const, label: "Browse" },
+  { href: "/dashboard" as const, label: "Dashboard" },
+  { href: "/messages" as const, label: "Messages" }
+];
 
 export default function Header() {
-  const pathname = usePathname();
-  const router = useRouter();
-  const supabase = useMemo(
-    () => (hasSupabaseEnv ? createSupabaseBrowserClient() : null),
-    []
-  );
-  const [session, setSession] = useState<Session | null>(null);
-  const [initialising, setInitialising] = useState(true);
-
-  useEffect(() => {
-    let active = true;
-
-    if (!supabase) {
-      setInitialising(false);
-      return;
-    }
-
-    supabase.auth
-      .getSession()
-      .then(({ data: { session } }) => {
-        if (!active) return;
-        setSession(session);
-        setInitialising(false);
-      })
-      .catch(() => {
-        if (!active) return;
-        setInitialising(false);
-        setSession(null);
-      });
-
-    const {
-      data: { subscription }
-    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      setSession(nextSession);
-    });
-
-    return () => {
-      active = false;
-      subscription.unsubscribe();
-    };
-  }, [supabase]);
-
-  const handleSignOut = async () => {
-    if (!supabase) return;
-    await supabase.auth.signOut();
-    setSession(null);
-    router.replace("/");
-    router.refresh();
-  };
-
-  const isAuthenticated = Boolean(session);
-  const { theme, toggleTheme } = useTheme();
-  const isDark = theme === "dark";
-  const themeLabel = `Switch to ${isDark ? "light" : "dark"} mode`;
-
   return (
-    <header className="sticky top-0 z-40 border-b border-brand-dark/10 bg-surface/95 backdrop-blur supports-[backdrop-filter]:backdrop-blur dark:border-white/10">
-      <div className="mx-auto flex h-20 max-w-container items-center justify-between gap-6 px-4 sm:px-6 lg:px-8">
-        <Link href="/" className="text-xl font-black tracking-tight text-brand-teal">
-          RENTO
-        </Link>
-        <nav className="hidden items-center gap-6 text-sm font-medium text-text-muted md:flex">
-          {navItems.map((item) => {
-            const active =
-              pathname === item.href || pathname.startsWith(`${item.href}/`);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={
-                  active
-                    ? "text-brand-teal dark:text-brand-teal"
-                    : "text-text-muted transition-colors hover:text-brand-teal"
-                }
-              >
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
-        <div className="hidden items-center gap-3 md:flex">
-          <button
-            type="button"
-            onClick={toggleTheme}
-            className={`${buttonStyles({ variant: "outline", size: "sm" })} min-w-[120px] justify-center`}
-            aria-label={themeLabel}
-          >
-            <Icon name={isDark ? "sun" : "moon"} className="h-5 w-5" />
-            <span className="text-sm font-semibold">
-              {isDark ? "Light mode" : "Dark mode"}
-            </span>
-          </button>
-          {isAuthenticated ? (
-            <button
-              type="button"
-              onClick={handleSignOut}
-              className={`${buttonStyles({ variant: "outline", size: "sm" })} min-w-[104px]`}
-              disabled={initialising}
+    <header className="sticky top-0 z-40 border-b border-black/5 bg-brand-bg/80 backdrop-blur">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4">
+        <Brand />
+        <nav className="hidden items-center gap-1 lg:flex">
+          {navLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={{ pathname: link.href }}
+              className="rounded-full px-3 py-2 text-sm font-medium text-text-muted transition hover:text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg"
             >
-              Logout
-            </button>
-          ) : (
-            <>
-              <Link
-                href="/auth/sign-in"
-                className={`${buttonStyles({ variant: "outline", size: "sm" })} min-w-[104px]`}
-              >
-                Login
-              </Link>
-              <Link
-                href="/auth/sign-up"
-                className={`${buttonStyles({ variant: "primary", size: "sm" })} min-w-[104px]`}
-              >
-                Sign up
-              </Link>
-            </>
-          )}
-        </div>
-        <div className="flex items-center gap-2 md:hidden">
-          <button
-            type="button"
-            onClick={toggleTheme}
-            className={`${buttonStyles({ variant: "outline", size: "sm" })} px-3`}
-            aria-label={themeLabel}
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+        <div className="flex flex-1 items-center justify-end gap-3 lg:flex-none">
+          <Link
+            href={{ pathname: "/browse", query: { filters: "open" } }}
+            className="group hidden items-center gap-2 rounded-full border border-brand-teal/30 bg-surface px-4 py-2 text-sm font-semibold text-brand-teal shadow-sm transition hover:border-brand-teal hover:bg-brand-teal/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg md:inline-flex"
+            aria-label="Open home filters"
+            data-testid="header-search-shortcut"
           >
-            <Icon name={isDark ? "sun" : "moon"} className="h-5 w-5" />
-          </button>
-          <Button variant="outline" size="sm" aria-label="Open menu">
-            Menu
-          </Button>
+            <MagnifyingGlassIcon className="h-4 w-4 transition group-hover:scale-105" />
+            <span>Filters</span>
+          </Link>
+          <Suspense fallback={<SignInButtons />}>
+            <ProfileMenu />
+          </Suspense>
         </div>
       </div>
     </header>
+  );
+}
+
+function Brand() {
+  return (
+    <Link
+      href={{ pathname: "/" }}
+      className="flex items-center gap-2 text-lg font-bold uppercase tracking-tight text-brand-dark"
+    >
+      <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-teal text-white shadow-soft">
+        R
+      </span>
+      <span className="text-brand-dark">
+        Rento
+        <span className="text-brand-teal">.</span>
+      </span>
+    </Link>
+  );
+}
+
+async function ProfileMenu() {
+  const profile = await getProfile().catch(() => null);
+
+  if (!profile) {
+    return <SignInButtons />;
+  }
+
+  const initials = profile.name
+    .split(" ")
+    .map((part) => part.at(0))
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+  return (
+    <div className="flex items-center gap-3">
+      <Link
+        href={{ pathname: "/auth/sign-in" }}
+        className="hidden rounded-full px-3 py-2 text-sm font-medium text-text-muted transition hover:text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg md:inline-flex"
+      >
+        Sign out
+      </Link>
+      <Link
+        href={{ pathname: "/profile" }}
+        className="group flex items-center gap-2 rounded-full border border-transparent bg-surface px-2 py-1 shadow-sm transition hover:border-brand-teal/40 hover:bg-brand-teal/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg"
+        aria-label="Open profile menu"
+      >
+        <span className="hidden text-sm font-medium text-text-muted transition group-hover:text-brand-teal md:inline">
+          {profile.name.split(" ")[0]}
+        </span>
+        <span className="relative inline-flex h-10 w-10 items-center justify-center rounded-full bg-brand-teal/10 text-sm font-semibold text-brand-teal">
+          {profile.avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={profile.avatarUrl}
+              alt={profile.name}
+              className="h-10 w-10 rounded-full object-cover"
+            />
+          ) : (
+            initials || "U"
+          )}
+          {profile.verificationStatus === "verified" && (
+            <span className="absolute -bottom-1 -right-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-brand-green text-[10px] text-white shadow-soft">
+              ?
+            </span>
+          )}
+        </span>
+      </Link>
+    </div>
+  );
+}
+
+function SignInButtons() {
+  return (
+    <div className="flex items-center gap-2">
+      <Link
+        href={{ pathname: "/auth/sign-in" }}
+        className={buttonStyles({
+          variant: "ghost",
+          size: "sm"
+        })}
+      >
+        Sign in
+      </Link>
+      <Link
+        href={{ pathname: "/auth/sign-up" }}
+        className={buttonStyles({
+          variant: "primary",
+          size: "sm"
+        })}
+      >
+        Join Rento
+      </Link>
+    </div>
   );
 }

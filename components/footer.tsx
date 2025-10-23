@@ -1,31 +1,32 @@
-import Link from "next/link";
-import type { Route } from "next";
+﻿import Link from "next/link";
 
-type FooterLink = { label: string; href: Route };
-
-const footLinks = [
-  { label: "About", href: "/about" },
-  { label: "Contact", href: "/contact" },
-  { label: "Terms", href: "/terms" },
-  { label: "Privacy", href: "/privacy" },
-] as const satisfies readonly FooterLink[];
+const footerLinks = [
+  { href: "/browse" as const, label: "Browse" },
+  { href: "/privacy" as const, label: "Privacy" },
+  { href: "/contact" as const, label: "Support" }
+];
 
 export default function Footer() {
   return (
-    <footer className="border-t border-brand-dark/10 bg-brand-bg">
-      <div className="mx-auto flex max-w-container flex-col items-center justify-between gap-4 px-4 py-10 text-sm text-text-muted sm:px-6 lg:px-8 md:flex-row">
-        <nav className="flex flex-wrap items-center gap-5">
-          {footLinks.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="transition-colors hover:text-brand-teal"
-            >
-              {item.label}
-            </Link>
-          ))}
+    <footer className="border-t border-black/5 bg-white/60 backdrop-blur">
+      <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-8 text-sm text-text-muted md:flex-row md:items-center md:justify-between">
+        <p className="text-sm">
+          © {new Date().getFullYear()} Rento. All rights reserved.
+        </p>
+        <nav aria-label="Footer">
+          <ul className="flex flex-wrap items-center justify-center gap-4 md:justify-end">
+            {footerLinks.map((link) => (
+              <li key={link.href}>
+                <Link
+                  href={{ pathname: link.href }}
+                  className="rounded-full px-3 py-2 transition hover:text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+                >
+                  {link.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
         </nav>
-        <p>Copyright {new Date().getFullYear()} Rento Bridge. All rights reserved.</p>
       </div>
     </footer>
   );

@@ -1,193 +1,208 @@
-export const revalidate = 3600;
-
+import type { Metadata } from "next";
+import { Suspense } from "react";
 import Link from "next/link";
-import type { ReactNode } from "react";
+import {
+  ArrowRightIcon,
+  ClipboardDocumentCheckIcon,
+  KeyIcon,
+  MagnifyingGlassIcon,
+  ShieldCheckIcon
+} from "@heroicons/react/24/outline";
 
-import { FeaturedCard } from "@/components/featured-card";
-import { SearchHero } from "@/components/search/search-hero";
-import { Card, CardContent } from "@/components/ui/card";
+import PropertyCard from "@/components/PropertyCard";
+import SearchBar from "@/components/SearchBar";
 import { buttonStyles } from "@/components/ui/button";
-import { Icon } from "@/components/ui/icon";
-import type { IconName } from "@/components/ui/icon";
-import { getFeatured } from "@/lib/search/service";
-import type { ListingSummary } from "@/lib/search/types";
+import { getFeatured } from "@/lib/data-access/properties";
 
-export default async function Page() {
-  const featured = await getFeatured(4);
+export const metadata: Metadata = {
+  title: "Rento — Homes for rent",
+  description:
+    "Find your next place with Rento. Browse verified listings, message landlords, and move in with confidence."
+};
+
+export default async function HomePage() {
+  const featured = await getFeatured();
 
   return (
-    <div className="space-y-section">
-      <section className="px-4 sm:px-6 lg:px-8">
-        <SearchHero />
-      </section>
-
-      <section className="px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-container">
-          <Card className="rounded-3xl border-brand-dark/10 bg-surface px-6 py-10 shadow-sm transition-shadow hover:shadow-lg md:px-12 md:py-16">
-            <CardContent className="p-0">
-              <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
-                <div className="space-y-6">
-                  <span className="inline-flex items-center rounded-full bg-brand-teal/10 px-4 py-1 text-sm font-semibold text-brand-teal">
-                    Rental matchmaking made simple
-                  </span>
-                  <h2 className="text-4xl font-bold text-textc sm:text-5xl">
-                    Manage listings and renters with clarity.
-                  </h2>
-                  <p className="text-base text-text-muted">
-                    Whether you&apos;re listing a new property or searching for your next home,
-                    Rento Bridge keeps applications, messaging, and insights together so you can
-                    move forward with confidence.
-                  </p>
-                  <div className="flex flex-col gap-3 sm:flex-row">
-                    <Link
-                      href="/search"
-                      className={`${buttonStyles({ variant: "primary", size: "lg" })} w-full sm:w-auto`}
-                    >
-                      Find a rental
-                    </Link>
-                    <Link
-                      href="/dashboard"
-                      className={`${buttonStyles({ variant: "outline", size: "lg" })} w-full sm:w-auto`}
-                    >
-                      Manage my listings
-                    </Link>
-                  </div>
-                  <div className="flex items-center gap-4 text-sm text-text-muted">
-                    <div className="flex -space-x-2" aria-hidden>
-                      {["T", "L", "P"].map((initial) => (
-                        <span
-                          key={initial}
-                          className="flex h-10 w-10 items-center justify-center rounded-full border border-white bg-brand-teal text-sm font-bold text-white dark:border-slate-900"
-                        >
-                          {initial}
-                        </span>
-                      ))}
-                    </div>
-                    <span>Trusted by renters and landlords across the Rento Bridge community.</span>
-                  </div>
-                </div>
-
-                <div className="space-y-4 rounded-2xl border border-brand-dark/10 bg-surface-muted p-6">
-                  <StatCard title="Verified listings" value="120+">
-                    Explore homes that are reviewed by our team and ready for move-in.
-                  </StatCard>
-                  <StatCard title="Fast responses" value="Under 2 hours">
-                    Integrated messaging keeps conversations moving quickly.
-                  </StatCard>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-
-      <FeaturedSection featured={featured} />
-
-      <section className="px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-container space-y-6">
-          <div className="max-w-2xl space-y-2">
-            <h2 className="text-3xl font-semibold text-textc">
-              Why renters choose Rento Bridge
-            </h2>
-            <p className="text-sm text-text-muted">
-              Explore verified rentals and stay in control from your first search to the signed
-              lease.
-            </p>
-          </div>
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {benefits.map((benefit) => (
-              <Card key={benefit.title}>
-                <CardContent className="space-y-3">
-                  <Icon
-                    name={benefit.icon}
-                    className="h-8 w-8 text-brand-teal"
-                    ariaLabel={`${benefit.title} icon`}
-                  />
-                  <h3 className="text-lg font-semibold text-textc">
-                    {benefit.title}
-                  </h3>
-                  <p className="text-sm text-text-muted">{benefit.copy}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
+    <div className="space-y-16">
+      <HeroSection />
+      <FeaturedSection properties={featured} />
+      <HowItWorks />
+      <SafetyStrip />
+      <CallToAction />
     </div>
   );
 }
 
-function FeaturedSection({ featured }: { featured: ListingSummary[] }) {
+function HeroSection() {
   return (
-    <section className="px-4 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-container space-y-8">
-        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-          <div>
-            <h2 className="text-3xl font-semibold text-textc">
-              Featured rentals
-            </h2>
-            <p className="text-sm text-text-muted">
-              Explore verified rentals curated for convenience, community, and comfort.
-            </p>
-          </div>
-          <Link
-            href="/search"
-            className={`${buttonStyles({ variant: "outline" })} w-full justify-center md:w-auto`}
+    <section className="grid gap-10 rounded-3xl bg-gradient-to-br from-brand-blue/10 via-brand-teal/10 to-brand-green/10 px-6 py-12 shadow-soft sm:px-10">
+      <div className="space-y-6 text-center sm:text-left">
+        <span className="inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 text-sm font-semibold text-brand-teal shadow-soft">
+          New
+          <span className="text-brand-dark">Supabase-ready rental toolkit</span>
+        </span>
+        <h1 className="text-4xl font-extrabold text-brand-dark sm:text-5xl">
+          Find your next place with Rento
+        </h1>
+        <p className="text-lg text-text-muted sm:max-w-xl">
+          Discover verified rentals, explore neighbourhoods, and manage conversations in one
+          streamlined dashboard.
+        </p>
+      </div>
+      <Suspense fallback={<SearchBarFallback />}>
+        <SearchBar />
+      </Suspense>
+      <dl className="grid gap-4 text-sm text-text-muted sm:grid-cols-3">
+        {[
+          { label: "Verified listings", value: "120+" },
+          { label: "Active landlords", value: "65" },
+          { label: "Tours booked this month", value: "48" }
+        ].map((item) => (
+          <div
+            key={item.label}
+            className="rounded-2xl border border-white/60 bg-white/50 px-4 py-3 text-center shadow-sm"
           >
-            Browse marketplace
-          </Link>
-        </div>
-
-        {featured.length ? (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {featured.map((listing) => (
-              <FeaturedCard key={listing.id} listing={listing} />
-            ))}
+            <dt className="text-xs uppercase tracking-wide">{item.label}</dt>
+            <dd className="text-lg font-semibold text-brand-dark">{item.value}</dd>
           </div>
-        ) : (
-          <Card className="border-dashed">
-            <CardContent className="p-6 text-sm text-text-muted">
-              No featured rentals yet. Check back soon for new highlights.
-            </CardContent>
-          </Card>
-        )}
+        ))}
+      </dl>
+    </section>
+  );
+}
+
+function FeaturedSection({ properties }: { properties: Awaited<ReturnType<typeof getFeatured>> }) {
+  return (
+    <section aria-labelledby="featured-heading" className="space-y-6">
+      <header className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h2 id="featured-heading" className="text-2xl font-semibold text-brand-dark">
+            Featured homes
+          </h2>
+          <p className="text-sm text-text-muted">
+            Curated rentals updated daily. Switch to Supabase to load your live inventory.
+          </p>
+        </div>
+        <Link
+          href="/browse"
+          className={buttonStyles({ variant: "outline", size: "sm" })}
+          data-testid="featured-browse"
+        >
+          Browse all
+        </Link>
+      </header>
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {properties.map((property) => (
+          <PropertyCard key={property.id} property={property} />
+        ))}
       </div>
     </section>
   );
 }
 
-type Benefit = {
-  title: string;
-  copy: string;
-  icon: IconName;
-};
+function HowItWorks() {
+  const steps = [
+    {
+      title: "Browse verified homes",
+      description: "Use filters to match by price, neighbourhood, amenities, and pet policies.",
+      icon: MagnifyingGlassIcon
+    },
+    {
+      title: "Book tours & apply",
+      description: "Message landlords instantly, schedule tours, and submit applications in-app.",
+      icon: ClipboardDocumentCheckIcon
+    },
+    {
+      title: "Move in with support",
+      description: "Track applications, receive updates, and stay secure with verified partners.",
+      icon: KeyIcon
+    }
+  ];
 
-const benefits: readonly Benefit[] = [
-  {
-    title: "Smarter discovery",
-    copy: "Filter by location, price, beds, baths, and amenities to surface the perfect matches.",
-    icon: "discover"
-  },
-  {
-    title: "Stress-free onboarding",
-    copy: "Personalize your profile so landlords and renters understand your priorities instantly.",
-    icon: "sparkles"
-  },
-  {
-    title: "End-to-end management",
-    copy: "Track inquiries, update listings, and complete verifications without leaving Rento Bridge.",
-    icon: "manage"
-  }
-] as const;
-
-function StatCard({ title, value, children }: { title: string; value: string; children: ReactNode }) {
   return (
-    <div className="rounded-2xl bg-surface p-5 shadow-sm">
-      <div className="text-xs font-semibold uppercase tracking-wide text-text-muted">
-        {title}
+    <section aria-labelledby="how-heading" className="space-y-6">
+      <div className="space-y-2">
+        <h2 id="how-heading" className="text-2xl font-semibold text-brand-dark">
+          How Rento works
+        </h2>
+        <p className="text-sm text-text-muted">
+          A renting journey designed for transparency, speed, and peace of mind.
+        </p>
       </div>
-      <div className="text-3xl font-bold text-textc">{value}</div>
-      <p className="text-sm text-text-muted">{children}</p>
+      <div className="grid gap-6 md:grid-cols-3">
+        {steps.map((step) => (
+          <div
+            key={step.title}
+            className="space-y-4 rounded-3xl border border-black/5 bg-white p-6 text-left shadow-soft"
+          >
+            <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-teal/10 text-brand-teal">
+              <step.icon className="h-6 w-6" aria-hidden="true" />
+            </span>
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold text-brand-dark">{step.title}</h3>
+              <p className="text-sm text-text-muted">{step.description}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function SafetyStrip() {
+  return (
+    <section className="rounded-3xl border border-brand-green/30 bg-brand-green/10 px-6 py-5 text-sm font-semibold text-brand-green shadow-soft">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="inline-flex items-center gap-3">
+          <ShieldCheckIcon className="h-5 w-5" aria-hidden="true" />
+          <span>Verified listings &amp; secure messaging</span>
+        </div>
+        <Link
+          href={{ pathname: "/privacy" }}
+          className="text-xs font-semibold text-brand-green underline-offset-4 hover:underline"
+        >
+          Learn how we keep renters safe
+        </Link>
+      </div>
+    </section>
+  );
+}
+
+function CallToAction() {
+  return (
+    <section className="grid gap-6 rounded-3xl bg-gradient-to-r from-brand-blue/15 via-brand-teal/15 to-brand-green/15 px-6 py-10 shadow-soft sm:px-10 sm:py-12">
+      <div className="space-y-2">
+        <h2 className="text-2xl font-semibold text-brand-dark">Ready to start your search?</h2>
+        <p className="text-sm text-text-muted">
+          Browse homes, book tours, and message landlords without leaving the app.
+        </p>
+      </div>
+      <div className="flex flex-wrap items-center gap-3">
+        <Link
+          href="/browse"
+          className={buttonStyles({ variant: "primary", size: "lg" })}
+          data-testid="cta-browse"
+        >
+          Browse homes
+          <ArrowRightIcon className="ml-2 h-5 w-5" aria-hidden="true" />
+        </Link>
+        <Link
+          href="/auth/sign-up"
+          className={buttonStyles({ variant: "outline", size: "lg" })}
+          data-testid="cta-signup"
+        >
+          Create account
+        </Link>
+      </div>
+    </section>
+  );
+}
+
+function SearchBarFallback() {
+  return (
+    <div className="w-full rounded-3xl border border-black/5 bg-white p-6 shadow-soft">
+      <div className="h-12 animate-pulse rounded-2xl bg-surface-muted" />
     </div>
   );
 }
