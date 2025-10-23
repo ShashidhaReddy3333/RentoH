@@ -84,7 +84,13 @@ export default function ChatPane({ conversation, currentUserId, onSend }: ChatPa
         <h2 className="text-lg font-semibold text-textc">{conversation.title}</h2>
         <p className="text-xs">With {conversation.otherUserName}</p>
       </header>
-      <div ref={listRef} className="flex-1 space-y-3 overflow-y-auto bg-surface-muted px-4 py-5">
+      <div
+        ref={listRef}
+        role="log"
+        aria-live="polite"
+        aria-relevant="additions"
+        className="flex-1 space-y-3 overflow-y-auto bg-surface-muted px-4 py-5"
+      >
         {sortedMessages.map((message) => {
           const isMe = message.senderId === currentUserId;
           return (

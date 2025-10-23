@@ -18,6 +18,13 @@ export function SupabaseListener() {
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!event) return;
 
+      const csrf = document.cookie
+        .split("; ")
+        .find((cookie) => cookie.startsWith("rento_csrf="))
+        ?.split("=")[1];
+
+      if (!csrf) return;
+
       // Keep the Next.js server session in sync by posting to our callback route.
       await fetch(CALLBACK_ENDPOINT, {
         method: "POST",
@@ -25,7 +32,7 @@ export function SupabaseListener() {
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ event, session })
+        body: JSON.stringify({ event, session, csrf })
       });
     });
 

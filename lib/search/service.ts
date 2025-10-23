@@ -1,8 +1,10 @@
 import { z } from "zod";
 
 import { properties as mockProperties } from "@/lib/mock";
-import { hasSupabaseEnv } from "@/lib/env";
+import type { Property } from "@/lib/mock";
+import { env, hasSupabaseEnv } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import {
   type Amenity,
   type ListingSummary,
@@ -120,6 +122,63 @@ export async function searchListings(filters: SearchFilters): Promise<SearchResu
     console.error("[searchListings] failed to query Supabase", error);
     return { items: [], total: 0, hasMore: false };
   }
+}
+
+export async function getFeatured(limit = 4): Promise<ListingSummary[]> {
+  if (!hasSupabaseEnv) {
+    return getMockFeatured(limit);
+  }
+
+  if (!env.SUPABASE_SERVICE_ROLE_KEY) {
+    return getMockFeatured(limit);
+  }
+
+  try {
+    const client = createServiceClient();
+    const { data, error } = await client
+      .from("properties")
+      .select(
+        [
+          "id",
+          "title",
+          "rent",
+          "address",
+          "city",
+          "state",
+          "postal_code",
+          "neighborhood",
+          "latitude",
+          "longitude",
+          "bedrooms",
+          "bathrooms",
+          "property_type",
+          "square_feet",
+          "amenities",
+          "thumbnail_url",
+          "landlord_id"
+        ].join(",")
+      )
+      .eq("available", true)
+      .order("created_at", { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      throw error;
+    }
+
+    const rows = Array.isArray(data) ? ((data as unknown) as Record<string, unknown>[]) : [];
+    return rows.map((row) => mapRowToListing(row));
+  } catch (error) {
+    console.error("[getFeatured] failed to query Supabase", error);
+    return getMockFeatured(limit);
+  }
+}
+
+function getMockFeatured(limit: number): ListingSummary[] {
+  return mockProperties
+    .filter((property) => property.availability === "available")
+    .slice(0, limit)
+    .map((property) => mapMockPropertyToListing(property));
 }
 
 function sanitizeFilters(filters: SearchFilters): SearchFilters {
@@ -277,6 +336,31 @@ function mapRowToListing(row: Record<string, unknown>): ListingSummary {
       : null,
     thumbnail_url: (row["thumbnail_url"] as string | null) ?? null,
     landlord_id: (row["landlord_id"] as string | null) ?? null
+  };
+}
+
+function mapMockPropertyToListing(property: Property): ListingSummary {
+  return {
+    id: property.id,
+    slug: property.id,
+    title: property.title,
+    rent: property.rent,
+    address: property.address ?? null,
+    neighborhood: null,
+    city: property.city ?? null,
+    state: null,
+    postal_code: property.postalCode ?? null,
+    latitude: null,
+    longitude: null,
+    bedrooms: null,
+    bathrooms: null,
+    property_type: property.type ?? null,
+    square_feet: null,
+    amenities: property.amenities
+      .map((amenity) => toAmenityKey(amenity))
+      .filter((amenity): amenity is Amenity => amenity !== null),
+    thumbnail_url: property.images[0] ?? null,
+    landlord_id: property.landlordId ?? null
   };
 }
 

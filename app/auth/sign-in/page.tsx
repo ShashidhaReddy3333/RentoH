@@ -65,13 +65,17 @@ function SignInContent() {
 
       const { data } = await supabase.auth.getSession();
       if (data.session) {
+        const csrf = document.cookie
+          .split("; ")
+          .find((cookie) => cookie.startsWith("rento_csrf="))
+          ?.split("=")[1];
         await fetch('/auth/callback', {
           method: 'POST',
           credentials: 'include',
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ event: 'SIGNED_IN', session: data.session })
+          body: JSON.stringify({ event: 'SIGNED_IN', session: data.session, csrf })
         });
       }
 
@@ -143,8 +147,12 @@ function SignInContent() {
                 className="input"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
+                aria-describedby="signin-password-hint"
                 placeholder="••••••••"
               />
+              <p id="signin-password-hint" className="sr-only">
+                Minimum 8 characters. Do not share your password.
+              </p>
             </div>
 
             <button

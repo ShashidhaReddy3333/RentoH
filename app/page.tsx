@@ -1,18 +1,23 @@
+export const revalidate = 3600;
 
-"use client";
-
+import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { SearchHero } from "@/components/search/search-hero";
-import PropertyGrid from "@/components/property-grid";
-import { useAppState } from "@/components/providers/app-provider";
-import { buttonStyles } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { buttonStyles } from "@/components/ui/button";
+import { getFeatured } from "@/lib/search/service";
+import type { ListingSummary } from "@/lib/search/types";
 
-export default function LandingPage() {
-  const { properties, toggleFavorite, favorites } = useAppState();
-  const featured = properties.slice(0, 4);
+const currencyFormatter = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  maximumFractionDigits: 0
+});
+
+export default async function Page() {
+  const featured = await getFeatured(4);
 
   return (
     <div className="space-y-14">
@@ -45,7 +50,7 @@ export default function LandingPage() {
                 </Link>
               </div>
               <div className="flex items-center gap-4 text-sm text-textc/60">
-                <div className="flex -space-x-2">
+                <div className="flex -space-x-2" aria-hidden>
                   {["T", "L", "P"].map((initial) => (
                     <span
                       key={initial}
@@ -73,23 +78,7 @@ export default function LandingPage() {
         </CardContent>
       </Card>
 
-      <section className="space-y-6">
-        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-          <div>
-            <h2 className="text-2xl font-semibold text-textc">Featured rentals</h2>
-            <p className="text-sm text-textc/60">
-              Explore trending properties handpicked for location, value, and amenities.
-            </p>
-          </div>
-          <Link
-            href="/search"
-            className="text-sm font-medium text-brand.blue hover:text-brand.primary hover:underline"
-          >
-            Browse full marketplace
-          </Link>
-        </div>
-        <PropertyGrid properties={featured} toggleFavorite={toggleFavorite} favorites={favorites} />
-      </section>
+      <FeaturedSection featured={featured} />
 
       <section className="grid gap-6 lg:grid-cols-3">
         {benefits.map((benefit) => (
@@ -108,6 +97,93 @@ export default function LandingPage() {
   );
 }
 
+function FeaturedSection({ featured }: { featured: ListingSummary[] }) {
+  return (
+    <section className="space-y-6">
+      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+        <div>
+          <h2 className="text-2xl font-semibold text-textc">Featured rentals</h2>
+          <p className="text-sm text-textc/60">
+            Explore trending properties handpicked for location, value, and amenities.
+          </p>
+        </div>
+        <Link
+          href="/search"
+          className="text-sm font-medium text-brand.blue hover:text-brand.primary hover:underline"
+        >
+          Browse full marketplace
+        </Link>
+      </div>
+
+      {featured.length ? (
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {featured.map((listing) => (
+            <FeaturedCard key={listing.id} listing={listing} />
+          ))}
+        </div>
+      ) : (
+        <Card className="border-dashed">
+          <CardContent className="p-6 text-sm text-textc/70">
+            No featured rentals yet. Check back soon for new highlights.
+          </CardContent>
+        </Card>
+      )}
+    </section>
+  );
+}
+
+function FeaturedCard({ listing }: { listing: ListingSummary }) {
+  return (
+    <Card className="flex flex-col overflow-hidden rounded-2xl border border-brand-dark/10 bg-white/90 shadow-soft">
+      <div className="relative aspect-video w-full overflow-hidden bg-brand-bg">
+        {listing.thumbnail_url ? (
+          <Image
+            src={listing.thumbnail_url}
+            alt={`${listing.title} photo`}
+            fill
+            sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+            className="object-cover"
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center text-sm text-brand-dark/60">
+            Image coming soon
+          </div>
+        )}
+        <div className="absolute right-3 top-3 rounded-full bg-black/70 px-3 py-1 text-xs font-semibold text-white">
+          {formatRent(listing.rent)}
+        </div>
+      </div>
+      <div className="flex flex-1 flex-col gap-4 p-6">
+        <div className="space-y-1">
+          <h3 className="text-lg font-semibold text-textc">{listing.title}</h3>
+          <p className="text-sm text-textc/70">
+            {[listing.city, listing.state, listing.postal_code].filter(Boolean).join(", ") ||
+              "Location coming soon"}
+          </p>
+        </div>
+        <div className="mt-auto flex items-center gap-3">
+          <Link
+            href={`/listings/${listing.slug}`}
+            className={buttonStyles({ variant: "outline", size: "md" })}
+          >
+            View details
+          </Link>
+          <Link
+            href="/messages"
+            className={buttonStyles({ variant: "ghost", size: "md" })}
+          >
+            Message
+          </Link>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function formatRent(amount: number) {
+  return `${currencyFormatter.format(amount)}/mo`;
+}
+
 const benefits = [
   {
     title: "Smarter discovery",
@@ -124,7 +200,7 @@ const benefits = [
     copy: "Track inquiries, manage listings, and handle verifications without leaving Rento.",
     icon: "\u{1F4E6}"
   }
-];
+] as const;
 
 function StatCard({ title, value, children }: { title: string; value: string; children: ReactNode }) {
   return (

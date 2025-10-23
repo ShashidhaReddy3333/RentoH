@@ -4,7 +4,17 @@ import type { NextRequest } from 'next/server';
 import { env } from './lib/env';
 import { createSupabaseMiddlewareClient } from './lib/supabase/middleware';
 
-const PROTECTED_ROUTES = ['/dashboard', '/messages'];
+const PROTECTED_ROUTES = [
+  '/dashboard',
+  '/messages',
+  '/listings/new',
+  '/listings/:id/manage',
+  '/profile',
+  '/favorites',
+  '/admin',
+  '/admin/:path*'
+] as const;
+const ADMIN_ROUTES = ['/admin', '/admin/:path*'] as const;
 const AUTH_ROUTES = ['/auth/sign-in', '/auth/sign-up'];
 
 const supabaseHost = (() => {
@@ -56,7 +66,7 @@ const csp = [
   `connect-src ${connectSrc.join(' ')}`,
   `img-src ${imgSrc.join(' ')}`,
   `font-src ${fontSrc.join(' ')}`,
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:",
   "worker-src 'self' blob:",
   "frame-src 'self'",
   "media-src 'self' blob:",
@@ -64,13 +74,16 @@ const csp = [
   'upgrade-insecure-requests'
 ].join('; ');
 
+const PROTECTED_ROUTE_MATCHERS = PROTECTED_ROUTES.map(compilePattern);
+const ADMIN_ROUTE_MATCHERS = ADMIN_ROUTES.map(compilePattern);
+
 const SECURITY_HEADERS: Record<string, string> = {
   'Content-Security-Policy': csp,
   'Strict-Transport-Security': 'max-age=63072000; includeSubDomains; preload',
   'Referrer-Policy': 'strict-origin-when-cross-origin',
   'X-Frame-Options': 'DENY',
   'X-Content-Type-Options': 'nosniff',
-  'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=()'
+  'Permissions-Policy': 'interest-cohort=(), camera=(), microphone=(), geolocation=(), payment=()'
 };
 
 function applySecurityHeaders(res: NextResponse) {
@@ -88,7 +101,8 @@ export async function middleware(req: NextRequest) {
 
   const { pathname } = req.nextUrl;
 
-  const isProtectedRoute = PROTECTED_ROUTES.some((route) => pathname.startsWith(route));
+  const isProtectedRoute = PROTECTED_ROUTE_MATCHERS.some((matcher) => matcher.test(pathname));
+  const isAdminRoute = ADMIN_ROUTE_MATCHERS.some((matcher) => matcher.test(pathname));
   const isAuthRoute = AUTH_ROUTES.some((route) => pathname.startsWith(route));
 
   if (!session && isProtectedRoute) {
@@ -96,6 +110,14 @@ export async function middleware(req: NextRequest) {
     redirectUrl.pathname = '/auth/sign-in';
     redirectUrl.searchParams.set('next', pathname);
     return applySecurityHeaders(NextResponse.redirect(redirectUrl));
+  }
+
+  if (isAdminRoute) {
+    const role = req.cookies.get('rento_role')?.value;
+    if (role !== 'admin') {
+      const redirectUrl = new URL('/auth/sign-in?next=/admin', req.url);
+      return applySecurityHeaders(NextResponse.redirect(redirectUrl));
+    }
   }
 
   if (session && isAuthRoute) {
@@ -110,3 +132,11 @@ export async function middleware(req: NextRequest) {
 export const config = {
   matcher: ['/((?!_next/static|_next/image|favicon.ico).*)']
 };
+
+function compilePattern(pattern: string): RegExp {
+  const escaped = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const withWildcards = escaped
+    .replace(/\\:path\\\*/g, '.*')
+    .replace(/\\:[^/]+/g, '[^/]+');
+  return new RegExp(`^${withWildcards}`);
+}

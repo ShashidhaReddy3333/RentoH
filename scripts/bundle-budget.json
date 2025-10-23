@@ -1,0 +1,6 @@
+{
+  "routeJsGzipKbMax": 180,
+  "lcpMsMax": 2500,
+  "clsMax": 0.1,
+  "inpMsMax": 200
+}
