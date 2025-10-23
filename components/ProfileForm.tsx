@@ -1,8 +1,10 @@
 "use client";
 
 import { useMemo, useState, useTransition, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
 
 import AvatarUploader from "@/components/AvatarUploader";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import PreferenceToggles from "@/components/PreferenceToggles";
 import { buttonStyles } from "@/components/ui/button";
 import type { Profile } from "@/lib/types";
@@ -10,13 +12,16 @@ import type { Profile } from "@/lib/types";
 type ProfileFormProps = {
   profile: Profile;
   onSave: (patch: Partial<Profile>) => Promise<void>;
+  onDeleteAccount?: () => Promise<void>;
 };
 
-export default function ProfileForm({ profile, onSave }: ProfileFormProps) {
+export default function ProfileForm({ profile, onSave, onDeleteAccount }: ProfileFormProps) {
   const [form, setForm] = useState<Profile>(profile);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [deleting, setDeleting] = useState(false);
+  const router = useRouter();
 
   const areasInput = useMemo(
     () => form.prefs.areas?.join(", ") ?? "",
@@ -266,16 +271,40 @@ export default function ProfileForm({ profile, onSave }: ProfileFormProps) {
           <h2 id="danger-section" className="text-lg font-semibold text-red-700">
             Danger zone
           </h2>
-          <p className="text-sm text-red-500">
+          <p id="danger-zone-description" className="text-sm text-red-500">
             Deleting your account removes saved homes and messages. This action cannot be undone.
           </p>
         </header>
-        <button
-          type="button"
-          className="w-fit rounded-full border border-red-500 px-5 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-500 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+        <ConfirmDialog
+          title="Delete account?"
+          description="This permanently removes saved homes, applications, and messages. You won’t be able to recover them."
+          confirmLabel={deleting ? "Deleting..." : "Delete account"}
+          cancelLabel="Keep account"
+          destructive
+          onConfirm={async () => {
+            if (!onDeleteAccount) return;
+            setDeleting(true);
+            try {
+              await onDeleteAccount();
+              router.replace("/auth/sign-in");
+              router.refresh();
+            } catch (err) {
+              console.error(err);
+              setError("We couldn't delete your account right now. Please try again.");
+            } finally {
+              setDeleting(false);
+            }
+          }}
         >
-          Delete account
-        </button>
+          <button
+            type="button"
+            className={buttonStyles({ variant: "destructive", size: "md" })}
+            aria-describedby="danger-zone-description"
+            disabled={deleting}
+          >
+            Delete account
+          </button>
+        </ConfirmDialog>
       </section>
 
       <div className="flex justify-end">

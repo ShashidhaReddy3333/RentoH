@@ -7,7 +7,7 @@ import { buttonStyles } from "@/components/ui/button";
 import { getCurrentUser, getProfile } from "@/lib/data-access/profile";
 import type { Profile } from "@/lib/types";
 
-import { updateProfileAction } from "./actions";
+import { deleteAccountAction, updateProfileAction } from "./actions";
 
 export const metadata: Metadata = {
   title: "Profile - Rento",
@@ -36,6 +36,10 @@ export default async function ProfilePage() {
   const handleSave = async (patch: Partial<Profile>) => {
     await updateProfileAction(patch);
   };
+  const handleDelete = async () => {
+    "use server";
+    await deleteAccountAction();
+  };
 
   return (
     <div className="space-y-8">
@@ -45,7 +49,7 @@ export default async function ProfilePage() {
           Keep your details up to date to receive tailored matches and faster approvals.
         </p>
       </header>
-      <ProfileForm profile={profile} onSave={handleSave} />
+      <ProfileForm profile={profile} onSave={handleSave} onDeleteAccount={handleDelete} />
     </div>
   );
 }

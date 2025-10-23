@@ -2,15 +2,24 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 
 import ChatList from "@/components/ChatList";
-import ChatThread from "@/components/ChatThread";
 import EmptyState from "@/components/EmptyState";
-import MessageInput from "@/components/MessageInput";
 import { buttonStyles } from "@/components/ui/button";
 import type { Message, MessageThread } from "@/lib/types";
 
 import { sendMessageAction } from "./actions";
+
+const ChatThread = dynamic(() => import("@/components/ChatThread"), {
+  ssr: false,
+  loading: () => <div className="flex h-[320px] items-center justify-center text-sm text-text-muted">Loading conversation…</div>
+});
+
+const MessageInput = dynamic(() => import("@/components/MessageInput"), {
+  ssr: false,
+  loading: () => null
+});
 
 type MessagesClientProps = {
   threads: MessageThread[];

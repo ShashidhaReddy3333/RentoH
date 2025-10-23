@@ -1,3 +1,5 @@
+import { unstable_cache } from "next/cache";
+
 import { hasSupabaseEnv } from "@/lib/env";
 import { mockProperties } from "@/lib/mock";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -25,22 +27,32 @@ type SupabasePropertyRow = {
   created_at?: string | null;
 };
 
+const fetchFeaturedFromSupabase = unstable_cache(
+  async () => {
+    const supabase = createSupabaseServerClient();
+    const { data, error } = await supabase
+      .from("properties")
+      .select(
+        "id,title,price,beds,baths,type,city,verified,pets,furnished,images,created_at"
+      )
+      .eq("is_featured", true)
+      .order("created_at", { ascending: false })
+      .limit(6);
+
+    if (error || !data) {
+      throw error ?? new Error("Failed to load featured properties");
+    }
+
+    return data.map(mapPropertyFromSupabase);
+  },
+  ["properties:featured"],
+  { revalidate: 3600, tags: ["properties:featured"] }
+);
+
 export async function getFeatured(): Promise<Property[]> {
   if (hasSupabaseEnv) {
     try {
-      const supabase = createSupabaseServerClient();
-      const { data, error } = await supabase
-        .from("properties")
-        .select(
-          "id,title,price,beds,baths,type,city,verified,pets,furnished,images,created_at"
-        )
-        .eq("is_featured", true)
-        .order("created_at", { ascending: false })
-        .limit(6);
-
-      if (!error && data) {
-        return data.map(mapPropertyFromSupabase);
-      }
+      return await fetchFeaturedFromSupabase();
     } catch (error) {
       console.warn("[properties] Falling back to mock featured listings", error);
     }
@@ -56,70 +68,88 @@ export async function getFeatured(): Promise<Property[]> {
     .slice(0, 6);
 }
 
+async function fetchManyFromSupabase(
+  filters: PropertyFilters,
+  sort: PropertySort,
+  page: number
+): Promise<PaginatedResult<Property>> {
+  const supabase = createSupabaseServerClient();
+  let query = supabase
+    .from("properties")
+    .select(
+      "id,title,price,beds,baths,type,city,verified,pets,furnished,images,created_at",
+      { count: "exact" }
+    );
+
+  if (filters.city) {
+    query = query.ilike("city", `%${filters.city}%`);
+  }
+
+  if (filters.beds != null) {
+    query = query.gte("beds", filters.beds);
+  }
+
+  if (filters.baths != null) {
+    query = query.gte("baths", filters.baths);
+  }
+
+  if (filters.type) {
+    query = query.eq("type", filters.type);
+  }
+
+  if (filters.pets != null) {
+    query = query.eq("pets", filters.pets);
+  }
+
+  if (filters.furnished != null) {
+    query = query.eq("furnished", filters.furnished);
+  }
+
+  if (filters.verified != null) {
+    query = query.eq("verified", filters.verified);
+  }
+
+  if (filters.min != null) {
+    query = query.gte("price", filters.min);
+  }
+
+  if (filters.max != null) {
+    query = query.lte("price", filters.max);
+  }
+
+  query = applySortToQuery(query, sort);
+
+  const from = (page - 1) * PAGE_SIZE;
+  const to = from + PAGE_SIZE - 1;
+
+  const { data, error, count } = await query.range(from, to);
+
+  if (error || !data) {
+    throw error ?? new Error("Failed to load properties");
+  }
+
+  const items = data.map(mapPropertyFromSupabase);
+  const totalCount = typeof count === "number" ? count : undefined;
+  const hasNext = totalCount != null ? to + 1 < totalCount : items.length === PAGE_SIZE;
+  return { items, nextPage: hasNext ? page + 1 : undefined };
+}
+
 export async function getMany(
   filters: PropertyFilters = {},
   sort: PropertySort = "newest",
   page = 1
 ): Promise<PaginatedResult<Property>> {
   if (hasSupabaseEnv) {
+    const cacheKey = serializeFilters(filters);
     try {
-      const supabase = createSupabaseServerClient();
-      let query = supabase
-        .from("properties")
-        .select(
-          "id,title,price,beds,baths,type,city,verified,pets,furnished,images,created_at",
-          { count: "exact" }
-        );
-
-      if (filters.city) {
-        query = query.ilike("city", `%${filters.city}%`);
-      }
-
-      if (filters.beds != null) {
-        query = query.gte("beds", filters.beds);
-      }
-
-      if (filters.baths != null) {
-        query = query.gte("baths", filters.baths);
-      }
-
-      if (filters.type) {
-        query = query.eq("type", filters.type);
-      }
-
-      if (filters.pets != null) {
-        query = query.eq("pets", filters.pets);
-      }
-
-      if (filters.furnished != null) {
-        query = query.eq("furnished", filters.furnished);
-      }
-
-      if (filters.verified != null) {
-        query = query.eq("verified", filters.verified);
-      }
-
-      if (filters.min != null) {
-        query = query.gte("price", filters.min);
-      }
-
-      if (filters.max != null) {
-        query = query.lte("price", filters.max);
-      }
-
-      query = applySortToQuery(query, sort);
-
-      const from = (page - 1) * PAGE_SIZE;
-      const to = from + PAGE_SIZE - 1;
-
-      const { data, error, count } = await query.range(from, to);
-
-      if (!error && data) {
-        const items = data.map(mapPropertyFromSupabase);
-        const totalCount = typeof count === "number" ? count : undefined;
-        const hasNext = totalCount != null ? to + 1 < totalCount : items.length === PAGE_SIZE;
-        return { items, nextPage: hasNext ? page + 1 : undefined };
-      }
+      return await unstable_cache(
+        () => fetchManyFromSupabase(filters, sort, page),
+        ["properties:list", cacheKey, sort, String(page)],
+        {
+          revalidate: 120,
+          tags: ["properties:list"]
+        }
+      )();
     } catch (error) {
       console.warn("[properties] Falling back to mock listings", error);
     }
@@ -217,4 +247,9 @@ function applySortToQuery<T extends SortableQuery<T>>(query: T, sort: PropertySo
   }
 
   return query.order("created_at", { ascending: false });
+}
+
+function serializeFilters(filters: PropertyFilters) {
+  const entries = Object.entries(filters).sort(([a], [b]) => a.localeCompare(b));
+  return JSON.stringify(Object.fromEntries(entries));
 }

@@ -12,13 +12,37 @@ import {
 import PropertyCard from "@/components/PropertyCard";
 import SearchBar from "@/components/SearchBar";
 import { buttonStyles } from "@/components/ui/button";
+import { env } from "@/lib/env";
 import { getFeatured } from "@/lib/data-access/properties";
 
-export const metadata: Metadata = {
-  title: "Rento — Homes for rent",
-  description:
-    "Find your next place with Rento. Browse verified listings, message landlords, and move in with confidence."
-};
+export const revalidate = 3600;
+
+export async function generateMetadata(): Promise<Metadata> {
+  const siteUrl = env.NEXT_PUBLIC_SITE_URL ?? "https://rento.example";
+  const title = "Rento – Homes for rent";
+  const description =
+    "Find your next place with Rento. Browse verified listings, message landlords, and move in with confidence.";
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: siteUrl
+    },
+    openGraph: {
+      title,
+      description,
+      url: siteUrl,
+      siteName: "Rento",
+      type: "website"
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description
+    }
+  };
+}
 
 export default async function HomePage() {
   const featured = await getFeatured();
@@ -206,3 +230,4 @@ function SearchBarFallback() {
     </div>
   );
 }
+

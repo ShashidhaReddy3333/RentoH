@@ -2,13 +2,40 @@ import type { Metadata } from "next";
 
 import BrowseClient from "@/app/browse/BrowseClient";
 import { getMany } from "@/lib/data-access/properties";
+import { env } from "@/lib/env";
 import type { FiltersState } from "@/components/FiltersSheet";
 import type { PropertyFilters, PropertySort } from "@/lib/types";
 
-export const metadata: Metadata = {
-  title: "Browse rentals - Rento",
-  description: "Filter by price, amenities, and verification status to discover your next rental."
-};
+export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const siteUrl = env.NEXT_PUBLIC_SITE_URL ?? "https://rento.example";
+  const url = `${siteUrl.replace(/\/$/, "")}/browse`;
+  const title = "Browse rentals - Rento";
+  const description =
+    "Filter by price, amenities, and verification status to discover your next rental.";
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: url
+    },
+    openGraph: {
+      title,
+      description,
+      url,
+      siteName: "Rento",
+      type: "website"
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description
+    }
+  };
+}
 
 type SearchParams = { [key: string]: string | string[] | undefined };
 

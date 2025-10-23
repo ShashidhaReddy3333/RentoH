@@ -12,7 +12,9 @@ export const buttonStyles = cva(
           "bg-brand-teal text-white shadow-sm hover:bg-brand-teal/90 focus-visible:ring-brand-teal/80",
         outline:
           "border border-brand-teal/30 bg-surface text-brand-teal hover:border-brand-teal hover:bg-brand-teal/10 dark:border-brand-teal/40 dark:bg-surface dark:text-brand-teal",
-        ghost: "text-textc hover:bg-brand-teal/10 dark:text-textc"
+        ghost: "text-textc hover:bg-brand-teal/10 dark:text-textc",
+        destructive:
+          "bg-red-600 text-white shadow-sm hover:bg-red-700 focus-visible:ring-red-600/70"
       },
       size: {
         sm: "px-4 text-sm",

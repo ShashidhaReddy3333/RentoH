@@ -44,6 +44,9 @@ export default function MessageInput({ threadId, onSend, disabled = false }: Mes
         <label htmlFor="message-textarea" className="sr-only">
           Message
         </label>
+        <p id="message-input-hint" className="sr-only">
+          Press Enter to send. Shift and Enter adds a new line.
+        </p>
         <textarea
           id="message-textarea"
           value={value}
@@ -51,6 +54,7 @@ export default function MessageInput({ threadId, onSend, disabled = false }: Mes
           onKeyDown={handleKeyDown}
           className="min-h-[120px] w-full resize-none rounded-2xl border border-black/5 bg-surface px-4 py-3 text-sm text-textc focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal"
           placeholder={threadId ? "Type your message..." : "Select a conversation to start chatting"}
+          aria-describedby="message-input-hint"
           data-testid="message-input"
         />
         <div className="flex items-center justify-end gap-2">

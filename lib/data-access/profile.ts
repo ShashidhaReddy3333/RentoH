@@ -108,6 +108,31 @@ export async function updateProfile(patch: Partial<Profile>): Promise<Profile> {
   return clone(nextProfile);
 }
 
+export async function deleteAccount(): Promise<void> {
+  if (hasSupabaseEnv) {
+    try {
+      const supabase = createSupabaseServerClient();
+      const { error } = await supabase.from("profiles").delete().eq("id", CURRENT_USER_ID);
+      if (error) {
+        throw error;
+      }
+    } catch (error) {
+      console.warn("[profile] Failed to delete Supabase profile, falling back to mock", error);
+    }
+  }
+
+  setMockProfile({
+    id: mockProfile.id,
+    name: "Removed Renter",
+    email: mockProfile.email,
+    phone: undefined,
+    avatarUrl: undefined,
+    prefs: {},
+    notifications: { newMatches: false, messages: false, applicationUpdates: false },
+    verificationStatus: "unverified"
+  });
+}
+
 function mapProfileFromSupabase(record: SupabaseProfileRow): Profile {
   return {
     id: record.id,

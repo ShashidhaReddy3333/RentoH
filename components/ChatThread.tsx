@@ -17,7 +17,7 @@ export default function ChatThread({ messages, loading = false }: ChatThreadProp
   useEffect(() => {
     const viewport = viewportRef.current;
     if (!viewport) return;
-    viewport.scrollTo({ top: viewport.scrollHeight, behavior: "smooth" });
+    viewport.scrollTop = viewport.scrollHeight;
   }, [messages.length]);
 
   return (
@@ -28,7 +28,15 @@ export default function ChatThread({ messages, loading = false }: ChatThreadProp
           <p className="text-xs text-text-muted">Messages are synced when Supabase is connected.</p>
         </div>
       </header>
-      <div ref={viewportRef} className="flex-1 space-y-4 overflow-y-auto px-6 py-6">
+      <div
+        ref={viewportRef}
+        role="log"
+        aria-live="polite"
+        aria-relevant="additions"
+        aria-label="Conversation messages"
+        tabIndex={0}
+        className="flex-1 space-y-4 overflow-y-auto px-6 py-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal"
+      >
         {loading ? (
           <div className="flex flex-col gap-3">
             <Bubble skeleton align="left" />
@@ -41,10 +49,7 @@ export default function ChatThread({ messages, loading = false }: ChatThreadProp
               key={message.id}
               align={message.senderId === CURRENT_USER_ID ? "right" : "left"}
               text={message.text}
-              timestamp={new Date(message.createdAt).toLocaleTimeString(undefined, {
-                hour: "numeric",
-                minute: "2-digit"
-              })}
+              timestamp={message.createdAt}
             />
           ))
         )}
@@ -72,6 +77,15 @@ function Bubble({
       ? "ml-auto rounded-br-md bg-brand-teal text-white"
       : "mr-auto rounded-bl-md bg-surface text-brand-dark";
 
+  const formattedTimestamp =
+    timestamp &&
+    new Date(timestamp).toLocaleTimeString(undefined, {
+      hour: "numeric",
+      minute: "2-digit"
+    });
+
+  const senderLabel = align === "right" ? "You" : "They";
+
   if (skeleton) {
     return (
       <div className={`flex ${align === "right" ? "justify-end" : "justify-start"}`}>
@@ -81,15 +95,21 @@ function Bubble({
   }
 
   return (
-    <div className={`flex ${align === "right" ? "justify-end" : "justify-start"} flex-col gap-2`}>
+    <div
+      className={`flex ${align === "right" ? "justify-end" : "justify-start"} flex-col gap-2`}
+      role="group"
+      aria-label={`${senderLabel} said ${text ?? ""}`}
+    >
       <span className={`${baseClasses} ${alignClass}`}>{text}</span>
-      <time
-        className="text-xs text-text-muted"
-        dateTime={timestamp}
-        aria-label={`Sent at ${timestamp}`}
-      >
-        {timestamp}
-      </time>
+      {formattedTimestamp ? (
+        <time
+          className="text-xs text-text-muted"
+          dateTime={timestamp}
+          aria-label={`${senderLabel} sent this at ${formattedTimestamp}`}
+        >
+          {formattedTimestamp}
+        </time>
+      ) : null}
     </div>
   );
 }
