@@ -10,7 +10,7 @@ export type Property = {
   price: number;
   beds: number;
   baths: number;
-  type: "apartment" | "house" | "condo";
+  type: "apartment" | "house" | "condo" | "townhouse";
   city: string;
   verified: boolean;
   pets: boolean;
@@ -26,6 +26,7 @@ export type Property = {
   walkthroughVideoUrl?: string;
   walkScore?: number;
   transitScore?: number;
+  status?: "draft" | "active" | "archived";
 };
 
 export type Message = {
@@ -87,4 +88,34 @@ export type PaginatedResult<TItem> = {
   nextPage?: number;
 };
 
-export type UserRole = "tenant" | "landlord" | "guest";
+export type UserRole = "tenant" | "landlord" | "admin" | "guest";
+
+export type TourStatus = "requested" | "confirmed" | "completed" | "cancelled";
+
+export type Tour = {
+  id: string;
+  propertyId: string;
+  propertyTitle: string;
+  scheduledAt: string;
+  city?: string;
+  status: TourStatus;
+};
+
+export type ApplicationStatus =
+  | "draft"
+  | "submitted"
+  | "reviewing"
+  | "interview"
+  | "approved"
+  | "rejected";
+
+export type ApplicationSummary = {
+  id: string;
+  propertyId: string;
+  applicantId: string;
+  applicantName: string;
+  propertyTitle: string;
+  status: ApplicationStatus;
+  submittedAt: string;
+};
+

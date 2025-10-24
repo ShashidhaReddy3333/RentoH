@@ -1,6 +1,7 @@
-import { hasSupabaseEnv } from "@/lib/env";
+﻿import { hasSupabaseEnv } from "@/lib/env";
 import { mockProperties } from "@/lib/mock";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseClientWithUser } from "@/lib/supabase/auth";
 import type {
   PaginatedResult,
   Property,
@@ -10,7 +11,7 @@ import type {
 
 const PAGE_SIZE = 12;
 
-type SupabasePropertyRow = {
+export type SupabasePropertyRow = {
   id: string;
   title: string;
   price: number;
@@ -24,6 +25,7 @@ type SupabasePropertyRow = {
   images?: string[] | string | null;
   created_at?: string | null;
   address?: string | null;
+  postal_code?: string | null;
   description?: string | null;
   amenities?: string[] | string | null;
   area?: number | null;
@@ -34,9 +36,10 @@ type SupabasePropertyRow = {
   walk_score?: number | null;
   transit_score?: number | null;
   walkthrough_video_url?: string | null;
+  status?: string | null;
 };
 
-const PROPERTY_COLUMNS = `
+export const PROPERTY_COLUMNS = `
   id,
   title,
   price,
@@ -50,6 +53,7 @@ const PROPERTY_COLUMNS = `
   images,
   created_at,
   address,
+  postal_code,
   description,
   amenities,
   area,
@@ -59,13 +63,17 @@ const PROPERTY_COLUMNS = `
   longitude,
   walk_score,
   transit_score,
-  walkthrough_video_url
+  walkthrough_video_url,
+  status
 `;
 
 export async function getFeatured(): Promise<Property[]> {
   if (hasSupabaseEnv) {
     try {
       const supabase = createSupabaseServerClient();
+      if (!supabase) {
+        throw new Error("Supabase client unavailable.");
+      }
       const { data, error } = await supabase
         .from("properties")
         .select(PROPERTY_COLUMNS)
@@ -74,7 +82,7 @@ export async function getFeatured(): Promise<Property[]> {
         .limit(6);
 
       if (!error && data) {
-        return data.map(mapPropertyFromSupabase);
+        return data.map(mapPropertyFromSupabaseRow);
       }
     } catch (error) {
       console.warn("[properties] Falling back to mock featured listings", error);
@@ -97,6 +105,9 @@ async function fetchManyFromSupabase(
   page: number
 ): Promise<PaginatedResult<Property>> {
   const supabase = createSupabaseServerClient();
+  if (!supabase) {
+    throw new Error("Supabase client unavailable.");
+  }
   let query = supabase
     .from("properties")
     .select(PROPERTY_COLUMNS, { count: "exact" });
@@ -148,7 +159,7 @@ async function fetchManyFromSupabase(
     throw error ?? new Error("Failed to load properties");
   }
 
-  const items = data.map(mapPropertyFromSupabase);
+  const items = data.map(mapPropertyFromSupabaseRow);
   const totalCount = typeof count === "number" ? count : undefined;
   const hasNext = totalCount != null ? to + 1 < totalCount : items.length === PAGE_SIZE;
   return { items, nextPage: hasNext ? page + 1 : undefined };
@@ -174,7 +185,7 @@ export async function getMany(
   return paged;
 }
 
-function mapPropertyFromSupabase(record: SupabasePropertyRow): Property {
+export function mapPropertyFromSupabaseRow(record: SupabasePropertyRow): Property {
   return {
     id: record.id,
     title: record.title,
@@ -200,7 +211,8 @@ function mapPropertyFromSupabase(record: SupabasePropertyRow): Property {
         : undefined,
     walkScore: record.walk_score ?? undefined,
     transitScore: record.transit_score ?? undefined,
-    walkthroughVideoUrl: record.walkthrough_video_url ?? undefined
+    walkthroughVideoUrl: record.walkthrough_video_url ?? undefined,
+    status: mapStatus(record.status)
   };
 }
 
@@ -282,6 +294,9 @@ export async function getById(id: string): Promise<Property | null> {
   if (hasSupabaseEnv) {
     try {
       const supabase = createSupabaseServerClient();
+      if (!supabase) {
+        throw new Error("Supabase client unavailable.");
+      }
       const { data, error } = await supabase
         .from("properties")
         .select(PROPERTY_COLUMNS)
@@ -289,7 +304,7 @@ export async function getById(id: string): Promise<Property | null> {
         .maybeSingle();
 
       if (!error && data) {
-        return mapPropertyFromSupabase(data);
+        return mapPropertyFromSupabaseRow(data);
       }
     } catch (error) {
       console.warn("[properties] Failed to load property by id, falling back to mocks", error);
@@ -298,6 +313,27 @@ export async function getById(id: string): Promise<Property | null> {
 
   const fallback = mockProperties.find((property) => property.id === id);
   return fallback ? cloneProperty(fallback) : null;
+}
+
+export async function listOwnedProperties(limit = 4): Promise<Property[]> {
+  const { supabase, user } = await getSupabaseClientWithUser();
+  if (!supabase || !user) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("properties")
+    .select(PROPERTY_COLUMNS)
+    .eq("landlord_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error || !data) {
+    console.error("[properties] Failed to load landlord properties", error);
+    return [];
+  }
+
+  return data.map(mapPropertyFromSupabaseRow);
 }
 
 function toStringArray(value: string[] | string | null | undefined): string[] {
@@ -315,6 +351,13 @@ function toStringArray(value: string[] | string | null | undefined): string[] {
   return [];
 }
 
+function mapStatus(value: string | null | undefined): Property["status"] | undefined {
+  if (value === "draft" || value === "active" || value === "archived") {
+    return value;
+  }
+  return undefined;
+}
+
 function cloneProperty(property: Property): Property {
   if (typeof structuredClone === "function") {
     return structuredClone(property);
@@ -322,3 +365,16 @@ function cloneProperty(property: Property): Property {
 
   return JSON.parse(JSON.stringify(property)) as Property;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+

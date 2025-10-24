@@ -17,7 +17,8 @@ type PropertyCardProps = {
 const typeLabels: Record<Property["type"], string> = {
   apartment: "Apartment",
   house: "House",
-  condo: "Condo"
+  condo: "Condo",
+  townhouse: "Townhouse"
 };
 
 export default function PropertyCard({ property }: PropertyCardProps) {

@@ -30,9 +30,16 @@ export default async function ProfilePage() {
       />
     );
   }
-
   const profile = await getProfile();
 
+  if (!profile) {
+    return (
+      <EmptyState
+        title="We couldn't load your profile"
+        description="Check your Supabase connection or try again in a moment."
+      />
+    );
+  }
   const handleSave = async (patch: Partial<Profile>) => {
     await updateProfileAction(patch);
   };

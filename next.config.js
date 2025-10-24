@@ -14,7 +14,7 @@ const nextConfig = {
   poweredByHeader: false,
   experimental: {
     typedRoutes: true,
-    optimizePackageImports: ['lucide-react']
+    optimizePackageImports: ['@heroicons/react/24/outline', '@heroicons/react/24/solid']
   },
   images: {
     remotePatterns: [
@@ -23,6 +23,16 @@ const nextConfig = {
       { protocol: 'https', hostname: 'api.dicebear.com' },
       ...(supabaseHost ? [{ protocol: 'https', hostname: supabaseHost }] : [])
     ]
+  },
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.performance = {
+        hints: 'warning',
+        maxEntrypointSize: 512_000,
+        maxAssetSize: 512_000
+      };
+    }
+    return config;
   }
 };
 

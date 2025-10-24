@@ -148,7 +148,7 @@ function SignInContent() {
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 aria-describedby="signin-password-hint"
-                placeholder="********"
+                placeholder="Enter your password"
               />
               <p id="signin-password-hint" className="sr-only">
                 Minimum 8 characters. Do not share your password.
@@ -175,10 +175,7 @@ function SignInContent() {
 
           <p className="text-center text-sm text-textc/70">
             New to Rento Bridge?{' '}
-            <Link
-              href="/auth/sign-up"
-              className="text-brand.blue hover:text-brand.primary hover:underline"
-            >
+            <Link href="/auth/sign-up" className="text-brand-blue hover:text-brand-teal hover:underline">
               Create an account
             </Link>
           </p>

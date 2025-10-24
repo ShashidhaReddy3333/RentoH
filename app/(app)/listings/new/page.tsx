@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { env } from "@/lib/env";
+import { hasSupabaseEnv } from "@/lib/env";
 
 import NewListingClient from "./NewListingClient";
 
@@ -20,7 +20,7 @@ export default function NewListingPage() {
         </p>
       </header>
       <NewListingClient />
-      {!env.NEXT_PUBLIC_SUPABASE_URL && (
+      {!hasSupabaseEnv && (
         <p className="text-xs text-text-muted">
           Supabase credentials are not configured, so submissions remain in-memory for testing purposes.
         </p>

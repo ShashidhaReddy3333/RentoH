@@ -1,10 +1,11 @@
-"use client";
+﻿"use client";
 
-import { useState, type FormEvent, type ReactNode } from "react";
+import type { ReactNode } from "react";
+import { useFormState, useFormStatus } from "react-dom";
 
 import { buttonStyles } from "@/components/ui/button";
 
-type SubmitState = "idle" | "success" | "error";
+import { createListingAction, initialListingFormState, type ListingFormState } from "./actions";
 
 const propertyTypes = [
   { value: "apartment", label: "Apartment" },
@@ -14,58 +15,33 @@ const propertyTypes = [
 ];
 
 export default function NewListingClient() {
-  const [state, setState] = useState<SubmitState>("idle");
-  const [error, setError] = useState<string | null>(null);
-
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const form = event.currentTarget;
-    const data = new FormData(form);
-
-    const title = (data.get("title") as string | null)?.trim();
-    const rent = Number(data.get("rent"));
-
-    if (!title || Number.isNaN(rent)) {
-      setError("Title and rent are required to save a listing.");
-      setState("error");
-      return;
-    }
-
-    setState("success");
-    setError(null);
-    form.reset();
-
-    // Reset success banner after a short delay so the flow can be repeated in demos/tests.
-    window.setTimeout(() => {
-      setState("idle");
-    }, 4000);
-  };
+  const [state, formAction] = useFormState(createListingAction, initialListingFormState);
 
   return (
     <form
-      onSubmit={handleSubmit}
+      action={formAction}
       className="space-y-6 rounded-3xl border border-black/5 bg-white p-8 shadow-soft"
       aria-describedby="new-listing-description"
     >
       <p id="new-listing-description" className="text-sm text-text-muted">
-        Provide basic property details to generate a mocked listing. All values remain local until Supabase actions are wired.
+        Provide property details to publish a draft listing to Supabase. Fields marked with an asterisk are required.
       </p>
 
-      {state === "success" ? (
+      {state.status === "success" ? (
         <div
           role="status"
           className="rounded-2xl border border-brand-teal/40 bg-brand-teal/10 px-4 py-3 text-sm font-semibold text-brand-teal"
         >
-          Property saved! Redirecting you to manage the listing...
+          Property saved! Refreshing your dashboard shortly.
         </div>
       ) : null}
 
-      {state === "error" && error ? (
+      {state.status === "error" ? (
         <div
           role="alert"
           className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600"
         >
-          {error}
+          {state.message}
         </div>
       ) : null}
 
@@ -133,13 +109,7 @@ export default function NewListingClient() {
         </FormField>
 
         <FormField label="Property type" htmlFor="propertyType" required>
-          <select
-            id="propertyType"
-            name="propertyType"
-            required
-            className="input"
-            defaultValue=""
-          >
+          <select id="propertyType" name="propertyType" required className="input" defaultValue="">
             <option value="" disabled>
               Select type
             </option>
@@ -164,11 +134,22 @@ export default function NewListingClient() {
       </FormField>
 
       <div className="flex justify-end">
-        <button type="submit" className={buttonStyles({ variant: "primary", size: "lg" })}>
-          Save listing
-        </button>
+        <SubmitButton state={state} />
       </div>
     </form>
+  );
+}
+
+function SubmitButton({ state }: { state: ListingFormState }) {
+  const { pending } = useFormStatus();
+  return (
+    <button
+      type="submit"
+      className={buttonStyles({ variant: "primary", size: "lg" })}
+      disabled={pending}
+    >
+      {pending ? "Saving..." : state.status === "success" ? "Saved" : "Save listing"}
+    </button>
   );
 }
 

@@ -13,7 +13,11 @@ import { sendMessageAction } from "./actions";
 
 const ChatThread = dynamic(() => import("@/components/ChatThread"), {
   ssr: false,
-  loading: () => <div className="flex h-[320px] items-center justify-center text-sm text-text-muted">Loading conversation…</div>
+  loading: () => (
+    <div className="flex h-[320px] items-center justify-center text-sm text-text-muted">
+      Loading conversation...
+    </div>
+  )
 });
 
 const MessageInput = dynamic(() => import("@/components/MessageInput"), {
@@ -25,12 +29,14 @@ type MessagesClientProps = {
   threads: MessageThread[];
   initialMessages: Message[];
   activeThreadId?: string;
+  currentUserId?: string;
 };
 
 export default function MessagesClient({
   threads,
   initialMessages,
-  activeThreadId
+  activeThreadId,
+  currentUserId
 }: MessagesClientProps) {
   const router = useRouter();
 
@@ -69,7 +75,7 @@ export default function MessagesClient({
     const optimistic: Message = {
       id: `temp-${Date.now()}`,
       threadId: currentThreadId,
-      senderId: "user_current",
+      senderId: currentUserId ?? "self",
       text,
       createdAt: new Date().toISOString()
     };
@@ -89,15 +95,11 @@ export default function MessagesClient({
 
   return (
     <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
-      <ChatList
-        threads={threads}
-        activeThreadId={currentThreadId}
-      />
+      <ChatList threads={threads} activeThreadId={currentThreadId} />
       <div className="space-y-4">
-        <ChatThread messages={messages} />
+        <ChatThread messages={messages} currentUserId={currentUserId} />
         <MessageInput threadId={currentThreadId} onSend={handleSend} disabled={!currentThreadId} />
       </div>
     </div>
   );
 }
-

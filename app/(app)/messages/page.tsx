@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 
-import MessagesClient from "@/app/messages/MessagesClient";
+import MessagesClient from "@/app/(app)/messages/MessagesClient";
+import { getCurrentUser } from "@/lib/data-access/profile";
 import { getThreadMessages, listThreads } from "@/lib/data-access/messages";
 
 export const metadata: Metadata = {
@@ -13,7 +14,7 @@ export default async function MessagesPage({
 }: {
   searchParams: { [key: string]: string | string[] | undefined };
 }) {
-  const threads = await listThreads();
+  const [threads, currentUser] = await Promise.all([listThreads(), getCurrentUser()]);
   const activeThreadId = resolveThreadId(searchParams["t"], threads);
   const messages = activeThreadId ? await getThreadMessages(activeThreadId) : [];
 
@@ -29,6 +30,7 @@ export default async function MessagesPage({
         threads={threads}
         initialMessages={messages}
         activeThreadId={activeThreadId}
+        currentUserId={currentUser?.id}
       />
     </div>
   );

@@ -4,14 +4,13 @@ import { useEffect, useRef } from "react";
 
 import type { Message } from "@/lib/types";
 
-const CURRENT_USER_ID = "user_current";
-
 type ChatThreadProps = {
   messages: Message[];
   loading?: boolean;
+  currentUserId?: string;
 };
 
-export default function ChatThread({ messages, loading = false }: ChatThreadProps) {
+export default function ChatThread({ messages, loading = false, currentUserId }: ChatThreadProps) {
   const viewportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -47,7 +46,7 @@ export default function ChatThread({ messages, loading = false }: ChatThreadProp
           messages.map((message) => (
             <Bubble
               key={message.id}
-              align={message.senderId === CURRENT_USER_ID ? "right" : "left"}
+              align={message.senderId === currentUserId ? "right" : "left"}
               text={message.text}
               timestamp={message.createdAt}
             />

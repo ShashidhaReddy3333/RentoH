@@ -31,6 +31,10 @@ export async function POST(request: Request) {
   }
 
   const supabase = createSupabaseServerClient();
+  if (!supabase) {
+    return NextResponse.json({ error: "Supabase unavailable." }, { status: 503 });
+  }
+
   const { event, session } = body;
 
   if (
@@ -60,6 +64,9 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = createSupabaseServerClient();
+    if (!supabase) {
+      return NextResponse.redirect(`${origin}/auth/auth-code-error`);
+    }
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
       return NextResponse.redirect(`${origin}${next}`);
@@ -77,3 +84,5 @@ function timingSafeEquals(left: string, right: string): boolean {
   }
   return crypto.timingSafeEqual(leftBuffer, rightBuffer);
 }
+
+

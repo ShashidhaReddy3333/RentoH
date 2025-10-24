@@ -76,9 +76,41 @@ export default async function PropertyDetail({ params }: Params) {
   const [nearby, currentUser] = await Promise.all([loadNearbyProperties(property), getCurrentUser()]);
   const isAuthenticated = Boolean(currentUser);
   const mapboxToken = env.NEXT_PUBLIC_MAPBOX_TOKEN ?? null;
+  const baseUrl = (env.NEXT_PUBLIC_SITE_URL ?? "https://rento.example").replace(/\/$/, "");
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "RealEstateListing",
+    name: property.title,
+    url: `${baseUrl}/property/${property.id}`,
+    description:
+      property.description ??
+      `View details for ${property.title} in ${property.city}. Check pricing, availability, and amenities.`,
+    address: property.address ?? undefined,
+    numberOfRooms: property.beds,
+    numberOfBathroomsTotal: property.baths,
+    petsAllowed: property.pets,
+    floorSize: property.area
+      ? {
+          "@type": "QuantitativeValue",
+          value: property.area,
+          unitText: "SQFT"
+        }
+      : undefined,
+    offers: {
+      "@type": "Offer",
+      price: property.price,
+      priceCurrency: "USD",
+      availability: "https://schema.org/InStock",
+      url: `${baseUrl}/property/${property.id}`
+    }
+  };
 
   return (
     <article className="space-y-8 text-textc">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
       <nav aria-label="Breadcrumb" className="text-sm text-text-muted">
         <ol className="flex flex-wrap items-center gap-1">
           <li>

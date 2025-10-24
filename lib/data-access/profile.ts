@@ -1,159 +1,147 @@
-import { hasSupabaseEnv } from "@/lib/env";
-import { mockCurrentUser, mockProfile, setMockProfile } from "@/lib/mock";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
-import type { Profile, UserRole } from "@/lib/types";
+import type { User } from "@supabase/supabase-js";
 
-const CURRENT_USER_ID = "user_current";
+import { getSupabaseClientWithUser } from "@/lib/supabase/auth";
+import type { Profile, UserRole } from "@/lib/types";
 
 type SupabaseProfileRow = {
   id: string;
-  name: string;
+  full_name?: string | null;
   email: string;
   phone?: string | null;
   avatar_url?: string | null;
   prefs?: Profile["prefs"] | null;
   notifications?: Profile["notifications"] | null;
   verification_status?: Profile["verificationStatus"] | null;
+  role?: UserRole | null;
 };
 
-export async function getProfile(): Promise<Profile> {
-  if (hasSupabaseEnv) {
-    try {
-      const supabase = createSupabaseServerClient();
-      const { data, error } = await supabase
-        .from("profiles")
-        .select(
-          `
-            id,
-            name,
-            email,
-            phone,
-            avatar_url,
-            prefs,
-            notifications,
-            verification_status
-          `
-        )
-        .eq("id", CURRENT_USER_ID)
-        .single();
-
-      if (!error && data) {
-        return mapProfileFromSupabase(data);
-      }
-    } catch (error) {
-      console.warn("[profile] Falling back to mock profile", error);
-    }
+export async function getProfile(): Promise<Profile | null> {
+  const { supabase, user } = await getSupabaseClientWithUser();
+  if (!supabase || !user) {
+    return null;
   }
 
-  return clone(mockProfile);
+  const { data, error } = await supabase
+    .from("profiles")
+    .select(
+      `
+        id,
+        full_name,
+        email,
+        phone,
+        avatar_url,
+        prefs,
+        notifications,
+        verification_status,
+        role
+      `
+    )
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[profile] Failed to load profile", error);
+    return null;
+  }
+
+  if (!data) {
+    return {
+      id: user.id,
+      name: user.email?.split("@")[0] ?? "Renter",
+      email: user.email ?? "unknown@example.com",
+      prefs: {},
+      notifications: {
+        newMatches: true,
+        messages: true,
+        applicationUpdates: true
+      },
+      verificationStatus: "pending"
+    };
+  }
+
+  return mapProfileFromSupabase(data);
 }
 
 export async function getCurrentUser(): Promise<{ id: string; role: UserRole } | null> {
-  if (hasSupabaseEnv) {
-    try {
-      const supabase = createSupabaseServerClient();
-      const { data, error } = await supabase.auth.getUser();
-
-      if (!error && data.user) {
-        const metadataRole = data.user.user_metadata?.["role"];
-        const role = (metadataRole as UserRole | undefined) ?? "tenant";
-        return { id: data.user.id, role };
-      }
-    } catch (error) {
-      console.warn("[profile] Unable to fetch current user", error);
-    }
+  const { user } = await getSupabaseClientWithUser();
+  if (!user) {
+    return null;
   }
 
-  return mockCurrentUser;
+  return {
+    id: user.id,
+    role: resolveRole(user)
+  };
 }
 
 export async function updateProfile(patch: Partial<Profile>): Promise<Profile> {
-  if (hasSupabaseEnv) {
-    try {
-      const supabase = createSupabaseServerClient();
-      const { data, error } = await supabase
-        .from("profiles")
-        .update(mapProfileToSupabase(patch))
-        .eq("id", CURRENT_USER_ID)
-        .select(
-          `
-            id,
-            name,
-            email,
-            phone,
-            avatar_url,
-            prefs,
-            notifications,
-            verification_status
-          `
-        )
-        .single();
-
-      if (!error && data) {
-        return mapProfileFromSupabase(data);
-      }
-    } catch (error) {
-      console.warn("[profile] Falling back to mock profile update", error);
-    }
+  const { supabase, user } = await getSupabaseClientWithUser();
+  if (!supabase || !user) {
+    throw new Error("Supabase client unavailable. Check your Supabase configuration.");
   }
 
-  const nextProfile: Profile = {
-    ...mockProfile,
-    ...patch,
-    prefs: { ...mockProfile.prefs, ...patch.prefs },
-    notifications: { ...mockProfile.notifications, ...patch.notifications }
-  };
+  const payload = mapProfileToSupabase(patch);
+  const { data, error } = await supabase
+    .from("profiles")
+    .update(payload)
+    .eq("id", user.id)
+    .select(
+      `
+        id,
+        full_name,
+        email,
+        phone,
+        avatar_url,
+        prefs,
+        notifications,
+        verification_status,
+        role
+      `
+    )
+    .maybeSingle();
 
-  setMockProfile(nextProfile);
-  return clone(nextProfile);
+  if (error || !data) {
+    throw error ?? new Error("Profile update failed.");
+  }
+
+  return mapProfileFromSupabase(data);
 }
 
 export async function deleteAccount(): Promise<void> {
-  if (hasSupabaseEnv) {
-    try {
-      const supabase = createSupabaseServerClient();
-      const { error } = await supabase.from("profiles").delete().eq("id", CURRENT_USER_ID);
-      if (error) {
-        throw error;
-      }
-    } catch (error) {
-      console.warn("[profile] Failed to delete Supabase profile, falling back to mock", error);
-    }
+  const { supabase, user } = await getSupabaseClientWithUser();
+  if (!supabase || !user) {
+    throw new Error("Supabase client unavailable. Check your Supabase configuration.");
   }
 
-  setMockProfile({
-    id: mockProfile.id,
-    name: "Removed Renter",
-    email: mockProfile.email,
-    phone: undefined,
-    avatarUrl: undefined,
-    prefs: {},
-    notifications: { newMatches: false, messages: false, applicationUpdates: false },
-    verificationStatus: "unverified"
-  });
+  const { error } = await supabase.from("profiles").delete().eq("id", user.id);
+  if (error) {
+    throw error;
+  }
 }
 
 function mapProfileFromSupabase(record: SupabaseProfileRow): Profile {
   return {
     id: record.id,
-    name: record.name,
+    name: record.full_name ?? record.email.split("@")[0] ?? "Renter",
     email: record.email,
     phone: record.phone ?? undefined,
     avatarUrl: record.avatar_url ?? undefined,
     prefs: record.prefs ?? {},
-    notifications: record.notifications ?? {
-      newMatches: true,
-      messages: true,
-      applicationUpdates: true
-    },
-    verificationStatus: record.verification_status ?? "unverified"
+    notifications:
+      record.notifications ??
+      {
+        newMatches: true,
+        messages: true,
+        applicationUpdates: true
+      },
+    verificationStatus: record.verification_status ?? "pending"
   };
 }
 
 function mapProfileToSupabase(patch: Partial<Profile>) {
   const payload: Record<string, unknown> = {};
 
-  if (patch.name !== undefined) payload["name"] = patch.name;
+  if (patch.name !== undefined) payload["full_name"] = patch.name;
   if (patch.email !== undefined) payload["email"] = patch.email;
   if (patch.phone !== undefined) payload["phone"] = patch.phone;
   if (patch.avatarUrl !== undefined) payload["avatar_url"] = patch.avatarUrl;
@@ -166,10 +154,12 @@ function mapProfileToSupabase(patch: Partial<Profile>) {
   return payload;
 }
 
-function clone<T>(value: T): T {
-  if (typeof structuredClone === "function") {
-    return structuredClone(value);
+function resolveRole(user: User): UserRole {
+  const rawRole =
+    (user.app_metadata?.["role"] as string | undefined) ??
+    (user.user_metadata?.["role"] as string | undefined);
+  if (rawRole === "landlord" || rawRole === "admin") {
+    return rawRole;
   }
-
-  return JSON.parse(JSON.stringify(value)) as T;
+  return "tenant";
 }
