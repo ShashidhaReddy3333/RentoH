@@ -5,7 +5,7 @@ import { useFormState, useFormStatus } from "react-dom";
 
 import { buttonStyles } from "@/components/ui/button";
 
-import { createListingAction, initialListingFormState, type ListingFormState } from "./actions";
+import { createListingAction, type ListingFormState } from "./actions";
 
 const propertyTypes = [
   { value: "apartment", label: "Apartment" },
@@ -13,6 +13,8 @@ const propertyTypes = [
   { value: "house", label: "House" },
   { value: "townhouse", label: "Townhouse" }
 ];
+
+const initialListingFormState: ListingFormState = { status: "idle" };
 
 export default function NewListingClient() {
   const [state, formAction] = useFormState(createListingAction, initialListingFormState);

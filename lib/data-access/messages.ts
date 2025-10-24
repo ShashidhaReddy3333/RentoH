@@ -1,3 +1,5 @@
+import { hasSupabaseEnv } from "@/lib/env";
+import { mockMessages, mockThreads } from "@/lib/mock";
 import { getSupabaseClientWithUser } from "@/lib/supabase/auth";
 import type { Message, MessageThread } from "@/lib/types";
 
@@ -20,6 +22,10 @@ type SupabaseMessageRow = {
 };
 
 export async function listThreads(): Promise<MessageThread[]> {
+  if (!hasSupabaseEnv) {
+    return mockThreads;
+  }
+
   const { supabase, user } = await getSupabaseClientWithUser();
   if (!supabase || !user) {
     return [];
@@ -51,6 +57,10 @@ export async function listThreads(): Promise<MessageThread[]> {
 
 export async function getThreadMessages(threadId: string): Promise<Message[]> {
   if (!threadId) return [];
+
+  if (!hasSupabaseEnv) {
+    return mockMessages.filter((msg) => msg.threadId === threadId);
+  }
 
   const { supabase, user } = await getSupabaseClientWithUser();
   if (!supabase || !user) {
@@ -130,4 +140,3 @@ function mapMessageFromSupabase(record: SupabaseMessageRow): Message {
     createdAt: record.created_at ?? new Date().toISOString()
   };
 }
-

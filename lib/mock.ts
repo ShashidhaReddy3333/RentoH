@@ -364,6 +364,13 @@ export const mockCurrentUser = {
   role: "tenant" as const
 };
 
+export function addMockProperty(property: Property) {
+  mockProperties.unshift(property);
+  if (mockProperties.length > 50) {
+    mockProperties.length = 50;
+  }
+}
+
 export function appendMockMessage(message: Message) {
   mockMessages = [...mockMessages, message];
 }
