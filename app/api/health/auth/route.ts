@@ -1,20 +1,43 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-import { clientEnv } from "@/lib/env";
+const HEALTH_CHECK_TOKEN = process.env['HEALTH_CHECK_TOKEN'];
 
-const required = [
-  "NEXT_PUBLIC_SITE_URL",
-  "NEXT_PUBLIC_SUPABASE_URL",
-  "NEXT_PUBLIC_SUPABASE_ANON_KEY"
-] as const;
+export async function GET(request: NextRequest) {
+  const authHeader = request.headers.get("Authorization");
+  const isInternal = authHeader === `Bearer ${HEALTH_CHECK_TOKEN}`;
+  
+  const supabase = createSupabaseServerClient();
+  let session = null;
+  if (supabase && typeof supabase.auth?.getSession === 'function') {
+    const resp = await supabase.auth.getSession();
+    // resp may contain { data }
+    // @ts-ignore
+    session = resp?.data?.session ?? null;
+  }
 
-export async function GET() {
-  const missing = required.filter((key) => !clientEnv[key]);
+  // Basic health check for public access
+  if (!isInternal) {
+    return NextResponse.json({
+      auth: {
+        available: true,
+        configured: Boolean(supabase)
+      }
+    });
+  }
 
+  // Detailed diagnostics for internal checks
   return NextResponse.json({
-    ok: missing.length === 0,
-    missing,
-    siteUrl: clientEnv.NEXT_PUBLIC_SITE_URL ?? null,
-    supabaseUrl: clientEnv.NEXT_PUBLIC_SUPABASE_URL ?? null
+    auth: {
+      available: true,
+      configured: Boolean(supabase),
+      session: Boolean(session),
+      provider: "supabase"
+    },
+    meta: {
+      timestamp: new Date().toISOString(),
+      version: process.env['NEXT_PUBLIC_APP_VERSION'] || "dev",
+      node_env: process.env.NODE_ENV
+    }
   });
 }

@@ -5,24 +5,21 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { env, hasSupabaseEnv } from '@/lib/env';
 
 export function createSupabaseServerClient(): SupabaseClient | null {
-  if (!hasSupabaseEnv) {
-    if (process.env.NODE_ENV !== 'test') {
-      console.warn('[supabase] Server client unavailable — Supabase environment variables missing.');
-    }
-    return null;
-  }
-
+  // Server-side creation should rely on server-side env values. Accept either the
+  // public anon key (for standard server usage) or the service role key (for admin ops).
   const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const supabaseKey = env.SUPABASE_SERVICE_ROLE_KEY ?? env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  if (!supabaseUrl || !supabaseAnonKey) {
-    console.warn('[supabase] Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY.');
+  if (!supabaseUrl || !supabaseKey) {
+    if (process.env.NODE_ENV !== 'test') {
+      console.warn('[supabase] Server client unavailable — missing SUPABASE credentials.');
+    }
     return null;
   }
 
   const cookieStore = cookies();
 
-  return createServerClient(supabaseUrl, supabaseAnonKey, {
+  return createServerClient(supabaseUrl, supabaseKey, {
     cookies: {
       get(name: string) {
         return cookieStore.get(name)?.value;

@@ -25,6 +25,9 @@ create table if not exists public.properties (
   verified boolean default false,
   pets boolean default false,
   furnished boolean default false,
+  smoking boolean default false,
+  parking text,
+  rent_frequency text,
   images jsonb default '[]'::jsonb,
   created_at timestamptz default now(),
   address text,
@@ -90,6 +93,19 @@ create table if not exists public.applications (
   message text,
   monthly_income integer
 );
+
+-- New table to hold per-user notification preferences (email + SMS channels)
+create table if not exists public.user_preferences (
+  user_id uuid primary key references public.profiles(id) on delete cascade,
+  email_notifications jsonb default '{"newMessages":true,"applications":true,"tours":true}'::jsonb,
+  sms_notifications jsonb default '{"newMessages":false,"applications":false,"tours":false}'::jsonb,
+  updated_at timestamptz default now()
+);
+
+alter table public.user_preferences enable row level security;
+
+create policy "Users manage their preferences" on public.user_preferences
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 alter table public.profiles enable row level security;
 alter table public.properties enable row level security;

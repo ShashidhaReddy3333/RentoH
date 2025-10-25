@@ -78,7 +78,7 @@ graph TD
 | High | Dashboard enforces auth server-side but renders with mock data (`CURRENT_LANDLORD_ID = "u2"`), so the experience never touches Supabase. | app/dashboard/dashboard-client.tsx:15-32 | Replace with RSC fetching landlord data via Supabase and hydrate only the interactive bits (delete/favorite) with client hooks. |
 | Medium | Listing metrics formatter renders corrupted glyphs (`�?`) because of an invalid fallback string. | components/search/listings-list.tsx:125-127 | Replace placeholder with human text (e.g., `"—"`) and ensure `Intl.NumberFormat` handles decimals. |
 | Medium | Manage listing “Performance snapshot” displays unreadable characters and fake analytics, eroding trust. | app/listings/[id]/manage/property-manage-client.tsx:128-131 | Remove hard-coded strings, drive metrics from Supabase analytics or hide card until data exists. |
-| Medium | Property detail route is a stub (`TODO`) with `A� Waterloo` in the description, breaking localisation and SEO. | app/property/[id]/page.tsx:8-18 | Fetch property via Supabase, normalise text encoding, and supply OG metadata per listing. |
+| Medium | Property detail route is a stub (`TODO`) with corrupted example text in the description (e.g. `Waterloo`), breaking localisation and SEO. | app/property/[id]/page.tsx:8-18 | Fetch property via Supabase, normalise text encoding, and supply OG metadata per listing. |
 | Medium | Password field placeholder contains garbage characters, confusing screen readers and masking localisation. | app/auth/sign-in/page.tsx:60-66 | Replace with descriptive helper text + `aria-describedby`; drop meaningless placeholder. |
 | Medium | “Save listing” flow only updates client context, relies on `setTimeout`, and never persists to Supabase. | app/listings/new/page.tsx:49-74 | Use a server action / API route with validation, optimistic UI via transition, and redirect once the insert succeeds. |
 | Medium | Browse route returns an empty array whenever Supabase env vars are absent, so the page silently renders nothing. | lib/data/properties.ts:6-36 | Provide mock dataset fallback with a warning banner, or surface a configuration error so deployments fail fast. |
@@ -329,7 +329,7 @@ create policy "listing-images-readable-by-authenticated"
   className="input"
   value={password}
   onChange={(event) => setPassword(event.target.value)}
-  placeholder="�?��?��?��?��?��?��?��?�"
+  placeholder="Enter your password"
 />
 ```
 

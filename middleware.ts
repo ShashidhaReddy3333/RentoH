@@ -114,6 +114,23 @@ function applySecurityHeaders(req: NextRequest, res: NextResponse) {
 }
 
 export async function middleware(req: NextRequest) {
+  // Enforce canonical host if NEXT_PUBLIC_SITE_URL is set
+  try {
+    const siteUrl = env.NEXT_PUBLIC_SITE_URL;
+    if (siteUrl) {
+      const primaryHost = new URL(siteUrl).host;
+      const host = req.nextUrl.hostname;
+      // Allow localhost and 127.x during development
+      if (host !== primaryHost && host !== 'localhost' && !host.startsWith('127.')) {
+        const redirectUrl = new URL(req.url);
+        redirectUrl.hostname = primaryHost;
+        redirectUrl.protocol = 'https:';
+        return applySecurityHeaders(req, NextResponse.redirect(redirectUrl));
+      }
+    }
+  } catch (e) {
+    // ignore URL parse errors and continue
+  }
   if (process.env["BYPASS_SUPABASE_AUTH"] === "1") {
     return applySecurityHeaders(req, NextResponse.next());
   }

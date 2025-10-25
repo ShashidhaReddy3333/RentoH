@@ -3,7 +3,8 @@ import { Suspense } from "react";
 import { MagnifyingGlassIcon, ShieldCheckIcon } from "@heroicons/react/24/outline";
 
 import { SignOutButton } from "@/components/auth/SignOutButton";
-import { getProfile } from "@/lib/data-access/profile";
+import { getProfile, getCurrentUser } from "@/lib/data-access/profile";
+import { LandlordNavLink } from "./LandlordNavLink";
 import { buttonStyles } from "@/components/ui/button";
 
 const navLinks = [
@@ -27,6 +28,9 @@ export default function Header() {
               {link.label}
             </Link>
           ))}
+          <Suspense fallback={null}>
+            <LandlordNavLink />
+          </Suspense>
         </nav>
         <div className="flex flex-1 items-center justify-end gap-3 lg:flex-none">
           <Link
@@ -65,11 +69,15 @@ function Brand() {
 }
 
 async function ProfileMenu() {
-  const profile = await getProfile().catch(() => null);
 
-  if (!profile) {
+  const profile = await getProfile().catch(() => null);
+  const user = await getCurrentUser().catch(() => null);
+  if (!profile || !user) {
     return <SignInButtons />;
   }
+  // Use user.role for reliable role-based UI
+  const isLandlord = user.role === 'landlord' || user.role === 'admin';
+  const isTenant = user.role === 'tenant' || !user.role;
 
   const initials = profile.name
     .split(" ")
@@ -81,6 +89,22 @@ async function ProfileMenu() {
   return (
     <div className="flex items-center gap-3">
       <SignOutButton className="hidden md:inline-flex" />
+      {isTenant && (
+        <Link
+          href={{ pathname: "/onboarding/landlord" }}
+          className="rounded-full bg-brand-blue px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-blue/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg"
+        >
+          Become a landlord
+        </Link>
+      )}
+      {isLandlord && (
+        <Link
+          href={{ pathname: "/listings/new" }}
+          className="rounded-full bg-brand-teal px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-teal/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg"
+        >
+          Manage listings
+        </Link>
+      )}
       <Link
         href={{ pathname: "/profile" }}
         className="group flex items-center gap-2 rounded-full border border-transparent bg-surface px-2 py-1 shadow-sm transition hover:border-brand-teal/40 hover:bg-brand-teal/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg"

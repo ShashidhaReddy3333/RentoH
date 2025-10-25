@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import type { FormEvent } from 'react';
 import { Suspense, useMemo, useState } from 'react';
 
+import { SupabaseConfigBanner } from '@/components/SupabaseConfigBanner';
 import { buttonStyles } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { hasSupabaseEnv } from '@/lib/env';
@@ -88,17 +89,7 @@ function SignInContent() {
     }
   };
 
-  if (!supabase) {
-    return (
-      <div className="mx-auto max-w-2xl space-y-6 rounded-xl border border-dashed border-red-200 bg-red-50 p-6 text-center text-sm text-red-600">
-        <p>Supabase credentials are not configured.</p>
-        <p className="text-xs text-red-500/80">
-          Set <code>NEXT_PUBLIC_SUPABASE_URL</code> and <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code>{" "}
-          in your environment to enable sign-in.
-        </p>
-      </div>
-    );
-  }
+  const isUnconfigured = !supabase;
 
   return (
     <div className="mx-auto max-w-2xl space-y-8">
@@ -158,10 +149,12 @@ function SignInContent() {
             <button
               type="submit"
               className={`${buttonStyles({ variant: 'primary' })} w-full`}
-              disabled={busy}
+              disabled={busy || isUnconfigured}
+              title={isUnconfigured ? 'Supabase connection required for sign-in' : undefined}
             >
               {busy ? 'Signing in...' : 'Sign in'}
             </button>
+            {isUnconfigured && <SupabaseConfigBanner />}
           </form>
 
           {error ? (

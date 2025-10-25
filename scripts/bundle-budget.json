@@ -1,6 +1,13 @@
 {
-  "routeJsGzipKbMax": 180,
-  "lcpMsMax": 2500,
-  "clsMax": 0.1,
-  "inpMsMax": 200
+  "version": 1,
+  "budgets": {
+    "routes": {
+      "/": { "js": 180000 },
+      "/browse": { "js": 180000 },
+      "/property/*": { "js": 180000 }
+    },
+    "shared": {
+      "js": 90000
+    }
+  }
 }

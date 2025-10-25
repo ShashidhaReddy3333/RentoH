@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import dynamic from "next/dynamic";
+import MapLoader from "@/components/MapLoader";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -17,10 +18,6 @@ import { getById, getMany } from "@/lib/data-access/properties";
 import { getCurrentUser } from "@/lib/data-access/profile";
 import type { Property } from "@/lib/types";
 
-const PropertyLocationMap = dynamic(
-  () => import("@/components/property/PropertyLocationMap").then((mod) => mod.PropertyLocationMap),
-  { ssr: false, loading: () => <MapFallback /> }
-);
 
 type Params = { params: { id: string } };
 
@@ -51,12 +48,14 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
       url,
       siteName: "Rento",
       type: "article",
-      images: property.images.length
-        ? property.images.map((image) => ({
-            url: image,
-            alt: property.title
-          }))
-        : undefined
+      images: [
+        // Generated OG image (higher priority)
+        { url: `${(env.NEXT_PUBLIC_SITE_URL ?? "https://rento.example").replace(/\/$/, "")}/og/${property.id}.png`, alt: property.title },
+        // Fall back to property-hosted images when available
+        ...(property.images.length
+          ? property.images.map((image) => ({ url: image, alt: property.title }))
+          : [])
+      ]
     },
     twitter: {
       card: "summary_large_image",
@@ -148,7 +147,7 @@ export default async function PropertyDetail({ params }: Params) {
                 </h2>
                 <p className="text-sm text-text-muted">Explore the neighbourhood around this home.</p>
               </div>
-              <PropertyLocationMap
+              <MapLoader
                 coordinates={property.coordinates}
                 address={property.address}
                 mapboxToken={mapboxToken}
@@ -179,7 +178,11 @@ export default async function PropertyDetail({ params }: Params) {
               {nearby.length === 0 ? (
                 <p className="text-sm text-text-muted">No nearby homes available right now.</p>
               ) : (
-                nearby.map((item) => <PropertyCard key={item.id} property={item} />)
+                nearby.map((item) => (
+                  <div key={item.id}>
+                    <PropertyCard property={item} />
+                  </div>
+                ))
               )}
             </div>
           </section>
@@ -194,10 +197,4 @@ async function loadNearbyProperties(property: Property) {
   return items.filter((item) => item.id !== property.id).slice(0, 3);
 }
 
-function MapFallback() {
-  return (
-    <div className="flex h-72 items-center justify-center rounded-3xl border border-dashed border-brand-teal/40 bg-brand-teal/10 text-sm text-brand-teal">
-      Loading map...
-    </div>
-  );
-}
+// Map loading is handled inside MapLoader (client) to avoid pulling Mapbox until user action

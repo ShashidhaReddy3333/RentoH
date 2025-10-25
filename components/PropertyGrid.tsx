@@ -20,11 +20,15 @@ export default function PropertyGrid({
     <div className="space-y-8">
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {loading
-          ? Array.from({ length: 8 }).map((_, index) => (
-              <Skeleton key={index} className="aspect-[4/5] rounded-3xl" />
+            ? Array.from({ length: 8 }).map((_, index) => (
+              <div key={index}>
+                <Skeleton className="aspect-[4/5] rounded-3xl" />
+              </div>
             ))
           : properties.map((property) => (
-              <PropertyCard key={property.id} property={property} />
+              <div key={property.id}>
+                <PropertyCard property={property} />
+              </div>
             ))}
       </div>
       {onLoadMore && hasMore && (

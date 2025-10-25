@@ -1,6 +1,7 @@
-﻿import { hasSupabaseEnv } from "@/lib/env";
+﻿import { hasSupabaseEnv, env } from "@/lib/env";
 import { mockProperties } from "@/lib/mock";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createClient } from "@supabase/supabase-js";
 import { getSupabaseClientWithUser } from "@/lib/supabase/auth";
 import type {
   PaginatedResult,
@@ -68,35 +69,27 @@ export const PROPERTY_COLUMNS = `
 `;
 
 export async function getFeatured(): Promise<Property[]> {
-  if (hasSupabaseEnv) {
-    try {
-      const supabase = createSupabaseServerClient();
-      if (!supabase) {
-        throw new Error("Supabase client unavailable.");
-      }
-      const { data, error } = await supabase
-        .from("properties")
-        .select(PROPERTY_COLUMNS)
-        .eq("is_featured", true)
-        .order("created_at", { ascending: false })
-        .limit(6);
-
-      if (!error && data) {
-        return data.map(mapPropertyFromSupabaseRow);
-      }
-    } catch (error) {
-      console.warn("[properties] Falling back to mock featured listings", error);
-    }
+  const supabase = createSupabaseServerClient();
+  if (!supabase) {
+    throw new Error("Supabase client unavailable.");
   }
 
-  return [...mockProperties]
-    .sort((a, b) => {
-      if (a.verified === b.verified) {
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      }
-      return a.verified ? -1 : 1;
-    })
-    .slice(0, 6);
+  try {
+    const { data, error } = await supabase
+      .from("properties")
+      .select(PROPERTY_COLUMNS)
+      .eq("is_featured", true)
+      .order("created_at", { ascending: false })
+      .limit(6);
+
+    if (error) throw error;
+    if (!data) return [];
+    
+    return data.map(mapPropertyFromSupabaseRow);
+  } catch (error) {
+    console.error("[properties] Failed to load featured listings", error);
+    return [];
+  }
 }
 
 async function fetchManyFromSupabase(
@@ -138,6 +131,35 @@ async function fetchManyFromSupabase(
 
   if (filters.verified != null) {
     query = query.eq("verified", filters.verified);
+  }
+
+  // Extended search filters
+  if ((filters as any).neighborhood) {
+    query = query.ilike("neighborhood", `%${(filters as any).neighborhood}%`);
+  }
+
+  if ((filters as any).availableFrom) {
+    // select properties available on or after the requested date
+    query = query.gte("available_from", (filters as any).availableFrom);
+  }
+
+  // amenities: expect array of strings; match any of them
+  if ((filters as any).amenities && Array.isArray((filters as any).amenities)) {
+    const amenities: string[] = (filters as any).amenities;
+    amenities.forEach((amenity) => {
+      query = query.ilike("amenities", `%${amenity}%`);
+    });
+  }
+
+  // keywords: search title or description
+  if ((filters as any).keywords) {
+    const kw = (filters as any).keywords;
+    // supabase .or uses a comma-separated conditions string
+    try {
+      query = query.or(`title.ilike.%${kw}%,description.ilike.%${kw}%`);
+    } catch (e) {
+      // fallback: ignore if .or fails for any reason
+    }
   }
 
   if (filters.min != null) {
@@ -235,6 +257,38 @@ function applyFilters(properties: Property[], filters: PropertyFilters) {
     if (filters.furnished != null && property.furnished !== filters.furnished) return false;
     if (filters.verified != null && property.verified !== filters.verified) return false;
 
+    // neighborhood filter
+    if (filters.neighborhood) {
+      if (!property.neighborhood) return false;
+      if (!property.neighborhood.toLowerCase().includes(filters.neighborhood.toLowerCase())) return false;
+    }
+
+    // availableFrom filter (property.availableFrom must be on or before requested date)
+    if (filters.availableFrom) {
+      if (!property.availableFrom) return false;
+      const requested = new Date(filters.availableFrom).getTime();
+      const avail = new Date(property.availableFrom).getTime();
+      if (Number.isNaN(requested) || Number.isNaN(avail)) return false;
+      if (avail > requested) return false;
+    }
+
+    // amenities: require that every requested amenity is present
+    if (filters.amenities && filters.amenities.length > 0) {
+      const propsAm = property.amenities ?? [];
+      const lower = propsAm.map((a) => a.toLowerCase());
+      const missing = filters.amenities.some((req) => !lower.includes(req.toLowerCase()));
+      if (missing) return false;
+    }
+
+    // keywords: search title, description and amenities
+    if (filters.keywords) {
+      const kw = filters.keywords.toLowerCase();
+      const inTitle = property.title.toLowerCase().includes(kw);
+      const inDesc = (property.description ?? "").toLowerCase().includes(kw);
+      const inAmenities = (property.amenities ?? []).some((a) => a.toLowerCase().includes(kw));
+      if (!inTitle && !inDesc && !inAmenities) return false;
+    }
+
     return true;
   });
 }
@@ -291,28 +345,51 @@ export async function getById(id: string): Promise<Property | null> {
     return null;
   }
 
-  if (hasSupabaseEnv) {
-    try {
-      const supabase = createSupabaseServerClient();
-      if (!supabase) {
-        throw new Error("Supabase client unavailable.");
-      }
-      const { data, error } = await supabase
-        .from("properties")
-        .select(PROPERTY_COLUMNS)
-        .eq("id", id)
-        .maybeSingle();
+  const supabase = createSupabaseServerClient();
+  if (!supabase) {
+    throw new Error("Supabase client unavailable.");
+  }
+  
+  const { data, error } = await supabase
+    .from("properties")
+    .select(PROPERTY_COLUMNS)
+    .eq("id", id)
+    .maybeSingle();
 
-      if (!error && data) {
-        return mapPropertyFromSupabaseRow(data);
-      }
-    } catch (error) {
-      console.warn("[properties] Failed to load property by id, falling back to mocks", error);
-    }
+  if (error || !data) {
+    console.error("[properties] Failed to load property by id", error);
+    return null;
   }
 
-  const fallback = mockProperties.find((property) => property.id === id);
-  return fallback ? cloneProperty(fallback) : null;
+  const prop = mapPropertyFromSupabaseRow(data);
+  const images = toStringArray((data as any).images);
+  if (images.length === 0) return prop;
+
+  const bucket = env.SUPABASE_STORAGE_BUCKET_LISTINGS || "listing-media";
+
+  // If we have a service role key, create short-lived signed URLs for each image path.
+  if (env.SUPABASE_SERVICE_ROLE_KEY) {
+    const service = createClient(env.NEXT_PUBLIC_SUPABASE_URL!, env.SUPABASE_SERVICE_ROLE_KEY);
+    const signedPromises = images.map(async (img) => {
+      if (!img || img.startsWith("http")) return img;
+      try {
+        const { data: signed, error: signErr } = await service.storage.from(bucket).createSignedUrl(img, 60 * 60);
+        if (signErr || !signed) {
+          return `${env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${bucket}/${encodeURIComponent(img)}`;
+        }
+        return signed.signedUrl;
+      } catch (e) {
+        return `${env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${bucket}/${encodeURIComponent(img)}`;
+      }
+    });
+
+    const signedUrls = await Promise.all(signedPromises);
+    return { ...prop, images: signedUrls };
+  }
+
+  // No service key — fall back to public URL pattern
+  const publicUrls = images.map((img) => (img.startsWith("http") ? img : `${env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${bucket}/${encodeURIComponent(img)}`));
+  return { ...prop, images: publicUrls };
 }
 
 export async function listOwnedProperties(limit = 4): Promise<Property[]> {

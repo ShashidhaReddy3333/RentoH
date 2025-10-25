@@ -35,6 +35,7 @@ export type Message = {
   senderId: string;
   text: string;
   createdAt: string;
+  readAt?: string | null;
 };
 
 export type MessageThread = {
@@ -67,6 +68,7 @@ export type Profile = {
     applicationUpdates: boolean;
   };
   verificationStatus: "verified" | "pending" | "unverified";
+  role?: UserRole;
 };
 
 export type PropertyFilters = {
@@ -79,6 +81,11 @@ export type PropertyFilters = {
   pets?: boolean;
   furnished?: boolean;
   verified?: boolean;
+  // Additional search-oriented filters
+  neighborhood?: string;
+  availableFrom?: string; // ISO date string, server will interpret
+  amenities?: string[];
+  keywords?: string;
 };
 
 export type PropertySort = "newest" | "priceAsc" | "priceDesc";

@@ -1,0 +1,41 @@
+name: Bundle analysis
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build (production)
+        env:
+          NODE_ENV: production
+          NEXT_TELEMETRY_DISABLED: 1
+        run: npm run build
+
+      - name: Run bundle analysis and enforce budgets
+        run: |
+          # produce a JSON report and let the analysis tool return a non-zero exit code if budgets violated
+          npx nextjs-bundle-analysis --build-output .next --budget scripts/bundle-budget.json --format json
+        continue-on-error: false
+
+      - name: Upload analysis artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: next-analyze
+          path: .next/analyze/**

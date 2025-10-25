@@ -8,6 +8,9 @@ import FiltersSheet, {
   FiltersContent,
   type FiltersState
 } from "@/components/FiltersSheet";
+import SortMenu from "@/components/SortMenu";
+import { SupabaseConfigBanner } from "@/components/SupabaseConfigBanner";
+import { hasSupabaseEnv } from "@/lib/env";
 import MapPane from "@/components/MapPane";
 import PropertyGrid from "@/components/PropertyGrid";
 import EmptyState from "@/components/EmptyState";
@@ -147,19 +150,7 @@ export default function BrowseClient({
             )}
           </div>
           <div className="flex items-center gap-2">
-            <label className="flex items-center gap-2 text-sm font-medium text-text-muted">
-              Sort
-              <select
-                value={currentSort}
-                onChange={(event) => handleSortChange(event.target.value as PropertySort)}
-                className="rounded-full border border-black/5 bg-surface px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal"
-                data-testid="sort-select"
-              >
-                <option value="newest">Newest</option>
-                <option value="priceAsc">Price (Low to High)</option>
-                <option value="priceDesc">Price (High to Low)</option>
-              </select>
-            </label>
+            <SortMenu value={currentSort} onChange={handleSortChange} />
             <div className="inline-flex items-center rounded-full border border-black/5 bg-surface p-1 text-sm text-text-muted">
               <ToggleButton
                 icon={Squares2X2Icon}
@@ -177,7 +168,36 @@ export default function BrowseClient({
           </div>
         </div>
 
-        {properties.length === 0 ? (
+        {!hasSupabaseEnv ? (
+          <div>
+            <SupabaseConfigBanner />
+            {properties.length === 0 ? (
+              <div className="rounded-md border border-black/5 bg-white p-6 text-sm text-text-muted">
+                <p className="font-semibold">Showing safe placeholder data</p>
+                <p className="mt-2">Supabase is not configured so you may be viewing mocked listings.</p>
+                <div className="mt-4">
+                  <button
+                    type="button"
+                    onClick={handleClearFilters}
+                    className={buttonStyles({ variant: "outline", size: "md" })}
+                    data-testid="clear-filters"
+                  >
+                    Clear filters
+                  </button>
+                </div>
+              </div>
+            ) : currentView === "map" ? (
+              <MapPane properties={properties} />
+            ) : (
+              <PropertyGrid
+                properties={properties}
+                onLoadMore={nextPageState ? handleLoadMore : undefined}
+                hasMore={Boolean(nextPageState)}
+                loading={isLoadingMore}
+              />
+            )}
+          </div>
+        ) : properties.length === 0 ? (
           <EmptyState
             title="No homes match your filters"
             description="Try adjusting your criteria or explore all homes nearby."

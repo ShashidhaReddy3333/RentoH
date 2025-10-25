@@ -1,24 +1,43 @@
 import "./globals.css";
 
 import { Inter } from "next/font/google";
-import type { Metadata } from "next";
+import type { ReactNode } from "react";
+import nextDynamic from 'next/dynamic';
 
-import Footer from "@/components/footer";
-import Header from "@/components/header";
 import { SupabaseConfigBanner } from "@/components/SupabaseConfigBanner";
+import { env } from '@/lib/env';
+
+const Footer = nextDynamic(() => import('@/components/footer'), {
+  ssr: true,
+  loading: () => (
+    <div className="h-32 animate-pulse bg-surface" role="progressbar" aria-label="Loading footer" />
+  )
+});
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
-export const metadata: Metadata = {
+const siteUrl = (env.NEXT_PUBLIC_SITE_URL ?? "https://rento.example").replace(/\/$/, "");
+
+export const metadata = {
   title: "Rento",
-  description: "Find verified rentals, message landlords, and manage your journey with Rento."
+  description: "Find verified rentals, message landlords, and manage your journey with Rento.",
+  alternates: { canonical: siteUrl }
 };
 
 export const dynamic = "force-dynamic";
+export default function RootLayout({ children }: { children: any }) {
+  const organizationLd = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "Rento",
+    url: siteUrl
+  };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
+      <head>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationLd) }} />
+      </head>
       <body className={`${inter.className} bg-brand-bg font-sans text-textc`}>
         <a
           href="#main"
@@ -26,16 +45,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         >
           Skip to content
         </a>
-        <div className="flex min-h-screen flex-col">
-          <Header />
-          <main id="main" className="flex-1">
-            <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-10">
-              <SupabaseConfigBanner />
-              {children}
-            </div>
-          </main>
-          <Footer />
-        </div>
+        <main id="main" className="flex-1">
+          <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-10">
+            <SupabaseConfigBanner />
+            {children}
+          </div>
+        </main>
+        <Footer />
       </body>
     </html>
   );

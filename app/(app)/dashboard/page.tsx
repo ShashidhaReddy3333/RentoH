@@ -1,4 +1,3 @@
-import type { ComponentProps } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
@@ -195,12 +194,14 @@ async function LandlordDashboard() {
   );
 }
 
-function DashboardStats({ stats }: { stats: Array<ComponentProps<typeof StatCard>> }) {
+function DashboardStats({ stats }: { stats: any }) {
   return (
     <section>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {stats.map((stat) => (
-          <StatCard key={stat.title} {...stat} />
+        {stats.map((stat: any) => (
+          <div key={stat.title}>
+            <StatCard {...stat} />
+          </div>
         ))}
       </div>
     </section>
@@ -256,7 +257,9 @@ function SavedListings({ favorites }: { favorites: Awaited<ReturnType<typeof lis
       {favorites.length ? (
         <div className="grid gap-4 md:grid-cols-3">
           {favorites.map((property) => (
-            <PropertyCard key={property.id} property={property} />
+            <div key={property.id}>
+              <PropertyCard property={property} />
+            </div>
           ))}
         </div>
       ) : (

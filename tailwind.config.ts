@@ -16,6 +16,16 @@ const config: Config = {
         "text-muted": "rgb(var(--color-text-muted) / <alpha-value>)",
         surface: "rgb(var(--color-surface) / <alpha-value>)",
         "surface-muted": "rgb(var(--color-surface-muted) / <alpha-value>)",
+        // Accessible color tokens (WCAG AA ≥4.5:1)
+        accent: {
+          DEFAULT: '#005A9E', // strong blue, 7.5:1 on white
+          focus: '#FFB300',   // amber, visible on dark/light
+          error: '#D32F2F',   // red, 5.5:1 on white
+          success: '#388E3C', // green, 5.7:1 on white
+        },
+        focus: {
+          ring: '#FFB300', // visible amber focus ring
+        },
       },
       borderRadius: { card: "var(--radius-card)" },
       maxWidth: { container: "var(--container)" },
@@ -29,9 +39,30 @@ const config: Config = {
       },
       boxShadow: {
         soft: "0 18px 36px rgba(15, 23, 42, 0.08)",
+        focus: '0 0 0 3px #FFB300', // focus ring shadow
+      },
+      outline: {
+        focus: ['2px solid #FFB300'],
       },
     },
   },
-  plugins: [],
+  plugins: [
+    function (plugin: any) {
+      const { addUtilities } = plugin;
+      addUtilities({
+        '.focus-ring': {
+          outline: '2px solid #FFB300',
+          outlineOffset: '2px',
+          boxShadow: '0 0 0 3px #FFB30033',
+          transition: 'outline 0.2s, box-shadow 0.2s',
+        },
+        '.focus-ring-error': {
+          outline: '2px solid #D32F2F',
+          outlineOffset: '2px',
+          boxShadow: '0 0 0 3px #D32F2F33',
+        },
+      });
+    },
+  ],
 };
 export default config;

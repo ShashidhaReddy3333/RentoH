@@ -4,6 +4,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { buttonStyles } from "@/components/ui/button";
+import Field from "@/components/form/field";
+import { useRef } from "react";
 
 type SearchFormState = {
   location: string;
@@ -22,6 +24,13 @@ export default function SearchBar() {
     max: "",
     beds: ""
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const refs = {
+    location: useRef<HTMLInputElement | null>(null),
+    min: useRef<HTMLInputElement | null>(null),
+    max: useRef<HTMLInputElement | null>(null),
+    beds: useRef<HTMLInputElement | null>(null)
+  };
 
   useEffect(() => {
     setForm({
@@ -34,13 +43,30 @@ export default function SearchBar() {
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const query = new URLSearchParams();
+    const nextErrors: Record<string, string> = {};
+    const numRe = /^\d{1,}$/;
+  if (form["min"] && !numRe.test(form["min"].replace(/,/g, ""))) nextErrors["min"] = "Enter a valid number";
+  if (form["max"] && !numRe.test(form["max"].replace(/,/g, ""))) nextErrors["max"] = "Enter a valid number";
+  if (form["beds"] && !numRe.test(form["beds"].replace(/\+$/, ""))) nextErrors["beds"] = "Enter a valid number";
 
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors);
+      // autofocus first invalid
+      const firstKey = Object.keys(nextErrors)[0] as keyof typeof refs;
+      const el = refs[firstKey]?.current;
+      if (el) {
+        el.focus();
+        el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      }
+      return;
+    }
+
+    const query = new URLSearchParams();
     if (form.location) query.set("city", form.location);
     if (form.min) query.set("min", form.min);
     if (form.max) query.set("max", form.max);
     if (form.beds) query.set("beds", form.beds);
-
+    setErrors({});
     router.push(`/browse?${query.toString()}`);
   };
 
@@ -55,43 +81,63 @@ export default function SearchBar() {
       data-testid="search-bar"
     >
       <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_repeat(3,minmax(0,140px))_auto] sm:items-end sm:gap-3">
-        <Field label="Location" htmlFor="search-location">
+        <Field id="search-location" label="Location" hint="Search by neighbourhood or city">
           <input
+            ref={refs.location}
             id="search-location"
             value={form.location}
-            onChange={handleChange("location")}
+            onChange={(e) => {
+              setForm((prev) => ({ ...prev, location: e.target.value }));
+              if (errors["location"]) setErrors((prev) => {
+                const c = { ...prev };
+                delete c["location"];
+                return c;
+              });
+            }}
             placeholder="Neighbourhood or city"
             className="input"
             data-testid="search-location"
           />
         </Field>
-        <Field label="Min price" htmlFor="search-min">
+  <Field id="search-min" label="Min price" hint="Optional" error={errors["min"]}>
           <input
+            ref={refs.min}
             id="search-min"
             value={form.min}
-            onChange={handleChange("min")}
+            onChange={(e) => {
+              setForm((prev) => ({ ...prev, min: e.target.value }));
+              if (errors["min"]) setErrors((prev) => { const c = { ...prev }; delete c["min"]; return c; });
+            }}
             placeholder="1,800"
             inputMode="numeric"
             className="input"
             data-testid="search-min"
           />
         </Field>
-        <Field label="Max price" htmlFor="search-max">
+  <Field id="search-max" label="Max price" hint="Optional" error={errors["max"]}>
           <input
+            ref={refs.max}
             id="search-max"
             value={form.max}
-            onChange={handleChange("max")}
+            onChange={(e) => {
+              setForm((prev) => ({ ...prev, max: e.target.value }));
+              if (errors["max"]) setErrors((prev) => { const c = { ...prev }; delete c["max"]; return c; });
+            }}
             placeholder="2,800"
             inputMode="numeric"
             className="input"
             data-testid="search-max"
           />
         </Field>
-        <Field label="Beds" htmlFor="search-beds">
+  <Field id="search-beds" label="Beds" hint="Optional" error={errors["beds"]}>
           <input
+            ref={refs.beds}
             id="search-beds"
             value={form.beds}
-            onChange={handleChange("beds")}
+            onChange={(e) => {
+              setForm((prev) => ({ ...prev, beds: e.target.value }));
+              if (errors["beds"]) setErrors((prev) => { const c = { ...prev }; delete c["beds"]; return c; });
+            }}
             placeholder="2+"
             inputMode="numeric"
             className="input"
@@ -107,22 +153,5 @@ export default function SearchBar() {
         </button>
       </div>
     </form>
-  );
-}
-
-function Field({
-  label,
-  children,
-  htmlFor
-}: {
-  label: string;
-  htmlFor: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <label className="flex flex-col gap-2 text-sm font-semibold text-text-muted" htmlFor={htmlFor}>
-      <span>{label}</span>
-      {children}
-    </label>
   );
 }

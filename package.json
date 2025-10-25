@@ -10,7 +10,8 @@
         "typecheck": "tsc --noEmit",
         "test": "vitest run",
         "e2e": "playwright test",
-        "analyze": "ANALYZE=true next build"
+        "analyze": "ANALYZE=true next build",
+        "analyze-bundle": "npx nextjs-bundle-analysis --build-output .next --budget scripts/bundle-budget.json"
     },
     "dependencies": {
         "@heroicons/react": "^2.2.0",
@@ -18,9 +19,11 @@
         "@supabase/auth-helpers-nextjs": "^0.9.0",
         "@supabase/ssr": "^0.7.0",
         "@supabase/supabase-js": "^2.45.0",
+        "@types/lodash": "^4.17.20",
         "class-variance-authority": "^0.7.0",
         "clsx": "^2.1.1",
         "date-fns": "^3.6.0",
+        "lodash": "^4.17.21",
         "mapbox-gl": "^2.15.0",
         "next": "14.2.4",
         "react": "18.3.1",
@@ -30,8 +33,9 @@
     },
     "devDependencies": {
         "@playwright/test": "^1.47.2",
-        "@testing-library/jest-dom": "^6.5.0",
-        "@testing-library/react": "^16.0.0",
+        "@testing-library/jest-dom": "^6.9.1",
+        "@testing-library/react": "^16.3.0",
+        "@testing-library/user-event": "^14.6.1",
         "@types/mapbox-gl": "^2.7.13",
         "@types/node": "^20.12.12",
         "@types/react": "^18.2.79",
@@ -43,11 +47,11 @@
         "eslint-config-next": "14.2.4",
         "eslint-config-prettier": "^9.1.0",
         "eslint-plugin-react-hooks": "^4.6.2",
-        "jsdom": "^24.0.0",
+        "jsdom": "^24.1.3",
         "postcss": "^8.4.41",
         "prettier": "^3.3.3",
         "tailwindcss": "^3.4.13",
         "typescript": "^5.6.2",
-        "vitest": "^2.1.1"
+        "vitest": "^2.1.9"
     }
 }

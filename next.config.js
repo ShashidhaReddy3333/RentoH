@@ -8,6 +8,16 @@ const supabaseHost = (() => {
   }
 })();
 
+const primaryHost = (() => {
+  const value = process.env.NEXT_PUBLIC_SITE_URL;
+  if (!value) return null;
+  try {
+    return new URL(value).host;
+  } catch {
+    return null;
+  }
+})();
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -34,6 +44,24 @@ const nextConfig = {
     }
     return config;
   }
+};
+
+// Redirect common www -> non-www if primaryHost is configured
+nextConfig.redirects = async () => {
+  if (!primaryHost) return [];
+  return [
+    {
+      source: '/:path*',
+      has: [
+        {
+          type: 'host',
+          value: `www.${primaryHost}`
+        }
+      ],
+      destination: `https://${primaryHost}/:path*`,
+      permanent: true
+    }
+  ];
 };
 
 module.exports = nextConfig;

@@ -19,16 +19,13 @@ type SupabaseMessageRow = {
   sender_id: string;
   body: string;
   created_at?: string | null;
+  read_at?: string | null;
 };
 
 export async function listThreads(): Promise<MessageThread[]> {
-  if (!hasSupabaseEnv) {
-    return mockThreads;
-  }
-
   const { supabase, user } = await getSupabaseClientWithUser();
   if (!supabase || !user) {
-    return [];
+    throw new Error("Supabase client unavailable.");
   }
 
   const { data, error } = await supabase
@@ -58,18 +55,14 @@ export async function listThreads(): Promise<MessageThread[]> {
 export async function getThreadMessages(threadId: string): Promise<Message[]> {
   if (!threadId) return [];
 
-  if (!hasSupabaseEnv) {
-    return mockMessages.filter((msg) => msg.threadId === threadId);
-  }
-
   const { supabase, user } = await getSupabaseClientWithUser();
   if (!supabase || !user) {
-    return [];
+    throw new Error("Supabase client unavailable.");
   }
 
   const { data, error } = await supabase
     .from("messages")
-    .select("id, thread_id, sender_id, body, created_at")
+    .select("id, thread_id, sender_id, body, created_at, read_at")
     .eq("thread_id", threadId)
     .order("created_at", { ascending: true });
 
@@ -137,6 +130,7 @@ function mapMessageFromSupabase(record: SupabaseMessageRow): Message {
     threadId: record.thread_id,
     senderId: record.sender_id,
     text: record.body,
-    createdAt: record.created_at ?? new Date().toISOString()
+    createdAt: record.created_at ?? new Date().toISOString(),
+    readAt: record.read_at
   };
 }

@@ -134,7 +134,8 @@ function mapProfileFromSupabase(record: SupabaseProfileRow): Profile {
         messages: true,
         applicationUpdates: true
       },
-    verificationStatus: record.verification_status ?? "pending"
+    verificationStatus: record.verification_status ?? "pending",
+    role: record.role ?? undefined,
   };
 }
 

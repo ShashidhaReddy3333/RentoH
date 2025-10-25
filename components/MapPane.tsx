@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { MapPinIcon } from "@heroicons/react/24/solid";
 
 import type { Property } from "@/lib/types";
@@ -20,6 +21,16 @@ export default function MapPane({ properties }: MapPaneProps) {
     [properties]
   );
 
+  const router = useRouter();
+  const itemRefs = useRef<Array<HTMLDivElement | null>>([]);
+  const [focusIdx, setFocusIdx] = useState(0);
+
+  const focusItem = (idx: number) => {
+    const el = itemRefs.current[idx];
+    if (el) el.focus();
+    setFocusIdx(idx);
+  };
+
   return (
     <section
       aria-label="Map view"
@@ -34,10 +45,31 @@ export default function MapPane({ properties }: MapPaneProps) {
           </span>
         </header>
         <div className="grid gap-3">
-          {items.map((property) => (
+          {items.map((property, idx) => (
             <div
               key={property.id}
-              className="flex items-center justify-between rounded-2xl bg-white/80 px-4 py-3 backdrop-blur transition hover:bg-white"
+              ref={(el) => { itemRefs.current[idx] = el; }}
+              tabIndex={focusIdx === idx ? 0 : -1}
+              role="button"
+              aria-label={`Open ${property.label}`}
+              onClick={() => router?.push(`/property/${property.id}`)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  router?.push(`/property/${property.id}`);
+                } else if (e.key === "ArrowDown") {
+                  const next = Math.min(items.length - 1, idx + 1);
+                  focusItem(next);
+                } else if (e.key === "ArrowUp") {
+                  const prev = Math.max(0, idx - 1);
+                  focusItem(prev);
+                } else if (e.key === "Home") {
+                  focusItem(0);
+                } else if (e.key === "End") {
+                  focusItem(items.length - 1);
+                }
+              }}
+              className="flex items-center justify-between rounded-2xl bg-white/80 px-4 py-3 backdrop-blur transition hover:bg-white focus:outline-none focus-ring"
             >
               <div className="flex items-center gap-3">
                 <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-brand-teal text-white shadow-sm">
