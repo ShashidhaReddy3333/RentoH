@@ -1,10 +1,8 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import { cookies } from "next/headers";
+import { type NextRequest } from "next/server";
 
 import { validateCsrfToken } from "./csrf";
 import { createErrorResponse, HttpError } from "./errors";
-import { checkRateLimit, getRateLimitKey, setRateLimitHeaders } from "./rate-limit";
+import { checkRateLimit, getRateLimitKey } from "./rate-limit"; // Removed setRateLimitHeaders as it's unused
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 interface ValidateAuthRequestOptions {
@@ -21,7 +19,7 @@ export async function validateAuthRequest(
     const remaining = checkRateLimit(key);
 
     // Get request body if needed
-    const body = requireCsrf ? await req.json() : undefined;
+    const body = requireCsrf ? await req.json() : undefined; // Keep this as it's used
     
     // Validate CSRF token if required
     if (requireCsrf) {
@@ -31,9 +29,8 @@ export async function validateAuthRequest(
       }
     }
 
-    // Initialize Supabase client
-    const cookieStore = cookies();
-    const supabase = createSupabaseServerClient();
+  // Initialize Supabase client
+  const supabase = createSupabaseServerClient();
     
     return {
       body,

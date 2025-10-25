@@ -1,7 +1,7 @@
 import "./globals.css";
 
 import { Inter } from "next/font/google";
-import type { ReactNode } from "react";
+import React from "react";
 import nextDynamic from 'next/dynamic';
 
 import { SupabaseConfigBanner } from "@/components/SupabaseConfigBanner";
@@ -25,7 +25,7 @@ export const metadata = {
 };
 
 export const dynamic = "force-dynamic";
-export default function RootLayout({ children }: { children: any }) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   const organizationLd = {
     "@context": "https://schema.org",
     "@type": "Organization",

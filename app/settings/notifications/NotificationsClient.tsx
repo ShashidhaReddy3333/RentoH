@@ -16,9 +16,8 @@ type Prefs = {
   };
 };
 
-export default function NotificationsClient() {
-  const [prefs, setPrefs] = useState<Prefs | null>(null);
-  const [saving, setSaving] = useState(false);
+export default function NotificationsClient() {  const [prefs, setPrefs] = useState<Prefs | null>(null);
+  // const [saving, setSaving] = useState(false); // 'saving' is assigned a value but never used.
 
   useEffect(() => {
     (async () => {
@@ -37,7 +36,7 @@ export default function NotificationsClient() {
   if (!prefs) return <div>Loading preferences…</div>;
 
   const save = async (partial: Partial<Prefs>) => {
-    setSaving(true);
+    // setSaving(true); // 'saving' is assigned a value but never used.
     try {
       const body = { ...prefs, ...partial };
       await fetch('/api/user-preferences', {
@@ -49,7 +48,7 @@ export default function NotificationsClient() {
     } catch (e) {
       console.error('Failed to save preferences', e);
     } finally {
-      setSaving(false);
+      // setSaving(false); // 'saving' is assigned a value but never used.
     }
   };
 

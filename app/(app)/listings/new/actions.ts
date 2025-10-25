@@ -4,9 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { hasSupabaseEnv, env } from "@/lib/env";
-import { addMockProperty } from "@/lib/mock";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import type { Property } from "@/lib/types";
 
 export const ListingSchema = z.object({
   title: z.string().min(3, "Title is required"),
@@ -27,8 +25,6 @@ export const ListingSchema = z.object({
   rentFrequency: z.enum(["monthly", "weekly", "biweekly"]).default("monthly"),
   description: z.string().min(10, "Description should be at least 10 characters")
 });
-
-type ListingInput = z.infer<typeof ListingSchema>;
 
 export type ListingFormState =
   | { status: "idle" }
@@ -169,7 +165,7 @@ export async function createListingAction(_prev: ListingFormState, formData: For
 
   // ensure images and cover ordering
   const imagesArr: string[] = Array.isArray(values.images) ? (values.images as string[]) : values.images ? [values.images as unknown as string] : [];
-  const coverKey = (values as any).cover as string | undefined;
+  const coverKey = (values as { cover?: string }).cover;
   let orderedImages = imagesArr;
   if (coverKey) {
     orderedImages = [coverKey, ...imagesArr.filter((i) => i !== coverKey)];
@@ -210,7 +206,7 @@ export async function createListingAction(_prev: ListingFormState, formData: For
   return { status: "success" };
 }
 
-export async function fetchDraftAction(): Promise<ListingFormState & { data?: any }> {
+export async function fetchDraftAction(): Promise<ListingFormState & { data?: Record<string, unknown> }> {
   if (!hasSupabaseEnv) {
     return { status: "error", message: "Missing Supabase configuration. Please set up your environment variables." };
   }

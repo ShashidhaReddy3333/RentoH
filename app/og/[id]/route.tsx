@@ -4,7 +4,6 @@ import type { NextRequest } from 'next/server';
 import type { CSSProperties } from 'react';
 
 import { getById } from '@/lib/data-access/properties';
-import { env } from '@/lib/env';
 
 export const runtime = 'edge';
 
@@ -30,7 +29,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       alignItems: 'center',
       justifyContent: 'flex-start',
       color: 'white',
-      fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, Roboto, \"Helvetica Neue\", Arial'
+  fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial'
     };
 
     const maxWidthStyle: CSSProperties = {

@@ -1,13 +1,11 @@
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import type { RealtimePresenceState } from "@supabase/supabase-js";
+import type { RealtimePresenceState } from "@supabase/supabase-js"; // Keep this import as it's used for type
 
 export type ThreadPresence = {
   isTyping: boolean;
   lastSeen?: string;
   userId: string;
 };
-
-type ThreadPresenceState = RealtimePresenceState<ThreadPresence>;
 
 const TYPING_TIMEOUT = 3000; // 3 seconds
 

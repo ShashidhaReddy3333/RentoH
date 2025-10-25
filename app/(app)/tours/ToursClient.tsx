@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { formatDistance, format } from 'date-fns';
+import { format } from 'date-fns';
 import Image from 'next/image';
 import Link from 'next/link';
 import { createTourCalendarEvent, generateICS, generateGoogleCalendarUrl } from '@/lib/ics';
@@ -39,6 +39,9 @@ interface Props {
 }
 
 export default function ToursClient({ tours, userRole, userId }: Props) {
+  // userId is accepted from the server page for context; keep it referenced to
+  // avoid unused-var lint in the client bundle.
+  void userId;
   const [filter, setFilter] = useState('all');
   const supabase = createClientComponentClient();
 

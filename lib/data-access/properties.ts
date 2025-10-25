@@ -133,39 +133,40 @@ async function fetchManyFromSupabase(
     query = query.eq("verified", filters.verified);
   }
 
-  // Extended search filters
-  if ((filters as any).neighborhood) {
-    query = query.ilike("neighborhood", `%${(filters as any).neighborhood}%`);
+  // Extended search filters (using type assertion for now, ideally PropertyFilters would be extended)
+  if ((filters as PropertyFilters & { neighborhood?: string }).neighborhood) {
+    query = query.ilike("neighborhood", `%${(filters as PropertyFilters & { neighborhood?: string }).neighborhood}%`);
   }
 
-  if ((filters as any).availableFrom) {
+  if ((filters as PropertyFilters & { availableFrom?: string }).availableFrom) {
     // select properties available on or after the requested date
-    query = query.gte("available_from", (filters as any).availableFrom);
+    query = query.gte("available_from", (filters as PropertyFilters & { availableFrom?: string }).availableFrom);
   }
 
   // amenities: expect array of strings; match any of them
-  if ((filters as any).amenities && Array.isArray((filters as any).amenities)) {
-    const amenities: string[] = (filters as any).amenities;
+  const amenitiesRaw = (filters as PropertyFilters & { amenities?: string[] }).amenities;
+  if (Array.isArray(amenitiesRaw)) {
+    const amenities: string[] = amenitiesRaw;
     amenities.forEach((amenity) => {
       query = query.ilike("amenities", `%${amenity}%`);
     });
   }
 
   // keywords: search title or description
-  if ((filters as any).keywords) {
-    const kw = (filters as any).keywords;
+  if ((filters as PropertyFilters & { keywords?: string }).keywords) {
+    const kw = (filters as PropertyFilters & { keywords?: string }).keywords;
     // supabase .or uses a comma-separated conditions string
     try {
       query = query.or(`title.ilike.%${kw}%,description.ilike.%${kw}%`);
-    } catch (e) {
+    } catch (e: unknown) { // Catching as unknown and handling
       // fallback: ignore if .or fails for any reason
+      console.warn("Supabase .or query failed, ignoring keywords filter:", e);
     }
   }
 
   if (filters.min != null) {
     query = query.gte("price", filters.min);
   }
-
   if (filters.max != null) {
     query = query.lte("price", filters.max);
   }
@@ -362,7 +363,7 @@ export async function getById(id: string): Promise<Property | null> {
   }
 
   const prop = mapPropertyFromSupabaseRow(data);
-  const images = toStringArray((data as any).images);
+  const images = toStringArray(data.images);
   if (images.length === 0) return prop;
 
   const bucket = env.SUPABASE_STORAGE_BUCKET_LISTINGS || "listing-media";
@@ -434,24 +435,5 @@ function mapStatus(value: string | null | undefined): Property["status"] | undef
   }
   return undefined;
 }
-
-function cloneProperty(property: Property): Property {
-  if (typeof structuredClone === "function") {
-    return structuredClone(property);
-  }
-
-  return JSON.parse(JSON.stringify(property)) as Property;
-}
-
-
-
-
-
-
-
-
-
-
-
 
 

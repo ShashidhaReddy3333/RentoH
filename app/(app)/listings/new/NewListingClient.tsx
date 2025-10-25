@@ -25,7 +25,6 @@ const initialListingFormState: ListingFormState = { status: "idle" };
 export default function NewListingClient() {
   const [state, formAction] = useFormState(createListingAction, initialListingFormState);
   const [autoSaveState, setAutoSaveState] = useState<ListingFormState>({ status: "idle" });
-  const [isLoadingDraft, setIsLoadingDraft] = useState(true);
   const formRef = useRef<HTMLFormElement>(null);
   
   // If the browser Supabase client is unavailable, we are running in dev mode
@@ -54,8 +53,7 @@ export default function NewListingClient() {
           }
         });
         setAutoSaveState({ status: "auto-saved", timestamp: Date.now() });
-      }
-      setIsLoadingDraft(false);
+  }
     }
     loadDraft();
   }, []);

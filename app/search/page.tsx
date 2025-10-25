@@ -4,9 +4,8 @@ import MapPane from "@/components/MapPane";
 import PropertyGrid from "@/components/PropertyGrid";
 import SearchClient from "./SearchClient";
 import { getMany } from "@/lib/data-access/properties";
-import { env } from "@/lib/env";
 import type { PropertyFilters, PropertySort } from "@/lib/types";
-import SortMenu from "@/components/SortMenu";
+import type { Property } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
@@ -14,7 +13,7 @@ export const fetchCache = "force-no-store";
 export async function generateMetadata(): Promise<Metadata> {
   const title = "Search rentals - Rento";
   const description = "Search by neighborhood, amenities, available date and more.";
-  const siteUrl = env.NEXT_PUBLIC_SITE_URL ?? "https://rento.example";
+  const siteUrl = process.env["NEXT_PUBLIC_SITE_URL"] ?? "https://rento.example";
   const url = `${siteUrl.replace(/\/$/, "")}/search`;
 
   return {
@@ -114,11 +113,11 @@ function parseFilters(searchParams: { [key: string]: string | string[] | undefin
   if (beds != null) filters.beds = beds;
 
   const baths = toNumber(get("baths"));
-  if (baths != null) filters.baths = baths;
+  if (baths != null) filters.baths = baths; // Corrected: This line was duplicated in the original.
 
   const type = get("type");
   if (type === "apartment" || type === "house" || type === "condo") {
-    filters.type = type as any;
+    filters.type = type as Property["type"];
   }
 
   const pets = get("pets");

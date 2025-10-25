@@ -11,7 +11,7 @@ const lastMessageTime = new Map<string, number>();
 
 export async function POST(request: NextRequest) {
   try {
-    const { body, supabase, rateLimit } = await validateAuthRequest(request);
+  const { body, supabase } = await validateAuthRequest(request);
     
     // Get authenticated user
     const { data: { user } } = await supabase!.auth.getUser();
@@ -172,6 +172,3 @@ export async function GET(request: NextRequest) {
     return handleAuthError(error);
   }
 }
-
-
-

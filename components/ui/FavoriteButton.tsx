@@ -24,6 +24,17 @@ function showToast(message: string, opts: { success?: boolean } = {}) {
   }, 2000);
 }
 
+function extractMessage(err: unknown): string | undefined {
+  if (!err) return undefined;
+  if (typeof err === "string") return err;
+  if (typeof err === "object" && err !== null) {
+    const rec = err as Record<string, unknown>;
+    const m = rec["message"] ?? rec["error"];
+    if (typeof m === "string") return m;
+  }
+  return undefined;
+}
+
 export default function FavoriteButton({ propertyId, initialSaved = false }: FavoriteButtonProps) {
   const [saved, setSaved] = useState<boolean>(initialSaved);
   const [busy, setBusy] = useState(false);
@@ -42,18 +53,19 @@ export default function FavoriteButton({ propertyId, initialSaved = false }: Fav
       });
 
       if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body?.error || "Failed to update favorite");
+        const text = await res.text().catch(() => null);
+        throw new Error(text || "Failed to update favorite");
       }
 
       showToast(next ? "Saved to favorites" : "Removed from favorites", { success: true });
-    } catch (err: any) {
+    } catch (err: unknown) {
       // revert optimistic
       setSaved(!next);
       console.error("Favorite toggle failed", err);
-      showToast(err?.message ?? "Action failed");
+      const m = extractMessage(err) ?? "Action failed";
+      showToast(m);
     } finally {
-      setBusy(false);
+      setBusy(false); // Revert busy state regardless of success or failure
     }
   }, [saved, propertyId, busy]);
 

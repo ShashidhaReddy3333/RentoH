@@ -53,7 +53,13 @@ export async function POST(request: NextRequest) {
     const { data: { user } } = await supabase!.auth.getUser();
     if (!user) throw new HttpError(401, "Authentication required", "AUTH_REQUIRED");
 
-    const payload: any = {
+    type Payload = {
+      user_id: string;
+      updated_at: string;
+      email_notifications?: object;
+      sms_notifications?: object;
+    };
+    const payload: Payload = {
       user_id: user.id,
       updated_at: new Date().toISOString()
     };

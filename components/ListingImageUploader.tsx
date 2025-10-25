@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import React, { useCallback, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
@@ -103,7 +104,13 @@ export default function ListingImageUploader({ name = "images" }: { name?: strin
             {img.uploading ? (
               <div className="flex h-40 items-center justify-center">Uploading...</div>
             ) : (
-              <img src={img.url} alt={`listing-${idx}`} className="h-40 w-full object-cover" />
+              <Image
+                src={img.url}
+                alt={`listing-${idx}`}
+                className="h-40 w-full object-cover"
+                width={200} // Provide appropriate width
+                height={160} // Provide appropriate height
+              />
             )}
 
             <div className="mt-2 flex items-center justify-between gap-2">

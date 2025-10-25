@@ -2,7 +2,7 @@ import { cookies } from 'next/headers';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-import { env, hasSupabaseEnv } from '@/lib/env';
+import { env } from '@/lib/env'; // Removed hasSupabaseEnv as it's unused
 
 export function createSupabaseServerClient(): SupabaseClient | null {
   // Server-side creation should rely on server-side env values. Accept either the

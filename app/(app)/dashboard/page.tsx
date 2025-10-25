@@ -194,11 +194,18 @@ async function LandlordDashboard() {
   );
 }
 
-function DashboardStats({ stats }: { stats: any }) {
+type StatItem = {
+  title: string;
+  value: number;
+  change?: string;
+  icon: React.ReactNode;
+};
+
+function DashboardStats({ stats }: { stats: StatItem[] }) {
   return (
     <section>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {stats.map((stat: any) => (
+        {stats.map((stat) => (
           <div key={stat.title}>
             <StatCard {...stat} />
           </div>
@@ -451,7 +458,6 @@ function formatRelativeDate(value: string) {
   if (days > 1) return `In ${days} days`;
   return `Past ${Math.abs(days)} days ago`;
 }
-
 
 
 

@@ -1,5 +1,6 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import type { Metadata } from "next";
 import { LANDING_DATA } from "@/app/landing-data";
 import {
   ClipboardDocumentCheckIcon,
@@ -15,7 +16,7 @@ import { getFeatured } from "@/lib/data-access/properties";
 
 export const revalidate = 3600;
 
-export async function generateMetadata(): Promise<any> {
+export async function generateMetadata(): Promise<Metadata> {
   const siteUrl = env.NEXT_PUBLIC_SITE_URL ?? "https://rento.example";
   const title = "Rento – Homes for rent";
   const description =
@@ -205,7 +206,3 @@ function SafetyStrip() {
     </section>
   );
 }
-
-
-
-

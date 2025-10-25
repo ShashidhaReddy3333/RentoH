@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import dynamic from "next/dynamic";
 import MapLoader from "@/components/MapLoader";
 import Link from "next/link";
 import { notFound } from "next/navigation";

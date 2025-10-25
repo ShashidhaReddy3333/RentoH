@@ -1,5 +1,6 @@
-'use client';
+ 'use client';
 
+import type { Route } from 'next';
 import { useState } from 'react';
 import { routes } from '@/lib/routes';
 import { useRouter } from 'next/navigation';
@@ -52,7 +53,7 @@ export function PropertyApplicationForm({ propertyId, landlordId, propertyTitle,
         console.error('Digest trigger failed', e);
       }
 
-      router.push(routes.applications as any);
+  router.push(routes.applications as Route);
     } catch (error) {
       console.error('Error submitting application:', error);
       alert('Failed to submit application. Please try again.');

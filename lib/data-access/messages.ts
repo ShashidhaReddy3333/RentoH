@@ -1,5 +1,4 @@
-import { hasSupabaseEnv } from "@/lib/env";
-import { mockMessages, mockThreads } from "@/lib/mock";
+// Removed unused imports: hasSupabaseEnv, mockMessages, mockThreads
 import { getSupabaseClientWithUser } from "@/lib/supabase/auth";
 import type { Message, MessageThread } from "@/lib/types";
 

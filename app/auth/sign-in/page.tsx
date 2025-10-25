@@ -40,7 +40,7 @@ function SignInContent() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const next = searchParams.get('next');
+  const next = searchParams?.get('next') ?? null;
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

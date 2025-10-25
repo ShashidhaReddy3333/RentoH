@@ -25,9 +25,10 @@ export default function ChatList({ threads, activeThreadId }: ChatListProps) {
   }, [threads, query]);
 
   const handleSelect = (threadId: string) => {
-    const next = new URLSearchParams(params.toString());
+    const next = new URLSearchParams(params?.toString() ?? "");
     next.set("t", threadId);
-    router.push(`${pathname}?${next.toString()}` as Route, { scroll: false });
+    const path = pathname ?? "/";
+    router.push(`${path}?${next.toString()}` as Route, { scroll: false });
   };
 
   return (

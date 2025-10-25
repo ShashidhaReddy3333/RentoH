@@ -3,6 +3,9 @@ import { getUserPreferencesForUserId, DEFAULT_PREFERENCES } from "@/lib/data-acc
 
 type DigestOpts = { trigger?: string };
 
+type MessageRow = { id: string; thread_id: string; sender_id: string; body: string; created_at: string };
+type ApplicationRow = { id: string; property_id: string; applicant_id: string; message: string; submitted_at: string; status: string };
+
 export async function generateDigestForUser(userId: string, opts: DigestOpts = {}) {
   const supabase = createSupabaseServerClient();
   if (!supabase) {
@@ -35,10 +38,10 @@ export async function generateDigestForUser(userId: string, opts: DigestOpts = {
     .from("message_threads")
     .select("id")
     .or(`owner_id.eq.${userId},participant_ids.cs.{${userId}}`);
+  
+  const threadIds = threads?.map((t: { id: string }) => t.id) ?? [];
 
-  const threadIds = threads?.map((t: any) => t.id) ?? [];
-
-  let recentMessages: any[] = [];
+  let recentMessages: MessageRow[] = [];
   if (threadIds.length > 0 && prefs.emailNotifications.newMessages) {
     const { data: messages } = await supabase
       .from("messages")
@@ -46,12 +49,12 @@ export async function generateDigestForUser(userId: string, opts: DigestOpts = {
       .in("thread_id", threadIds)
       .gt("created_at", since)
       .order("created_at", { ascending: false })
-      .limit(20);
+      .limit(20); // Limit to 20 messages
     recentMessages = messages ?? [];
   }
 
   // Applications: fetch recent applications addressed to this user
-  let recentApplications: any[] = [];
+  let recentApplications: ApplicationRow[] = [];
   if (prefs.emailNotifications.applications) {
     const { data: apps } = await supabase
       .from("applications")
@@ -59,7 +62,7 @@ export async function generateDigestForUser(userId: string, opts: DigestOpts = {
       .eq("landlord_id", userId)
       .gt("submitted_at", since)
       .order("submitted_at", { ascending: false })
-      .limit(20);
+      .limit(20); // Limit to 20 applications
     recentApplications = apps ?? [];
   }
 

@@ -77,10 +77,14 @@ export async function upsertCurrentUserPreferences(prefs: Partial<UserPreference
   const { supabase, user } = await getSupabaseClientWithUser();
   if (!supabase || !user) throw new Error("Supabase client unavailable.");
 
-  const payload: any = {};
+  type Payload = {
+    email_notifications?: object;
+    sms_notifications?: object;
+    updated_at: string;
+  };
+  const payload: Payload = { updated_at: new Date().toISOString() };
   if (prefs.emailNotifications !== undefined) payload.email_notifications = prefs.emailNotifications;
   if (prefs.smsNotifications !== undefined) payload.sms_notifications = prefs.smsNotifications;
-  payload.updated_at = new Date().toISOString();
 
   const { data, error } = await supabase
     .from("user_preferences")

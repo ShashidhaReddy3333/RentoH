@@ -2,9 +2,7 @@
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
-import { buttonStyles } from "@/components/ui/button";
-
-import type { Coordinates } from "@/lib/types";
+import { buttonStyles } from "@/components/ui/button"; // Keep buttonStyles as it's used
 
 const PropertyLocationMap = dynamic(
   () => import("@/components/property/PropertyLocationMap").then((mod) => mod.PropertyLocationMap),

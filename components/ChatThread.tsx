@@ -55,7 +55,7 @@ export default function ChatThread({ messages, loading = false, currentUserId }:
       window.removeEventListener("thread:presence:sync", handleSync);
       document.querySelector("[data-testid=message-input]")?.removeEventListener("input", handleInput);
     };
-  }, [currentUserId, messages[0]?.threadId]);
+  }, [currentUserId, messages[0]?.threadId, messages]);
 
   useEffect(() => {
     const viewport = viewportRef.current;
@@ -68,7 +68,7 @@ export default function ChatThread({ messages, loading = false, currentUserId }:
       const presence = setupThreadPresence(messages[0]?.threadId ?? "", currentUserId);
       void presence.updateReadStatus();
     }
-  }, [messages.length, currentUserId, messages[0]?.threadId]);
+  }, [messages.length, currentUserId, messages[0]?.threadId, messages]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     const viewport = viewportRef.current;

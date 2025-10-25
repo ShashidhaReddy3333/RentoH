@@ -34,10 +34,10 @@ export default function SearchBar() {
 
   useEffect(() => {
     setForm({
-      location: params.get("city") ?? "",
-      min: params.get("min") ?? "",
-      max: params.get("max") ?? "",
-      beds: params.get("beds") ?? ""
+      location: params?.get("city") ?? "",
+      min: params?.get("min") ?? "",
+      max: params?.get("max") ?? "",
+      beds: params?.get("beds") ?? ""
     });
   }, [params]);
 
@@ -68,10 +68,6 @@ export default function SearchBar() {
     if (form.beds) query.set("beds", form.beds);
     setErrors({});
     router.push(`/browse?${query.toString()}`);
-  };
-
-  const handleChange = (field: keyof SearchFormState) => (event: React.ChangeEvent<HTMLInputElement>) => {
-    setForm((prev) => ({ ...prev, [field]: event.target.value }));
   };
 
   return (

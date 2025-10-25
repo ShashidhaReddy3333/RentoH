@@ -31,8 +31,7 @@ export async function POST(request: NextRequest) {
       if (supabase && typeof supabase.auth?.setSession === 'function') {
         // supabase.auth.setSession exists in some client versions
         // call setSession with tokens if available
-        // @ts-ignore - runtime check above ensures method exists
-        await supabase.auth.setSession({ access_token, refresh_token });
+  await supabase.auth.setSession({ access_token, refresh_token });
       }
 
       // Ensure secure cookie settings for any supabase-related cookies present in the store

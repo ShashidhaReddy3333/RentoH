@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const HEALTH_CHECK_TOKEN = process.env['HEALTH_CHECK_TOKEN'];
@@ -11,9 +12,8 @@ export async function GET(request: NextRequest) {
   let session = null;
   if (supabase && typeof supabase.auth?.getSession === 'function') {
     const resp = await supabase.auth.getSession();
-    // resp may contain { data }
-    // @ts-ignore
-    session = resp?.data?.session ?? null;
+  // resp may contain { data }
+  session = resp?.data?.session ?? null;
   }
 
   // Basic health check for public access

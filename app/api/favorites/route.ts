@@ -9,6 +9,17 @@ async function readJson(request: Request) {
   }
 }
 
+function extractMessage(obj: unknown): string | undefined {
+  if (!obj) return undefined;
+  if (typeof obj === "string") return obj;
+  if (typeof obj === "object" && obj !== null) {
+    const rec = obj as Record<string, unknown>;
+    const m = rec["message"];
+    if (typeof m === "string") return m;
+  }
+  return undefined;
+}
+
 export async function POST(request: Request) {
   const body = await readJson(request);
   const propertyId = body?.propertyId;
@@ -25,17 +36,19 @@ export async function POST(request: Request) {
     const { error } = await supabase.from("favorites").insert({ user_id: user.id, property_id: propertyId });
     if (error) {
       // allow idempotency for duplicates
-      if ((error as any)?.code === "23505") {
+      if ((error as { code?: string })?.code === "23505") {
         return NextResponse.json({ ok: true });
       }
       console.error("[api/favorites] insert error", error);
-      return NextResponse.json({ error: error.message ?? "Failed to save favorite" }, { status: 500 });
+      const msg = extractMessage(error) ?? "Failed to save favorite";
+      return NextResponse.json({ error: msg }, { status: 500 });
     }
 
     return NextResponse.json({ ok: true }, { status: 201 });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("[api/favorites] POST error", err);
-    return NextResponse.json({ error: err?.message ?? "Unknown error" }, { status: 500 });
+    const msg = extractMessage(err) ?? "Unknown error";
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
 
@@ -60,12 +73,14 @@ export async function DELETE(request: Request) {
 
     if (error) {
       console.error("[api/favorites] delete error", error);
-      return NextResponse.json({ error: error.message ?? "Failed to remove favorite" }, { status: 500 });
+      const msg = extractMessage(error) ?? "Failed to remove favorite";
+      return NextResponse.json({ error: msg }, { status: 500 });
     }
 
     return NextResponse.json({ ok: true });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("[api/favorites] DELETE error", err);
-    return NextResponse.json({ error: err?.message ?? "Unknown error" }, { status: 500 });
+    const msg = extractMessage(err) ?? "Unknown error";
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

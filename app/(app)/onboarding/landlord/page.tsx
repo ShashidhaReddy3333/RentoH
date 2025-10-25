@@ -1,7 +1,6 @@
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { useState } from 'react';
 
 export default async function LandlordOnboardingPage() {
   const supabase = createServerComponentClient({ cookies });
