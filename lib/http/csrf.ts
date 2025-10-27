@@ -10,10 +10,11 @@ export function generateCsrfToken(): string {
 
 export function setCsrfCookie(token: string) {
   cookies().set(CSRF_COOKIE, token, {
-    httpOnly: true,
+    httpOnly: false, // Must be false so JavaScript can read the token for auth callbacks
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
+    maxAge: 60 * 60 * 24 * 30 // 30 days
   });
 }
 

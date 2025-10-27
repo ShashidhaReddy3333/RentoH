@@ -64,21 +64,9 @@ function SignInContent() {
         return;
       }
 
-      const { data } = await supabase.auth.getSession();
-      if (data.session) {
-        const csrf = document.cookie
-          .split("; ")
-          .find((cookie) => cookie.startsWith("rento_csrf="))
-          ?.split("=")[1];
-        await fetch('/auth/callback', {
-          method: 'POST',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ event: 'SIGNED_IN', session: data.session, csrf })
-        });
-      }
+      // Success! The SupabaseListener will automatically sync the session.
+      // Wait a brief moment for the listener to complete, then redirect.
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       const target: Route =
         next && next.startsWith('/') ? (next as Route) : '/dashboard';

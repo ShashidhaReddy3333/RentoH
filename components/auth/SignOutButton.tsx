@@ -32,11 +32,16 @@ export function SignOutButton({ className }: SignOutButtonProps) {
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.error("[auth] signOut failed", error);
+        return;
       }
-    } finally {
-      setBusy(false);
+      
+      // Wait briefly for SupabaseListener to sync the session state
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       router.push("/");
       router.refresh();
+    } finally {
+      setBusy(false);
     }
   };
 
