@@ -1,7 +1,5 @@
 "use client";
 
-import React from "react";
-
 import type { PropertySort } from "@/lib/types";
 
 export default function SortMenu({
