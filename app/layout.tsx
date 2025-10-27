@@ -5,6 +5,7 @@ import React from "react";
 import nextDynamic from 'next/dynamic';
 
 import { SupabaseConfigBanner } from "@/components/SupabaseConfigBanner";
+import Header from "@/components/header";
 import { env } from '@/lib/env';
 
 const RootProviders = nextDynamic(
@@ -29,7 +30,6 @@ export const metadata = {
   alternates: { canonical: siteUrl }
 };
 
-export const dynamic = "force-dynamic";
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   // Enhanced JSON-LD for Organization
   const organizationLd = {
@@ -88,6 +88,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           >
             Skip to content
           </a>
+          <Header />
           <main id="main" className="flex-1">
             <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-10">
               <SupabaseConfigBanner />
