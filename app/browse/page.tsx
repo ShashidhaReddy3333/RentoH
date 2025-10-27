@@ -5,7 +5,7 @@ import BrowseClient from "@/app/browse/BrowseClient";
 import { getMany } from "@/lib/data-access/properties";
 import { env } from "@/lib/env";
 import type { FiltersState } from "@/components/FiltersSheet";
-import type { PropertyFilters, PropertySort } from "@/lib/types";
+import type { PropertyFilters, PropertySort, Property, PaginatedResult } from "@/lib/types";
 
 // Enable server-side caching with 1 hour revalidation
 export const revalidate = 3600;
@@ -116,7 +116,7 @@ async function BrowseResults({
   view,
   filtersOpen
 }: {
-  propertiesPromise: Promise<any>;
+  propertiesPromise: Promise<PaginatedResult<Property>>;
   filtersState: FiltersState;
   filters: PropertyFilters;
   sort: PropertySort;
@@ -141,7 +141,7 @@ async function BrowseResults({
 }
 
 // Loading fallback with skeleton UI
-function BrowseLoadingFallback({ filtersState, view }: { filtersState: FiltersState; view: "grid" | "map" }) {
+function BrowseLoadingFallback({ view }: { filtersState: FiltersState; view: "grid" | "map" }) {
   return (
     <div className="grid gap-6 lg:grid-cols-[320px_1fr] lg:gap-10">
       <div className="hidden lg:block">

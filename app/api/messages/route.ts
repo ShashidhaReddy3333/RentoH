@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate CSRF token (double submit cookie pattern)
-    const csrfToken = (requestBody as any)?.csrf;
+    const csrfToken = (requestBody as Record<string, unknown>)?.['csrf'] as string | undefined;
     if (!validateCsrfToken(csrfToken)) {
       return NextResponse.json(
         { error: "Invalid or missing CSRF token", code: "INVALID_CSRF" },

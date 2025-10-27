@@ -14,7 +14,7 @@ type MapboxMapProps = {
  */
 export default function MapboxMap({ properties }: MapboxMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<any>(null);
+  const mapRef = useRef<mapboxgl.Map | null>(null);
   const mapboxToken = env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
   useEffect(() => {
