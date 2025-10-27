@@ -41,10 +41,27 @@ const serverParsed = serverSchema.safeParse(rawServerEnv);
 
 if (!serverParsed.success) {
   console.error("[env] Invalid environment variables", serverParsed.error.flatten().fieldErrors);
-  throw new Error("Invalid environment variables. Check your .env files.");
+  
+  // Only throw in development - in production, log and continue with defaults
+  if (process.env.NODE_ENV === 'development') {
+    throw new Error("Invalid environment variables. Check your .env files.");
+  } else {
+    console.warn("[env] Continuing with default/missing environment variables");
+  }
 }
 
-const env = Object.freeze(serverParsed.data);
+// Use parsed data if successful, otherwise use raw env with safe defaults
+const env = Object.freeze(serverParsed.success ? serverParsed.data : {
+  NODE_ENV: process.env.NODE_ENV || 'production',
+  NEXT_PUBLIC_SUPABASE_URL: undefined,
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: undefined,
+  NEXT_PUBLIC_SITE_URL: undefined,
+  NEXT_PUBLIC_MAPBOX_TOKEN: undefined,
+  SUPABASE_SERVICE_ROLE_KEY: undefined,
+  SUPABASE_JWT_SECRET: undefined,
+  SUPABASE_STORAGE_BUCKET_LISTINGS: 'listing-media',
+  EMAIL_FROM_ADDRESS: undefined
+});
 
 const clientParsed = clientSchema.safeParse({
   NEXT_PUBLIC_SUPABASE_URL: env.NEXT_PUBLIC_SUPABASE_URL,
@@ -55,10 +72,21 @@ const clientParsed = clientSchema.safeParse({
 
 if (!clientParsed.success) {
   console.error("[env] Invalid public environment variables", clientParsed.error.flatten().fieldErrors);
-  throw new Error("Invalid public environment variables. Check NEXT_PUBLIC_* keys.");
+  
+  // Only throw in development
+  if (process.env.NODE_ENV === 'development') {
+    throw new Error("Invalid public environment variables. Check NEXT_PUBLIC_* keys.");
+  } else {
+    console.warn("[env] Continuing with missing public environment variables");
+  }
 }
 
-const clientEnv = Object.freeze(clientParsed.data);
+const clientEnv = Object.freeze(clientParsed.success ? clientParsed.data : {
+  NEXT_PUBLIC_SUPABASE_URL: undefined,
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: undefined,
+  NEXT_PUBLIC_SITE_URL: undefined,
+  NEXT_PUBLIC_MAPBOX_TOKEN: undefined
+});
 
 const bypassSupabase = process.env["BYPASS_SUPABASE_AUTH"] === "1";
 
