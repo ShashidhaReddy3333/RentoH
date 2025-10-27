@@ -1,4 +1,4 @@
-﻿import { hasSupabaseEnv, env } from "@/lib/env";
+import { hasSupabaseEnv, env } from "@/lib/env";
 import { mockProperties } from "@/lib/mock";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createClient } from "@supabase/supabase-js";
@@ -71,7 +71,8 @@ export const PROPERTY_COLUMNS = `
 export async function getFeatured(): Promise<Property[]> {
   const supabase = createSupabaseServerClient();
   if (!supabase) {
-    throw new Error("Supabase client unavailable.");
+    console.warn("[properties] Supabase unavailable, using mock featured listings");
+    return mockProperties.slice(0, 6);
   }
 
   try {
@@ -83,12 +84,12 @@ export async function getFeatured(): Promise<Property[]> {
       .limit(6);
 
     if (error) throw error;
-    if (!data) return [];
+    if (!data) return mockProperties.slice(0, 6);
     
     return data.map(mapPropertyFromSupabaseRow);
   } catch (error) {
-    console.error("[properties] Failed to load featured listings", error);
-    return [];
+    console.error("[properties] Failed to load featured listings, falling back to mock data", error);
+    return mockProperties.slice(0, 6);
   }
 }
 
@@ -348,7 +349,8 @@ export async function getById(id: string): Promise<Property | null> {
 
   const supabase = createSupabaseServerClient();
   if (!supabase) {
-    throw new Error("Supabase client unavailable.");
+    console.warn("[properties] Supabase unavailable, checking mock data");
+    return mockProperties.find(p => p.id === id) ?? null;
   }
   
   const { data, error } = await supabase
@@ -359,7 +361,7 @@ export async function getById(id: string): Promise<Property | null> {
 
   if (error || !data) {
     console.error("[properties] Failed to load property by id", error);
-    return null;
+    return mockProperties.find(p => p.id === id) ?? null;
   }
 
   const prop = mapPropertyFromSupabaseRow(data);

@@ -67,6 +67,9 @@ export { env, clientEnv };
 export const hasSupabaseEnv =
   !bypassSupabase && Boolean(clientEnv.NEXT_PUBLIC_SUPABASE_URL && clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
+export const missingSupabaseMessage = 
+  "Supabase environment variables are not configured. Please add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to your .env.local file.";
+
 if (!hasSupabaseEnv && env.NODE_ENV !== "test") {
   console.warn(
     "[env] NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY missing. Supabase features are disabled."
