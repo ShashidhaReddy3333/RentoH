@@ -69,12 +69,20 @@ if (supabaseHost) {
   fontSrc.push(`https://${supabaseHost}`);
 }
 
+const isDev = process.env.NODE_ENV === 'development';
+
 const styleSrc = ["'self'", 'https://api.mapbox.com'];
+if (isDev) {
+  styleSrc.push("'unsafe-inline'"); // Required for Next.js dev mode
+}
 if (supabaseHost) {
   styleSrc.push(`https://${supabaseHost}`);
 }
 
 const scriptSrc = ["'self'", 'https://api.mapbox.com', 'https://events.mapbox.com'];
+if (isDev) {
+  scriptSrc.push("'unsafe-eval'", "'unsafe-inline'"); // Required for Next.js dev mode
+}
 if (supabaseHost) {
   scriptSrc.push(`https://${supabaseHost}`);
 }
