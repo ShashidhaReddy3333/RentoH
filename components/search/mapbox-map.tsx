@@ -26,6 +26,7 @@ export default function MapboxMap({ properties }: MapboxMapProps) {
     // Dynamically import mapbox-gl and its CSS to avoid loading in the main bundle
     Promise.all([
       import("mapbox-gl"),
+      // @ts-expect-error - CSS import doesn't have type declarations
       import("mapbox-gl/dist/mapbox-gl.css")
     ]).then(([mapboxgl]) => {
       if (!mapContainerRef.current) return;
