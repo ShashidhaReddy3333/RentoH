@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import Link from 'next/link';
 import type { Route } from 'next';
@@ -91,6 +91,57 @@ function SignInContent() {
 
   const isUnconfigured = !supabase;
 
+  // Show friendly message when Supabase is not configured
+  if (isUnconfigured) {
+    return (
+      <div className="mx-auto max-w-2xl space-y-8">
+        <header className="space-y-2 text-center">
+          <h1 className="text-3xl font-semibold text-textc">Welcome back</h1>
+          <p className="text-sm text-textc/70">
+            Sign in to access your dashboard
+          </p>
+        </header>
+
+        <Card>
+          <CardContent className="space-y-6">
+            <div className="space-y-4 text-center py-8">
+              <div className="mx-auto w-16 h-16 rounded-full bg-brand-blue/10 flex items-center justify-center">
+                <svg 
+                  className="w-8 h-8 text-brand-blue" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    strokeWidth={2} 
+                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" 
+                  />
+                </svg>
+              </div>
+              <h2 className="text-xl font-semibold text-textc">Authentication Not Configured</h2>
+              <p className="text-sm text-textc/70 max-w-md mx-auto">
+                Supabase authentication is not set up yet. To enable sign-in functionality, 
+                please configure your Supabase credentials.
+              </p>
+            </div>
+
+            <SupabaseConfigBanner />
+
+            <p className="text-center text-sm text-textc/70">
+              New to Rento?{' '}
+              <Link href="/auth/sign-up" className="text-brand-blue hover:text-brand-teal hover:underline">
+                Create an account
+              </Link>
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-2xl space-y-8">
       <header className="space-y-2 text-center">
@@ -149,12 +200,10 @@ function SignInContent() {
             <button
               type="submit"
               className={`${buttonStyles({ variant: 'primary' })} w-full`}
-              disabled={busy || isUnconfigured}
-              title={isUnconfigured ? 'Supabase connection required for sign-in' : undefined}
+              disabled={busy}
             >
               {busy ? 'Signing in...' : 'Sign in'}
             </button>
-            {isUnconfigured && <SupabaseConfigBanner />}
           </form>
 
           {error ? (
@@ -167,7 +216,7 @@ function SignInContent() {
           ) : null}
 
           <p className="text-center text-sm text-textc/70">
-            New to Rento Bridge?{' '}
+            New to Rento?{' '}
             <Link href="/auth/sign-up" className="text-brand-blue hover:text-brand-teal hover:underline">
               Create an account
             </Link>

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 
 import BrowseClient from "@/app/browse/BrowseClient";
 import { getMany } from "@/lib/data-access/properties";
@@ -6,33 +7,65 @@ import { env } from "@/lib/env";
 import type { FiltersState } from "@/components/FiltersSheet";
 import type { PropertyFilters, PropertySort } from "@/lib/types";
 
-export const dynamic = "force-dynamic";
-export const fetchCache = "force-no-store";
+// Enable server-side caching with 1 hour revalidation
+export const revalidate = 3600;
 
 export async function generateMetadata(): Promise<Metadata> {
   const siteUrl = env.NEXT_PUBLIC_SITE_URL ?? "https://rento.example";
   const url = `${siteUrl.replace(/\/$/, "")}/browse`;
-  const title = "Browse rentals - Rento";
+  const title = "Browse Rental Homes & Apartments";
   const description =
-    "Filter by price, amenities, and verification status to discover your next rental.";
+    "Explore thousands of verified rental listings. Filter by price, bedrooms, amenities, pet-friendly options, and more. Find your perfect home today.";
+  const imageUrl = `${siteUrl}/og-browse.png`;
 
   return {
     title,
     description,
+    keywords: [
+      "browse rentals",
+      "rental search",
+      "apartments",
+      "houses for rent",
+      "condos",
+      "pet-friendly rentals",
+      "furnished apartments",
+      "verified listings"
+    ],
     alternates: {
       canonical: url
     },
     openGraph: {
-      title,
-      description,
+      type: "website",
+      locale: "en_US",
       url,
       siteName: "Rento",
-      type: "website"
+      title,
+      description,
+      images: [
+        {
+          url: imageUrl,
+          width: 1200,
+          height: 630,
+          alt: "Browse Rental Homes on Rento"
+        }
+      ]
     },
     twitter: {
       card: "summary_large_image",
       title,
-      description
+      description,
+      images: [imageUrl],
+      creator: "@rento"
+    },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-image-preview": "large",
+        "max-snippet": -1
+      }
     }
   };
 }
@@ -55,7 +88,43 @@ export default async function BrowsePage({ searchParams }: { searchParams: Searc
   const view = searchParams["view"] === "map" ? "map" : "grid";
   const filtersOpen = searchParams["filters"] === "open";
 
-  const result = await getMany(filters, sort, page);
+  // Stream search results as a server component using RSC
+  const propertiesPromise = getMany(filters, sort, page);
+
+  return (
+    <Suspense fallback={<BrowseLoadingFallback filtersState={filtersState} view={view} />}>
+      <BrowseResults
+        propertiesPromise={propertiesPromise}
+        filtersState={filtersState}
+        filters={filters}
+        sort={sort}
+        page={page}
+        view={view}
+        filtersOpen={filtersOpen}
+      />
+    </Suspense>
+  );
+}
+
+// Server component that uses the promise with use() API for streaming
+async function BrowseResults({
+  propertiesPromise,
+  filtersState,
+  filters,
+  sort,
+  page,
+  view,
+  filtersOpen
+}: {
+  propertiesPromise: Promise<any>;
+  filtersState: FiltersState;
+  filters: PropertyFilters;
+  sort: PropertySort;
+  page: number;
+  view: "grid" | "map";
+  filtersOpen: boolean;
+}) {
+  const result = await propertiesPromise;
 
   return (
     <BrowseClient
@@ -68,6 +137,29 @@ export default async function BrowsePage({ searchParams }: { searchParams: Searc
       view={view}
       filtersOpen={filtersOpen}
     />
+  );
+}
+
+// Loading fallback with skeleton UI
+function BrowseLoadingFallback({ filtersState, view }: { filtersState: FiltersState; view: "grid" | "map" }) {
+  return (
+    <div className="grid gap-6 lg:grid-cols-[320px_1fr] lg:gap-10">
+      <div className="hidden lg:block">
+        <div className="h-96 animate-pulse rounded-3xl bg-surface" />
+      </div>
+      <div className="space-y-6">
+        <div className="h-16 animate-pulse rounded-3xl bg-surface" />
+        {view === "map" ? (
+          <div className="h-[420px] animate-pulse rounded-3xl bg-surface" />
+        ) : (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="h-80 animate-pulse rounded-3xl bg-surface" />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 

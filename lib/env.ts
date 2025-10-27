@@ -1,20 +1,26 @@
 import { z } from "zod";
 
+// Supabase URL validation - must be a valid URL when provided
+const supabaseUrlSchema = z.string().url().optional();
+
+// Supabase key validation - must be at least 20 characters when provided
+const supabaseKeySchema = z.string().min(20, "Supabase keys must be at least 20 characters").optional();
+
 const serverSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
-  NEXT_PUBLIC_SUPABASE_URL: z.string().url().optional(),
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(20).optional(),
+  NEXT_PUBLIC_SUPABASE_URL: supabaseUrlSchema,
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: supabaseKeySchema,
   NEXT_PUBLIC_SITE_URL: z.string().url().optional(),
   NEXT_PUBLIC_MAPBOX_TOKEN: z.string().min(1).optional(),
-  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
+  SUPABASE_SERVICE_ROLE_KEY: supabaseKeySchema,
   SUPABASE_JWT_SECRET: z.string().min(1).optional(),
   SUPABASE_STORAGE_BUCKET_LISTINGS: z.string().min(1).default("listing-media"),
   EMAIL_FROM_ADDRESS: z.string().email().optional()
 });
 
 const clientSchema = z.object({
-  NEXT_PUBLIC_SUPABASE_URL: z.string().url().optional(),
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(20).optional(),
+  NEXT_PUBLIC_SUPABASE_URL: supabaseUrlSchema,
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: supabaseKeySchema,
   NEXT_PUBLIC_SITE_URL: z.string().url().optional(),
   NEXT_PUBLIC_MAPBOX_TOKEN: z.string().min(1).optional()
 });

@@ -18,27 +18,78 @@ export const revalidate = 3600;
 
 export async function generateMetadata(): Promise<Metadata> {
   const siteUrl = env.NEXT_PUBLIC_SITE_URL ?? "https://rento.example";
-  const title = "Rento – Homes for rent";
+  const title = "Rento – Find Your Perfect Rental Home";
   const description =
-    "Find your next place with Rento. Browse verified listings, message landlords, and move in with confidence.";
+    "Discover verified rental homes, apartments, and condos. Browse thousands of listings, message landlords directly, and move in with confidence. Your rental journey starts here.";
+  const imageUrl = `${siteUrl}/og-image.png`;
 
   return {
-    title,
+    metadataBase: new URL(siteUrl),
+    title: {
+      default: title,
+      template: "%s | Rento"
+    },
     description,
+    keywords: [
+      "rental homes",
+      "apartments for rent",
+      "house rentals",
+      "condo rentals",
+      "find rentals",
+      "rental listings",
+      "verified rentals",
+      "landlord messaging",
+      "rental search"
+    ],
+    authors: [{ name: "Rento" }],
+    creator: "Rento",
+    publisher: "Rento",
+    formatDetection: {
+      email: false,
+      address: false,
+      telephone: false
+    },
     alternates: {
       canonical: siteUrl
     },
     openGraph: {
-      title,
-      description,
+      type: "website",
+      locale: "en_US",
       url: siteUrl,
       siteName: "Rento",
-      type: "website"
+      title,
+      description,
+      images: [
+        {
+          url: imageUrl,
+          width: 1200,
+          height: 630,
+          alt: "Rento - Find Your Perfect Rental Home"
+        }
+      ]
     },
     twitter: {
       card: "summary_large_image",
       title,
-      description
+      description,
+      images: [imageUrl],
+      creator: "@rento"
+    },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-video-preview": -1,
+        "max-image-preview": "large",
+        "max-snippet": -1
+      }
+    },
+    verification: {
+      google: "your-google-verification-code",
+      // yandex: "your-yandex-verification-code",
+      // bing: "your-bing-verification-code"
     }
   };
 }

@@ -117,6 +117,62 @@ function SignUpContent() {
 
   const isUnconfigured = !supabase;
 
+  // Show friendly message when Supabase is not configured
+  if (isUnconfigured) {
+    return (
+      <div className="mx-auto max-w-2xl space-y-8">
+        <header className="space-y-2 text-center">
+          <h1 className="text-3xl font-semibold text-textc">
+            Create your account
+          </h1>
+          <p className="text-sm text-textc/70">
+            Join Rento to find your perfect rental
+          </p>
+        </header>
+
+        <Card>
+          <CardContent className="space-y-6">
+            <div className="space-y-4 text-center py-8">
+              <div className="mx-auto w-16 h-16 rounded-full bg-brand-blue/10 flex items-center justify-center">
+                <svg 
+                  className="w-8 h-8 text-brand-blue" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    strokeWidth={2} 
+                    d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" 
+                  />
+                </svg>
+              </div>
+              <h2 className="text-xl font-semibold text-textc">Authentication Not Configured</h2>
+              <p className="text-sm text-textc/70 max-w-md mx-auto">
+                Supabase authentication is not set up yet. To enable account creation, 
+                please configure your Supabase credentials.
+              </p>
+            </div>
+
+            <SupabaseConfigBanner />
+
+            <p className="text-center text-sm text-textc/70">
+              Already have an account?{" "}
+              <Link
+                href="/auth/sign-in"
+                className="text-brand-blue hover:text-brand-teal hover:underline"
+              >
+                Sign in
+              </Link>
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-2xl space-y-8">
       <header className="space-y-2 text-center">
@@ -180,12 +236,10 @@ function SignUpContent() {
             <button
               type="submit"
               className={`${buttonStyles({ variant: "primary" })} w-full`}
-              disabled={busy || isUnconfigured}
-              title={isUnconfigured ? "Supabase connection required for sign-up" : undefined}
+              disabled={busy}
             >
               {busy ? "Creating account..." : "Send magic link"}
             </button>
-            {isUnconfigured && <SupabaseConfigBanner />}
           </form>
 
           {error ? (

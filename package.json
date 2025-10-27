@@ -10,8 +10,10 @@
         "typecheck": "tsc --noEmit",
         "test": "vitest run",
         "e2e": "playwright test",
-        "analyze": "ANALYZE=true next build",
-        "analyze-bundle": "npx nextjs-bundle-analysis --build-output .next --budget scripts/bundle-budget.json"
+        "analyze": "cross-env ANALYZE=true next build",
+        "analyze:unused": "node scripts/analyze-unused.js",
+        "analyze:bundle": "npx nextjs-bundle-analysis --build-output .next --budget scripts/bundle-budget.json",
+        "build:analyze": "npm run analyze && npm run analyze:bundle"
     },
     "dependencies": {
         "@heroicons/react": "^2.2.0",
@@ -32,7 +34,9 @@
         "zod": "^3.23.8"
     },
     "devDependencies": {
+        "@next/bundle-analyzer": "^14.2.4",
         "@playwright/test": "^1.47.2",
+        "cross-env": "^7.0.3",
         "@testing-library/jest-dom": "^6.9.1",
         "@testing-library/react": "^16.3.0",
         "@testing-library/user-event": "^14.6.1",

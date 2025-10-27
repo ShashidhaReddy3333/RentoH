@@ -51,9 +51,12 @@ a {
   transition: color 150ms ease, background-color 150ms ease;
 }
 
+/* WCAG AA Compliant Focus Styles */
 a:focus-visible {
-  outline: 2px solid currentColor;
+  outline: 3px solid #FFB300;
   outline-offset: 2px;
+  box-shadow: 0 0 0 5px rgba(255, 179, 0, 0.2);
+  transition: outline 0.2s, box-shadow 0.2s;
 }
 
 .input {
@@ -67,15 +70,51 @@ a:focus-visible {
     color 200ms ease;
 }
 
+/* WCAG AA Compliant Focus Ring - 3px solid with high contrast */
 .input:focus-visible {
-  outline: none;
+  outline: 3px solid #FFB300;
+  outline-offset: 2px;
   border-color: var(--brand-teal);
-  box-shadow: 0 0 0 2px rgba(47, 183, 154, 0.2);
+  box-shadow: 0 0 0 5px rgba(255, 179, 0, 0.2);
 }
 
 .input:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+/* Error state with accessible contrast */
+.input[aria-invalid="true"] {
+  border-color: #D32F2F;
+}
+
+.input[aria-invalid="true"]:focus-visible {
+  outline: 3px solid #D32F2F;
+  box-shadow: 0 0 0 5px rgba(211, 47, 47, 0.2);
+}
+
+/* Accessible button focus states */
+button:focus-visible,
+[role="button"]:focus-visible {
+  outline: 3px solid #FFB300;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 5px rgba(255, 179, 0, 0.2);
+  transition: outline 0.2s, box-shadow 0.2s;
+}
+
+/* Skip link styling for keyboard navigation */
+.skip-link:focus {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 9999;
+  padding: 1rem 1.5rem;
+  background: #FFB300;
+  color: #000;
+  font-weight: 600;
+  border-radius: 0.5rem;
+  outline: 3px solid #000;
+  outline-offset: 2px;
 }
 
 .map-container .mapboxgl-map,

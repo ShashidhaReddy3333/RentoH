@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import type { Route } from "next";
 import { usePathname, useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import { AdjustmentsHorizontalIcon, MapIcon, Squares2X2Icon } from "@heroicons/react/24/outline";
 import FiltersSheet, {
   FiltersContent,
@@ -11,13 +12,20 @@ import FiltersSheet, {
 import SortMenu from "@/components/SortMenu";
 import { SupabaseConfigBanner } from "@/components/SupabaseConfigBanner";
 import { hasSupabaseEnv } from "@/lib/env";
-import MapPane from "@/components/MapPane";
 import PropertyGrid from "@/components/PropertyGrid";
 import EmptyState from "@/components/EmptyState";
 import { buttonStyles } from "@/components/ui/button";
 import type { Property, PropertyFilters, PropertySort } from "@/lib/types";
 
 import { fetchMoreProperties } from "./actions";
+
+// Lazy-load MapPane only when user switches to map view
+const MapPane = dynamic(() => import("@/components/MapPane"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-[420px] animate-pulse rounded-3xl bg-surface" role="status" aria-label="Loading map" />
+  )
+});
 
 type BrowseClientProps = {
   initialProperties: Property[];

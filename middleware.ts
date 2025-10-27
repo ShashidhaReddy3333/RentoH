@@ -4,17 +4,26 @@ import type { NextRequest } from 'next/server';
 import { env, hasSupabaseEnv } from './lib/env';
 import { createSupabaseMiddlewareClient } from './lib/supabase/middleware';
 
+// All routes that require authentication
 const PROTECTED_ROUTES = [
   '/dashboard',
   '/messages',
-  '/listings/new',
-  '/listings/:id/manage',
   '/profile',
   '/favorites',
+  '/applications',
+  '/tours',
+  '/onboarding',
+  '/onboarding/:path*',
+  '/listings/new',
+  '/listings/:id/manage',
   '/admin',
   '/admin/:path*'
 ] as const;
+
+// Routes that require admin role
 const ADMIN_ROUTES = ['/admin', '/admin/:path*'] as const;
+
+// Public authentication routes
 const AUTH_ROUTES = ['/auth/sign-in', '/auth/sign-up'];
 
 const supabaseHost = (() => {
@@ -149,6 +158,7 @@ export async function middleware(req: NextRequest) {
   const isAdminRoute = ADMIN_ROUTE_MATCHERS.some((matcher) => matcher.test(pathname));
   const isAuthRoute = AUTH_ROUTES.some((route) => pathname.startsWith(route));
 
+  // Redirect unauthenticated users trying to access protected routes
   if (!session && isProtectedRoute) {
     const redirectUrl = req.nextUrl.clone();
     redirectUrl.pathname = '/auth/sign-in';
@@ -156,16 +166,30 @@ export async function middleware(req: NextRequest) {
     return applySecurityHeaders(req, NextResponse.redirect(redirectUrl));
   }
 
+  // Check admin role for admin routes
   if (isAdminRoute) {
+    // First check if user is authenticated
+    if (!session) {
+      const redirectUrl = req.nextUrl.clone();
+      redirectUrl.pathname = '/auth/sign-in';
+      redirectUrl.searchParams.set('next', pathname);
+      return applySecurityHeaders(req, NextResponse.redirect(redirectUrl));
+    }
+
+    // Then check if user has admin role
     const role =
-      (session?.user?.app_metadata?.["role"] as string | undefined) ??
-      (session?.user?.user_metadata?.["role"] as string | undefined);
+      (session.user?.app_metadata?.["role"] as string | undefined) ??
+      (session.user?.user_metadata?.["role"] as string | undefined);
+    
     if (role !== 'admin') {
-      const redirectUrl = new URL('/auth/sign-in?next=/admin', req.url);
+      // Redirect non-admin users to dashboard with error message
+      const redirectUrl = new URL('/dashboard', req.url);
+      redirectUrl.searchParams.set('error', 'unauthorized');
       return applySecurityHeaders(req, NextResponse.redirect(redirectUrl));
     }
   }
 
+  // Redirect authenticated users away from auth pages to dashboard
   if (session && isAuthRoute) {
     return applySecurityHeaders(req, NextResponse.redirect(new URL('/dashboard', req.url)));
   }

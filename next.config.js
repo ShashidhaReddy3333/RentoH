@@ -1,3 +1,8 @@
+const withBundleAnalyzer = require('@next/bundle-analyzer')({
+  enabled: process.env.ANALYZE === 'true',
+  openAnalyzer: true,
+});
+
 const supabaseHost = (() => {
   const value = process.env.NEXT_PUBLIC_SUPABASE_URL;
   if (!value) return null;
@@ -24,8 +29,23 @@ const nextConfig = {
   poweredByHeader: false,
   experimental: {
     typedRoutes: true,
-    optimizePackageImports: ['@heroicons/react/24/outline', '@heroicons/react/24/solid']
+    // Optimize package imports to reduce bundle size
+    optimizePackageImports: [
+      '@heroicons/react/24/outline',
+      '@heroicons/react/24/solid',
+      '@radix-ui/react-alert-dialog',
+      'lodash',
+      'date-fns'
+    ]
   },
+  // Compiler optimizations
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production' ? {
+      exclude: ['error', 'warn']
+    } : false
+  },
+  // Production source maps (disabled for smaller builds)
+  productionBrowserSourceMaps: false,
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: 'images.unsplash.com' },
@@ -64,4 +84,4 @@ nextConfig.redirects = async () => {
   ];
 };
 
-module.exports = nextConfig;
+module.exports = withBundleAnalyzer(nextConfig);
