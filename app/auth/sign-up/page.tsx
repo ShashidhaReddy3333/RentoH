@@ -230,7 +230,11 @@ function SignUpContent() {
                 onChange={(event) => setPassword(event.target.value)}
                 placeholder="Choose a secure password"
                 disabled={busy || Boolean(message)}
+                aria-describedby="password-hint"
               />
+              <p id="password-hint" className="text-xs text-textc/60">
+                Must be at least 6 characters. Use a mix of letters, numbers, and symbols for better security.
+              </p>
             </div>
 
             <button

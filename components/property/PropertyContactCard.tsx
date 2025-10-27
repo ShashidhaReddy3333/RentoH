@@ -1,8 +1,12 @@
+'use client';
+
 import Link from "next/link";
 import { EnvelopeIcon, PhoneIcon } from "@heroicons/react/24/outline";
 import clsx from "clsx";
+import { useTransition, useState } from 'react';
 
 import { buttonStyles } from "@/components/ui/button";
+import { createThreadForProperty } from "@/app/(app)/messages/create-thread-action";
 
 type PropertyContactCardProps = {
   propertyId: string;
@@ -15,9 +19,24 @@ export function PropertyContactCard({
   propertyTitle,
   isAuthenticated
 }: PropertyContactCardProps) {
-  const contactHref = isAuthenticated
-    ? { pathname: "/messages", query: { compose: `property-${propertyId}` } }
-    : { pathname: "/auth/sign-in", query: { next: `/property/${propertyId}` } };
+  const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+
+  const handleMessageClick = () => {
+    if (!isAuthenticated) {
+      window.location.href = `/auth/sign-in?next=/property/${propertyId}`;
+      return;
+    }
+
+    setError(null);
+    startTransition(async () => {
+      const result = await createThreadForProperty(propertyId);
+      if (result?.error) {
+        setError(result.error);
+      }
+      // On success, the server action redirects to messages
+    });
+  };
 
   return (
     <section
@@ -32,16 +51,27 @@ export function PropertyContactCard({
           Message the landlord to ask questions, request a tour, or start an application.
         </p>
       </div>
+
+      {error && (
+        <div
+          role="alert"
+          className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600"
+        >
+          {error}
+        </div>
+      )}
+
       <div className="space-y-3">
-        <Link
-          href={contactHref}
+        <button
+          type="button"
+          onClick={handleMessageClick}
+          disabled={isPending}
           className={clsx(buttonStyles({ variant: "primary", size: "md" }), "w-full justify-center")}
-          prefetch
           aria-label={isAuthenticated ? "Compose a message about this property" : "Sign in to contact the landlord"}
         >
           <EnvelopeIcon className="h-5 w-5" aria-hidden="true" />
-          {isAuthenticated ? "Message landlord" : "Sign in to contact"}
-        </Link>
+          {isPending ? "Opening conversation..." : isAuthenticated ? "Message landlord" : "Sign in to contact"}
+        </button>
         <a
           href="tel:+15195557421"
           className={clsx(buttonStyles({ variant: "outline", size: "md" }), "w-full justify-center")}

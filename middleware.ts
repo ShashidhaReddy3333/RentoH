@@ -146,10 +146,28 @@ export async function middleware(req: NextRequest) {
   } catch (e) {
     // ignore URL parse errors and continue
   }
+  const { pathname } = req.nextUrl;
+  const isProtectedRoute = PROTECTED_ROUTE_MATCHERS.some((matcher) => matcher.test(pathname));
+  const isAdminRoute = ADMIN_ROUTE_MATCHERS.some((matcher) => matcher.test(pathname));
+  const isAuthRoute = AUTH_ROUTES.some((route) => pathname.startsWith(route));
+
   if (process.env["BYPASS_SUPABASE_AUTH"] === "1") {
     return applySecurityHeaders(req, NextResponse.next());
   }
+
+  // When Supabase is not configured, always allow auth pages
+  // and redirect protected routes to sign-in (which shows config banner)
   if (!hasSupabaseEnv) {
+    if (isAuthRoute) {
+      return applySecurityHeaders(req, NextResponse.next());
+    }
+    if (isProtectedRoute) {
+      const redirectUrl = req.nextUrl.clone();
+      redirectUrl.pathname = '/auth/sign-in';
+      redirectUrl.searchParams.set('next', pathname);
+      redirectUrl.searchParams.set('error', 'config');
+      return applySecurityHeaders(req, NextResponse.redirect(redirectUrl));
+    }
     return applySecurityHeaders(req, NextResponse.next());
   }
 
@@ -158,11 +176,10 @@ export async function middleware(req: NextRequest) {
     data: { session }
   } = await supabase.auth.getSession();
 
-  const { pathname } = req.nextUrl;
-
-  const isProtectedRoute = PROTECTED_ROUTE_MATCHERS.some((matcher) => matcher.test(pathname));
-  const isAdminRoute = ADMIN_ROUTE_MATCHERS.some((matcher) => matcher.test(pathname));
-  const isAuthRoute = AUTH_ROUTES.some((route) => pathname.startsWith(route));
+  // Redirect authenticated users away from auth pages to dashboard
+  if (session && isAuthRoute) {
+    return applySecurityHeaders(req, NextResponse.redirect(new URL('/dashboard', req.url)));
+  }
 
   // Redirect unauthenticated users trying to access protected routes
   if (!session && isProtectedRoute) {
@@ -193,11 +210,6 @@ export async function middleware(req: NextRequest) {
       redirectUrl.searchParams.set('error', 'unauthorized');
       return applySecurityHeaders(req, NextResponse.redirect(redirectUrl));
     }
-  }
-
-  // Redirect authenticated users away from auth pages to dashboard
-  if (session && isAuthRoute) {
-    return applySecurityHeaders(req, NextResponse.redirect(new URL('/dashboard', req.url)));
   }
 
   // This will refresh the session cookie if it's expired.
