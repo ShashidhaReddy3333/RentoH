@@ -23,8 +23,11 @@ export default function MapboxMap({ properties }: MapboxMapProps) {
       return;
     }
 
-    // Dynamically import mapbox-gl to avoid loading it in the main bundle
-    import("mapbox-gl").then((mapboxgl) => {
+    // Dynamically import mapbox-gl and its CSS to avoid loading in the main bundle
+    Promise.all([
+      import("mapbox-gl"),
+      import("mapbox-gl/dist/mapbox-gl.css")
+    ]).then(([mapboxgl]) => {
       if (!mapContainerRef.current) return;
 
       mapboxgl.accessToken = mapboxToken;
