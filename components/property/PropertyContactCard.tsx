@@ -1,6 +1,5 @@
 'use client';
 
-import Link from "next/link";
 import { EnvelopeIcon, PhoneIcon } from "@heroicons/react/24/outline";
 import clsx from "clsx";
 import { useTransition, useState } from 'react';
