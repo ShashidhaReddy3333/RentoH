@@ -84,13 +84,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <RootProviders>
           <a
             href="#main"
-            className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 rounded-full bg-brand-blue px-4 py-2 text-white transition"
+            className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 z-50 rounded-full bg-brand-blue px-4 py-2 text-white transition"
           >
             Skip to content
           </a>
           <Header />
-          <main id="main" className="flex-1">
-            <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-10">
+          <main id="main" className="flex-1 min-h-screen">
+            <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 sm:gap-8 sm:py-10">
               <SupabaseConfigBanner />
               {children}
             </div>

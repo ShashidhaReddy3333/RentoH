@@ -56,18 +56,20 @@ export default function ProfileForm({ profile, onSave, onDeleteAccount }: Profil
         </div>
       )}
 
-      <section aria-labelledby="account-section" className="space-y-6 rounded-3xl border border-black/5 bg-white p-6 shadow-soft">
+      <section aria-labelledby="account-section" className="space-y-6 rounded-2xl border border-black/5 bg-white p-4 shadow-soft sm:rounded-3xl sm:p-6">
         <header className="space-y-1">
           <h2 id="account-section" className="text-lg font-semibold text-brand-dark">
             Account
           </h2>
           <p className="text-sm text-text-muted">Manage your basic information and avatar.</p>
         </header>
-        <div className="grid gap-6 md:grid-cols-[auto_1fr] md:items-start">
-          <AvatarUploader
-            value={form.avatarUrl}
-            onChange={(value) => setForm((prev) => ({ ...prev, avatarUrl: value }))}
-          />
+        <div className="grid gap-6 sm:grid-cols-[auto_1fr] sm:items-start">
+          <div className="flex justify-center sm:block">
+            <AvatarUploader
+              value={form.avatarUrl}
+              onChange={(value) => setForm((prev) => ({ ...prev, avatarUrl: value }))}
+            />
+          </div>
           <div className="grid gap-4">
             <FormField label="Full name" htmlFor="profile-name">
               <input
@@ -102,7 +104,7 @@ export default function ProfileForm({ profile, onSave, onDeleteAccount }: Profil
         </div>
       </section>
 
-      <section aria-labelledby="preferences-section" className="space-y-6 rounded-3xl border border-black/5 bg-white p-6 shadow-soft">
+      <section aria-labelledby="preferences-section" className="space-y-6 rounded-2xl border border-black/5 bg-white p-4 shadow-soft sm:rounded-3xl sm:p-6">
         <header className="space-y-1">
           <h2 id="preferences-section" className="text-lg font-semibold text-brand-dark">
             Preferences
@@ -218,7 +220,7 @@ export default function ProfileForm({ profile, onSave, onDeleteAccount }: Profil
         </div>
       </section>
 
-      <section aria-labelledby="notifications-section" className="space-y-6 rounded-3xl border border-black/5 bg-white p-6 shadow-soft">
+      <section aria-labelledby="notifications-section" className="space-y-6 rounded-2xl border border-black/5 bg-white p-4 shadow-soft sm:rounded-3xl sm:p-6">
         <header className="space-y-1">
           <h2 id="notifications-section" className="text-lg font-semibold text-brand-dark">
             Notifications
@@ -238,7 +240,7 @@ export default function ProfileForm({ profile, onSave, onDeleteAccount }: Profil
         />
       </section>
 
-      <section aria-labelledby="verification-section" className="space-y-6 rounded-3xl border border-black/5 bg-white p-6 shadow-soft">
+      <section aria-labelledby="verification-section" className="space-y-6 rounded-2xl border border-black/5 bg-white p-4 shadow-soft sm:rounded-3xl sm:p-6">
         <header className="space-y-1">
           <h2 id="verification-section" className="text-lg font-semibold text-brand-dark">
             Verification
@@ -266,7 +268,7 @@ export default function ProfileForm({ profile, onSave, onDeleteAccount }: Profil
         </div>
       </section>
 
-      <section aria-labelledby="danger-section" className="space-y-4 rounded-3xl border border-red-200 bg-red-50 p-6">
+      <section aria-labelledby="danger-section" className="space-y-4 rounded-2xl border border-red-200 bg-red-50 p-4 sm:rounded-3xl sm:p-6">
         <header className="space-y-1">
           <h2 id="danger-section" className="text-lg font-semibold text-red-700">
             Danger zone
@@ -310,7 +312,7 @@ export default function ProfileForm({ profile, onSave, onDeleteAccount }: Profil
       <div className="flex justify-end">
         <button
           type="submit"
-          className={buttonStyles({ variant: "primary", size: "lg" })}
+          className={buttonStyles({ variant: "primary", size: "lg" }) + " w-full sm:w-auto"}
           disabled={isPending}
           data-testid="profile-save"
         >

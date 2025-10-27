@@ -6,6 +6,7 @@ import { SignOutButton } from "@/components/auth/SignOutButton";
 import { getProfile, getCurrentUser } from "@/lib/data-access/profile";
 import { LandlordNavLink } from "./LandlordNavLink";
 import { buttonStyles } from "@/components/ui/button";
+import { MobileMenu } from "./MobileMenu";
 
 const navLinks = [
   { href: "/browse" as const, label: "Browse" },
@@ -18,6 +19,8 @@ export default function Header() {
     <header className="sticky top-0 z-40 border-b border-black/5 bg-brand-bg/80 backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4">
         <Brand />
+        
+        {/* Desktop Navigation */}
         <nav className="hidden items-center gap-1 lg:flex">
           {navLinks.map((link) => (
             <Link
@@ -32,10 +35,12 @@ export default function Header() {
             <LandlordNavLink />
           </Suspense>
         </nav>
-        <div className="flex flex-1 items-center justify-end gap-3 lg:flex-none">
+        
+        {/* Desktop Actions */}
+        <div className="hidden flex-1 items-center justify-end gap-3 lg:flex lg:flex-none">
           <Link
             href={{ pathname: "/browse", query: { filters: "open" } }}
-            className="group hidden items-center gap-2 rounded-full border border-brand-teal/30 bg-surface px-4 py-2 text-sm font-semibold text-brand-teal shadow-sm transition hover:border-brand-teal hover:bg-brand-teal/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg md:inline-flex"
+            className="group inline-flex items-center gap-2 rounded-full border border-brand-teal/30 bg-surface px-4 py-2 text-sm font-semibold text-brand-teal shadow-sm transition hover:border-brand-teal hover:bg-brand-teal/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg"
             aria-label="Open home filters"
             data-testid="header-search-shortcut"
           >
@@ -46,6 +51,11 @@ export default function Header() {
             <ProfileMenu />
           </Suspense>
         </div>
+
+        {/* Mobile Actions */}
+        <Suspense fallback={<SignInButtons />}>
+          <MobileMenuWrapper />
+        </Suspense>
       </div>
     </header>
   );
@@ -69,7 +79,6 @@ function Brand() {
 }
 
 async function ProfileMenu() {
-
   const profile = await getProfile().catch(() => null);
   const user = await getCurrentUser().catch(() => null);
   if (!profile || !user) {
@@ -88,7 +97,7 @@ async function ProfileMenu() {
 
   return (
     <div className="flex items-center gap-3">
-      <SignOutButton className="hidden md:inline-flex" />
+      <SignOutButton />
       {isTenant && (
         <Link
           href={{ pathname: "/onboarding/landlord" }}
@@ -102,7 +111,7 @@ async function ProfileMenu() {
           href={{ pathname: "/listings/new" }}
           className="rounded-full bg-brand-teal px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-teal/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg"
         >
-          Manage listings
+          Add listing
         </Link>
       )}
       <Link
@@ -134,6 +143,14 @@ async function ProfileMenu() {
       </Link>
     </div>
   );
+}
+
+
+async function MobileMenuWrapper() {
+  const profile = await getProfile().catch(() => null);
+  const user = await getCurrentUser().catch(() => null);
+
+  return <MobileMenu profile={profile} user={user} />;
 }
 
 function SignInButtons() {
