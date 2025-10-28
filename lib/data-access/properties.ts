@@ -14,6 +14,7 @@ const PAGE_SIZE = 12;
 
 export type SupabasePropertyRow = {
   id: string;
+  slug?: string | null;
   title: string;
   price: number;
   beds: number;
@@ -42,6 +43,7 @@ export type SupabasePropertyRow = {
 
 export const PROPERTY_COLUMNS = `
   id,
+  slug,
   title,
   price,
   beds,
@@ -212,6 +214,7 @@ export async function getMany(
 export function mapPropertyFromSupabaseRow(record: SupabasePropertyRow): Property {
   return {
     id: record.id,
+    slug: record.slug ?? undefined,
     title: record.title,
     images: toStringArray(record.images),
     price: record.price,

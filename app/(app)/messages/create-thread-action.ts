@@ -4,10 +4,14 @@ import { redirect } from 'next/navigation';
 
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
+function resolveThreadRedirect(threadId: string) {
+  redirect(`/messages?t=${threadId}`);
+}
+
 /**
  * Create a new message thread for a property inquiry
  */
-export async function createThreadForProperty(propertyId: string) {
+export async function createThreadForProperty(propertyIdentifier: string) {
   const supabase = createSupabaseServerClient();
   
   if (!supabase) {
@@ -20,41 +24,49 @@ export async function createThreadForProperty(propertyId: string) {
     return { error: 'You must be signed in to message landlords.' };
   }
 
-  // Get property details to find the owner
   const { data: property, error: propertyError } = await supabase
     .from('properties')
-    .select('id, title, owner_id')
-    .eq('id', propertyId)
-    .single();
+    .select('id, title, landlord_id, slug')
+    .or(`id.eq.${propertyIdentifier},slug.eq.${propertyIdentifier}`)
+    .maybeSingle();
 
   if (propertyError || !property) {
     console.error('[messages] Property not found', propertyError);
     return { error: 'Property not found.' };
   }
 
-  if (property.owner_id === user.id) {
+  if (property.landlord_id === user.id) {
     return { error: 'You cannot message yourself about your own property.' };
   }
 
-  // Check if thread already exists between these participants
-  const { data: existingThreads } = await supabase
+  const tenantId = user.id;
+  const landlordId = property.landlord_id;
+
+  // Check if thread already exists between these participants for this property
+  const { data: existingThreads, error: existingError } = await supabase
     .from('message_threads')
     .select('id')
-    .eq('property_id', propertyId)
-    .or(`owner_id.eq.${user.id},participant_ids.cs.{${user.id}}`);
+    .eq('property_id', property.id)
+    .or(`tenant_id.eq.${tenantId},landlord_id.eq.${tenantId}`)
+    .or(`tenant_id.eq.${landlordId},landlord_id.eq.${landlordId}`)
+    .limit(1);
+
+  if (existingError) {
+    console.error('[messages] Failed checking existing threads', existingError);
+  }
 
   if (existingThreads && existingThreads.length > 0 && existingThreads[0]) {
     // Redirect to existing thread
-    redirect(`/messages?t=${existingThreads[0].id}`);
+    resolveThreadRedirect(existingThreads[0].id);
   }
 
   // Create new thread
   const { data: newThread, error: threadError } = await supabase
     .from('message_threads')
     .insert({
-      property_id: propertyId,
-      owner_id: user.id,
-      participant_ids: [user.id, property.owner_id],
+      property_id: property.id,
+      tenant_id: tenantId,
+      landlord_id: landlordId,
       subject: `Inquiry about ${property.title}`,
       last_message: 'Thread created'
     })
@@ -67,5 +79,5 @@ export async function createThreadForProperty(propertyId: string) {
   }
 
   // Redirect to the new thread
-  redirect(`/messages?t=${newThread.id}`);
+  resolveThreadRedirect(newThread.id);
 }

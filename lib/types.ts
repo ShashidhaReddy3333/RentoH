@@ -5,6 +5,7 @@ export type Coordinates = {
 
 export type Property = {
   id: string;
+  slug?: string;
   title: string;
   images: string[];
   price: number;
@@ -16,6 +17,7 @@ export type Property = {
   pets: boolean;
   furnished: boolean;
   createdAt: string;
+  isFavorite?: boolean;
   address?: string;
   description?: string;
   amenities?: string[];
@@ -40,6 +42,9 @@ export type Message = {
 
 export type MessageThread = {
   id: string;
+  subject?: string;
+  propertyId?: string;
+  propertyTitle?: string;
   otherPartyName: string;
   otherPartyAvatar?: string;
   lastMessage?: string;

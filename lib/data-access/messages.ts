@@ -4,12 +4,22 @@ import type { Message, MessageThread } from "@/lib/types";
 
 type SupabaseThreadRow = {
   id: string;
-  other_party_id: string | null;
-  other_party_name: string | null;
-  other_party_avatar: string | null;
+  property_id: string;
+  property: { title: string | null } | { title: string | null }[] | null;
+  tenant_id: string;
+  landlord_id: string;
+  subject: string | null;
   last_message: string | null;
   unread_count: number | null;
   updated_at: string | null;
+  tenant_profile:
+    | { full_name: string | null; avatar_url: string | null }
+    | { full_name: string | null; avatar_url: string | null }[]
+    | null;
+  landlord_profile:
+    | { full_name: string | null; avatar_url: string | null }
+    | { full_name: string | null; avatar_url: string | null }[]
+    | null;
 };
 
 type SupabaseMessageRow = {
@@ -32,15 +42,19 @@ export async function listThreads(): Promise<MessageThread[]> {
     .select(
       `
         id,
-        other_party_id,
-        other_party_name,
-        other_party_avatar,
+        property_id,
+        property:properties ( title ),
+        tenant_id,
+        landlord_id,
+        subject,
         last_message,
         unread_count,
-        updated_at
+        updated_at,
+        tenant_profile:tenant!message_threads_tenant_id_fkey ( full_name, avatar_url ),
+        landlord_profile:landlord!message_threads_landlord_id_fkey ( full_name, avatar_url )
       `
     )
-    .eq("owner_id", user.id)
+    .or(`tenant_id.eq.${user.id},landlord_id.eq.${user.id}`)
     .order("updated_at", { ascending: false });
 
   if (error || !data) {
@@ -48,7 +62,7 @@ export async function listThreads(): Promise<MessageThread[]> {
     return [];
   }
 
-  return data.map(mapThreadFromSupabase);
+  return data.map((row) => mapThreadFromSupabase(row, user.id));
 }
 
 export async function getThreadMessages(threadId: string): Promise<Message[]> {
@@ -103,20 +117,33 @@ export async function sendMessage(threadId: string, text: string): Promise<Messa
     .from("message_threads")
     .update({
       last_message: content,
-      unread_count: 0,
       updated_at: data.created_at ?? new Date().toISOString()
     })
-    .eq("id", threadId)
-    .eq("owner_id", user.id);
+    .eq("id", threadId);
 
   return mapMessageFromSupabase(data);
 }
 
-function mapThreadFromSupabase(record: SupabaseThreadRow): MessageThread {
+function mapThreadFromSupabase(record: SupabaseThreadRow, currentUserId: string): MessageThread {
+  const tenantProfile = Array.isArray(record.tenant_profile)
+    ? record.tenant_profile[0] ?? null
+    : record.tenant_profile;
+  const landlordProfile = Array.isArray(record.landlord_profile)
+    ? record.landlord_profile[0] ?? null
+    : record.landlord_profile;
+  const isCurrentTenant = record.tenant_id === currentUserId;
+  const otherProfile = isCurrentTenant ? landlordProfile : tenantProfile;
+  const otherName = otherProfile?.full_name ?? (isCurrentTenant ? "Landlord" : "Tenant");
+
   return {
     id: record.id,
-    otherPartyName: record.other_party_name ?? "Conversation",
-    otherPartyAvatar: record.other_party_avatar ?? undefined,
+    propertyId: record.property_id,
+    subject: record.subject ?? undefined,
+    propertyTitle: Array.isArray(record.property)
+      ? record.property[0]?.title ?? undefined
+      : record.property?.title ?? undefined,
+    otherPartyName: otherName,
+    otherPartyAvatar: otherProfile?.avatar_url ?? undefined,
     lastMessage: record.last_message ?? undefined,
     unreadCount: Number.isFinite(record.unread_count) ? Number(record.unread_count) : 0,
     updatedAt: record.updated_at ?? new Date().toISOString()
