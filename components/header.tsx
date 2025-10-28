@@ -7,6 +7,7 @@ import { SignOutButton } from "@/components/auth/SignOutButton";
 import { getProfile, getCurrentUser } from "@/lib/data-access/profile";
 import { LandlordNavLink } from "./LandlordNavLink";
 import { buttonStyles } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { MobileMenu } from "./MobileMenu";
 
 const navLinks = [
@@ -39,6 +40,7 @@ export default function Header() {
         
         {/* Desktop Actions */}
         <div className="hidden flex-1 items-center justify-end gap-3 lg:flex lg:flex-none">
+          <ThemeToggle showLabel={false} />
           <Link
             href={{ pathname: "/browse", query: { filters: "open" } }}
             className="group inline-flex items-center gap-2 rounded-full border border-brand-teal/30 bg-surface px-4 py-2 text-sm font-semibold text-brand-teal shadow-sm transition hover:border-brand-teal hover:bg-brand-teal/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg"
@@ -54,9 +56,12 @@ export default function Header() {
         </div>
 
         {/* Mobile Actions */}
-        <Suspense fallback={<SignInButtons />}>
-          <MobileMenuWrapper />
-        </Suspense>
+        <div className="flex items-center gap-2 lg:hidden">
+          <ThemeToggle showLabel={false} />
+          <Suspense fallback={<SignInButtons />}>
+            <MobileMenuWrapper />
+          </Suspense>
+        </div>
       </div>
     </header>
   );
