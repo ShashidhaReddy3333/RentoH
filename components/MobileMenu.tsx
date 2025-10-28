@@ -2,9 +2,15 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Bars3Icon, XMarkIcon, MagnifyingGlassIcon, ShieldCheckIcon } from "@heroicons/react/24/outline";
+import {
+  Bars3Icon,
+  XMarkIcon,
+  MagnifyingGlassIcon,
+  ShieldCheckIcon
+} from "@heroicons/react/24/outline";
 
 import { SignOutButton } from "@/components/auth/SignOutButton";
+import { buttonStyles } from "@/components/ui/button";
 
 const navLinks = [
   { href: "/browse" as const, label: "Browse" },
@@ -28,18 +34,29 @@ type MobileMenuProps = {
 };
 
 export function MobileMenu({ profile, user }: MobileMenuProps) {
+  const isAuthenticated = Boolean(profile && user);
+
   return (
     <div className="flex items-center gap-3 lg:hidden">
-      {profile && user && <ProfileMenuMobile profile={profile} user={user} />}
-      <MobileMenuButton user={user} />
+      {isAuthenticated && profile && user && (
+        <ProfileMenuMobile profile={profile} user={user} />
+      )}
+      <MobileMenuButton profile={profile} user={user} />
     </div>
   );
 }
 
-function MobileMenuButton({ user }: { user: User | null }) {
+function MobileMenuButton({
+  user,
+  profile
+}: {
+  user: User | null;
+  profile: Profile | null;
+}) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const isLandlord = user?.role === 'landlord' || user?.role === 'admin';
+  const isAuthenticated = Boolean(user && profile);
+  const isLandlord = user?.role === "landlord" || user?.role === "admin";
 
   return (
     <>
@@ -78,6 +95,15 @@ function MobileMenuButton({ user }: { user: User | null }) {
                 My Listings
               </Link>
             )}
+            {isLandlord && (
+              <Link
+                href={{ pathname: "/listings/new" }}
+                onClick={() => setMobileMenuOpen(false)}
+                className="block rounded-lg px-3 py-2 text-sm font-semibold text-brand-teal transition hover:bg-brand-teal/10"
+              >
+                Add listing
+              </Link>
+            )}
             <Link
               href={{ pathname: "/browse", query: { filters: "open" } }}
               onClick={() => setMobileMenuOpen(false)}
@@ -86,9 +112,37 @@ function MobileMenuButton({ user }: { user: User | null }) {
               <MagnifyingGlassIcon className="h-4 w-4" />
               <span>Search Filters</span>
             </Link>
-            <div className="pt-2 border-t border-black/5 mt-2">
-              <SignOutButton className="w-full justify-start" />
-            </div>
+            {isAuthenticated ? (
+              <>
+                <Link
+                  href={{ pathname: "/profile" }}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block rounded-lg px-3 py-2 text-sm font-medium text-text-muted transition hover:bg-surface hover:text-brand-teal"
+                >
+                  View profile
+                </Link>
+                <div className="mt-3 border-t border-black/5 pt-3">
+                  <SignOutButton className="w-full justify-start" />
+                </div>
+              </>
+            ) : (
+              <div className="mt-3 border-t border-black/5 pt-3 space-y-2">
+                <Link
+                  href={{ pathname: "/auth/sign-in" }}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`${buttonStyles({ variant: "ghost", size: "sm" })} w-full justify-start`}
+                >
+                  Sign in
+                </Link>
+                <Link
+                  href={{ pathname: "/auth/sign-up" }}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`${buttonStyles({ variant: "primary", size: "sm" })} w-full justify-center`}
+                >
+                  Join Rento
+                </Link>
+              </div>
+            )}
           </nav>
         </div>
       )}
@@ -97,8 +151,8 @@ function MobileMenuButton({ user }: { user: User | null }) {
 }
 
 function ProfileMenuMobile({ profile, user }: { profile: Profile; user: User }) {
-  const isLandlord = user.role === 'landlord' || user.role === 'admin';
-  const isTenant = user.role === 'tenant' || !user.role;
+  const isLandlord = user.role === "landlord" || user.role === "admin";
+  const isTenant = user.role === "tenant" || !user.role;
 
   const initials = profile.name
     .split(" ")
@@ -122,7 +176,7 @@ function ProfileMenuMobile({ profile, user }: { profile: Profile; user: User }) 
           href={{ pathname: "/listings/new" }}
           className="rounded-full bg-brand-teal px-3 py-2 text-xs font-semibold text-white shadow-sm hover:bg-brand-teal/90"
         >
-          Add
+          Add listing
         </Link>
       )}
       <Link
