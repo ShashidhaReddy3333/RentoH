@@ -12,5 +12,13 @@ module.exports = {
   rules: {
     '@typescript-eslint/consistent-type-imports': 'warn',
     'react/jsx-key': 'off'
-  }
+  },
+  overrides: [
+    {
+      files: ['**/*.d.ts'],
+      rules: {
+        '@typescript-eslint/no-explicit-any': 'off'
+      }
+    }
+  ]
 };

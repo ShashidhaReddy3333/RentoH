@@ -69,8 +69,6 @@ if (supabaseHost) {
   fontSrc.push(`https://${supabaseHost}`);
 }
 
-const isDev = process.env.NODE_ENV === 'development';
-
 const styleSrc = ["'self'", 'https://api.mapbox.com'];
 // Next.js requires unsafe-inline for styles in both dev and production
 styleSrc.push("'unsafe-inline'");

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import { unstable_noStore as noStore } from "next/cache";
 import { MagnifyingGlassIcon, ShieldCheckIcon } from "@heroicons/react/24/outline";
 
 import { SignOutButton } from "@/components/auth/SignOutButton";
@@ -79,21 +80,24 @@ function Brand() {
 }
 
 async function ProfileMenu() {
-  const profile = await getProfile().catch(() => null);
+  noStore();
   const user = await getCurrentUser().catch(() => null);
-  if (!profile || !user) {
+  if (!user) {
     return <SignInButtons />;
   }
-  // Use user.role for reliable role-based UI
-  const isLandlord = user.role === 'landlord' || user.role === 'admin';
-  const isTenant = user.role === 'tenant' || !user.role;
 
-  const initials = profile.name
+  const profile = await getProfile().catch(() => null);
+
+  const displayName = profile?.name ?? "Account";
+  const initials = displayName
     .split(" ")
     .map((part) => part.at(0))
     .join("")
     .slice(0, 2)
     .toUpperCase();
+
+  const isLandlord = user.role === "landlord" || user.role === "admin";
+  const isTenant = user.role === "tenant" || !user.role;
 
   return (
     <div className="flex items-center gap-3">
@@ -120,20 +124,20 @@ async function ProfileMenu() {
         aria-label="Open profile menu"
       >
         <span className="hidden text-sm font-medium text-text-muted transition group-hover:text-brand-teal md:inline">
-          {profile.name.split(" ")[0]}
+          {displayName.split(" ")[0]}
         </span>
         <span className="relative inline-flex h-10 w-10 items-center justify-center rounded-full bg-brand-teal/10 text-sm font-semibold text-brand-teal">
-          {profile.avatarUrl ? (
+          {profile?.avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={profile.avatarUrl}
-              alt={`${profile.name} profile picture`}
+              alt={`${displayName} profile picture`}
               className="h-10 w-10 rounded-full object-cover"
             />
           ) : (
             initials || "U"
           )}
-          {profile.verificationStatus === "verified" && (
+          {profile?.verificationStatus === "verified" && (
             <span className="absolute -bottom-1 -right-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-brand-green text-white shadow-soft">
               <ShieldCheckIcon className="h-3.5 w-3.5" aria-hidden="true" />
               <span className="sr-only">Verified account</span>
@@ -147,6 +151,7 @@ async function ProfileMenu() {
 
 
 async function MobileMenuWrapper() {
+  noStore();
   const profile = await getProfile().catch(() => null);
   const user = await getCurrentUser().catch(() => null);
 

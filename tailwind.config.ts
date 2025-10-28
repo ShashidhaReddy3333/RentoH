@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import type { PluginAPI } from "tailwindcss/types/config";
 const config: Config = {
   content: ["./app/**/*.{ts,tsx,js,jsx,mdx}", "./components/**/*.{ts,tsx,js,jsx,mdx}", "./lib/**/*.{ts,tsx,js,jsx,mdx}"],
   theme: {
@@ -47,8 +48,8 @@ const config: Config = {
     },
   },
   plugins: [
-    function (plugin: any) {
-      const { addUtilities } = plugin;
+    function focusRingUtilities(pluginApi: PluginAPI) {
+      const { addUtilities } = pluginApi;
       addUtilities({
         '.focus-ring': {
           outline: '2px solid #FFB300',

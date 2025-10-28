@@ -11,6 +11,18 @@ export async function getSupabaseClientWithUser(): Promise<{
     return { supabase: null, user: null };
   }
 
+  const {
+    data: { session },
+    error: sessionError
+  } = await supabase.auth.getSession();
+  if (sessionError) {
+    console.error("[supabase] Failed to fetch session", sessionError);
+  }
+
+  if (session?.user) {
+    return { supabase, user: session.user };
+  }
+
   const { data, error } = await supabase.auth.getUser();
   if (error) {
     console.error("[supabase] Unable to resolve current user", error);
