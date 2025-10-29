@@ -28,15 +28,21 @@ export default function ProfileForm({
     }
 
     const fd = new FormData(e.currentTarget);
-    const raw = Object.fromEntries(fd.entries());
     const parsed = profileUpdateSchema.safeParse({
-      ...raw,
+      ...Object.fromEntries(fd.entries()),
       photo: fd.get("photo")
     });
     if (!parsed.success) {
       setMsg(parsed.error.issues[0]?.message ?? "Invalid form");
       return;
     }
+    const data = parsed.data;
+
+    const normalize = (value?: string | null) => {
+      if (!value) return null;
+      const trimmed = value.trim();
+      return trimmed.length ? trimmed : null;
+    };
 
     setPending(true);
     try {
@@ -58,18 +64,21 @@ export default function ProfileForm({
         photo_url = pub?.publicUrl ?? null;
       }
 
-      const { error } = await supabase.from("profiles").upsert({
-        id: user.id,
-        full_name: (raw.full_name as string) || initialProfile?.full_name || "",
-        email,
-        phone: (raw.phone as string) || initialProfile?.phone || "",
-        user_type: (raw.user_type as string) || initialProfile?.user_type || "tenant",
-        city: raw.city?.toString() || null,
-        address: raw.address?.toString() || null,
-        contact_method: raw.contact_method?.toString() || null,
-        dob: raw.dob?.toString() || null,
-        photo_url
-      });
+      const { error } = await supabase.from("profiles").upsert(
+        {
+          id: user.id,
+          full_name: data.full_name,
+          email: data.email ?? email,
+          phone: data.phone,
+          user_type: data.user_type,
+          city: normalize(data.city ?? null),
+          address: normalize(data.address ?? null),
+          contact_method: data.contact_method ?? null,
+          dob: normalize(data.dob ?? null),
+          photo_url
+        },
+        { onConflict: "id" }
+      );
       if (error) throw error;
       setMsg("Profile updated");
     } catch (err) {
