@@ -22,6 +22,11 @@ export default function ProfileForm({
     e.preventDefault();
     setMsg(null);
 
+    if (!supabase) {
+      setMsg("Supabase not configured.");
+      return;
+    }
+
     const fd = new FormData(e.currentTarget);
     const raw = Object.fromEntries(fd.entries());
     const parsed = profileUpdateSchema.safeParse({
