@@ -169,7 +169,7 @@ export default function ProfileForm({
                     initialProfile?.contact_method === v || (!initialProfile?.contact_method && v === "email")
                   }
                 />
-                {v[0].toUpperCase() + v.slice(1)}
+                {(v?.[0]?.toUpperCase() ?? "") + v.slice(1)}
               </label>
             ))}
           </div>
