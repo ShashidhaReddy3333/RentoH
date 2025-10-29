@@ -1,3 +1,5 @@
+import { memo } from "react";
+
 import PropertyCard from "@/components/PropertyCard";
 import { buttonStyles } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -10,7 +12,7 @@ type PropertyGridProps = {
   hasMore?: boolean;
 };
 
-export default function PropertyGrid({
+function PropertyGridComponent({
   properties,
   loading = false,
   onLoadMore,
@@ -20,7 +22,7 @@ export default function PropertyGrid({
     <div className="space-y-8">
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {loading
-            ? Array.from({ length: 8 }).map((_, index) => (
+          ? Array.from({ length: 8 }).map((_, index) => (
               <div key={index}>
                 <Skeleton className="aspect-[4/5] rounded-3xl" />
               </div>
@@ -46,3 +48,5 @@ export default function PropertyGrid({
     </div>
   );
 }
+
+export default memo(PropertyGridComponent);

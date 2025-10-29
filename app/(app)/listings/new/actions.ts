@@ -114,96 +114,105 @@ export async function saveDraftAction(formData: FormData): Promise<ListingFormSt
   return { status: "auto-saved", timestamp: Date.now() };
 }
 
-export async function createListingAction(_prev: ListingFormState, formData: FormData): Promise<ListingFormState> {
-  // Build a raw object that preserves repeated keys (arrays) like images[] or amenities[]
-  const entries = Array.from(formData.entries());
-  const raw: Record<string, unknown> = {};
-  for (const [key, value] of entries) {
-    if (key.endsWith("[]")) {
-      const k = key.slice(0, -2);
-      raw[k] = Array.isArray(raw[k]) ? [...(raw[k] as string[]), String(value)] : [String(value)];
-    } else {
-      raw[key] = value;
+export async function createListingAction(
+  _prev: ListingFormState,
+  formData: FormData
+): Promise<ListingFormState> {
+  try {
+    const entries = Array.from(formData.entries());
+    const raw: Record<string, unknown> = {};
+    for (const [key, value] of entries) {
+      if (key.endsWith("[]")) {
+        const k = key.slice(0, -2);
+        raw[k] = Array.isArray(raw[k]) ? [...(raw[k] as string[]), String(value)] : [String(value)];
+      } else {
+        raw[key] = value;
+      }
     }
+
+    const parsed = ListingSchema.safeParse(raw);
+    if (!parsed.success) {
+      return { status: "error", message: "Please check the highlighted fields." };
+    }
+
+    const values = parsed.data;
+
+    if (!hasSupabaseEnv) {
+      return { status: "error", message: "Missing Supabase configuration. Please set up your environment variables." };
+    }
+
+    const supabase = createSupabaseServerClient();
+    if (!supabase) {
+      return { status: "error", message: "Supabase client unavailable." };
+    }
+
+    const {
+      data: { user },
+      error: authError
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return { status: "error", message: "You must be signed in to create a listing." };
+    }
+
+    const role =
+      (user.app_metadata?.["role"] as string | undefined) ??
+      (user.user_metadata?.["role"] as string | undefined) ??
+      "tenant";
+
+    if (role !== "landlord" && role !== "admin") {
+      return { status: "error", message: "Only landlord accounts can create listings." };
+    }
+
+    const imagesArr: string[] = Array.isArray(values.images)
+      ? (values.images as string[])
+      : values.images
+        ? [values.images as unknown as string]
+        : [];
+    const coverKey = (values as { cover?: string }).cover;
+    let orderedImages = imagesArr;
+    if (coverKey) {
+      orderedImages = [coverKey, ...imagesArr.filter((i) => i !== coverKey)];
+    }
+
+    const { error } = await supabase.from("properties").insert({
+      landlord_id: user.id,
+      title: values.title,
+      price: values.rent,
+      address: values.street,
+      postal_code: values.postalCode,
+      city: values.city,
+      type: values.propertyType,
+      beds: values.beds,
+      baths: values.baths,
+      area: values.area,
+      amenities: values.amenities ?? [],
+      images: orderedImages,
+      pets: values.pets ?? false,
+      smoking: values.smoking ?? false,
+      parking: values.parking,
+      available_from: values.availableFrom,
+      rent_frequency: values.rentFrequency,
+      description: values.description,
+      status: "draft",
+      verified: false,
+      furnished: false
+    });
+
+    if (error) {
+      console.error("[listings] Failed to create listing", error);
+      return { status: "error", message: error.message };
+    }
+
+    revalidatePath("/dashboard");
+    revalidatePath("/browse");
+
+    return { status: "success" };
+  } catch (error) {
+    console.error("[listings] Unexpected error creating listing", error);
+    const message = error instanceof Error ? error.message : "Failed to create listing";
+    return { status: "error", message };
   }
-
-  const parsed = ListingSchema.safeParse(raw);
-
-  if (!parsed.success) {
-    const firstError = parsed.error.errors.at(0)?.message ?? "Invalid listing details.";
-    return { status: "error", message: firstError };
-  }
-
-  const values = parsed.data;
-
-  if (!hasSupabaseEnv) {
-    return { status: "error", message: "Missing Supabase configuration. Please set up your environment variables." };
-  }
-
-  const supabase = createSupabaseServerClient();
-  if (!supabase) {
-    return { status: "error", message: "Supabase client unavailable." };
-  }
-
-  const {
-    data: { user },
-    error: authError
-  } = await supabase.auth.getUser();
-
-  if (authError || !user) {
-    return { status: "error", message: "You must be signed in to create a listing." };
-  }
-
-  const role =
-    (user.app_metadata?.["role"] as string | undefined) ??
-    (user.user_metadata?.["role"] as string | undefined) ??
-    "tenant";
-
-  if (role !== "landlord" && role !== "admin") {
-    return { status: "error", message: "Only landlord accounts can create listings." };
-  }
-
-  // ensure images and cover ordering
-  const imagesArr: string[] = Array.isArray(values.images) ? (values.images as string[]) : values.images ? [values.images as unknown as string] : [];
-  const coverKey = (values as { cover?: string }).cover;
-  let orderedImages = imagesArr;
-  if (coverKey) {
-    orderedImages = [coverKey, ...imagesArr.filter((i) => i !== coverKey)];
-  }
-
-  const { error } = await supabase.from("properties").insert({
-    landlord_id: user.id,
-    title: values.title,
-    price: values.rent,
-    address: values.street,
-    postal_code: values.postalCode,
-    city: values.city,
-    type: values.propertyType,
-    beds: values.beds,
-    baths: values.baths,
-    area: values.area,
-  amenities: values.amenities ?? [],
-  images: orderedImages,
-    pets: values.pets ?? false,
-    smoking: values.smoking ?? false,
-    parking: values.parking,
-    available_from: values.availableFrom,
-    rent_frequency: values.rentFrequency,
-  description: values.description,
-  status: "draft",
-    verified: false,
-    furnished: false
-  });
-
-  if (error) {
-    console.error("[listings] Failed to create listing", error);
-    return { status: "error", message: error.message };
-  }
-
-  revalidatePath("/dashboard");
-  revalidatePath("/browse");
-
-  return { status: "success" };
 }
 
 export async function fetchDraftAction(): Promise<ListingFormState & { data?: Record<string, unknown> }> {
@@ -262,3 +271,4 @@ export async function fetchDraftAction(): Promise<ListingFormState & { data?: Re
 
   return { status: "success", data: formData };
 }
+

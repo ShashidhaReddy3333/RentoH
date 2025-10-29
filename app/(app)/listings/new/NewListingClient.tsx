@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -10,6 +10,7 @@ import { createListingAction, saveDraftAction, fetchDraftAction, type ListingFor
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import dynamic from "next/dynamic";
 import { useDebounce } from "@/lib/utils/hooks/index";
+import { useRouter } from "next/navigation";
 
 const ListingImageUploader = dynamic(() => import("@/components/ListingImageUploader"), { ssr: false });
 
@@ -21,11 +22,14 @@ const propertyTypes = [
 ];
 
 const initialListingFormState: ListingFormState = { status: "idle" };
+type ToastState = { type: "error" | "success"; message: string } | null;
 
 export default function NewListingClient() {
   const [state, formAction] = useFormState(createListingAction, initialListingFormState);
   const [autoSaveState, setAutoSaveState] = useState<ListingFormState>({ status: "idle" });
   const formRef = useRef<HTMLFormElement>(null);
+  const router = useRouter();
+  const [toast, setToast] = useState<ToastState>(null);
   
   // If the browser Supabase client is unavailable, we are running in dev mode
   // (or missing NEXT_PUBLIC_* keys). Show a clear dev-mode notice so landlords
@@ -86,11 +90,29 @@ export default function NewListingClient() {
       });
     };
   }, [debouncedHandleFormChange]);
+  useEffect(() => {
+    if (state.status === "error") {
+      setToast({ type: "error", message: state.message });
+    } else if (state.status === "success") {
+      setToast({ type: "success", message: "Listing created! Redirecting..." });
+    } else if (state.status === "idle") {
+      setToast(null);
+    }
+  }, [state]);
+
+  useEffect(() => {
+    if (state.status !== "success") return;
+    const timeout = setTimeout(() => {
+      router.push("/dashboard?toast=listing-created");
+    }, 250);
+    return () => clearTimeout(timeout);
+  }, [state.status, router]);
 
   return (
     <form
       ref={formRef}
       action={formAction}
+      noValidate
       className="space-y-6 rounded-3xl border border-black/5 bg-white p-8 shadow-soft"
       aria-describedby="new-listing-description"
     >
@@ -98,21 +120,18 @@ export default function NewListingClient() {
         Provide property details to publish a draft listing to Supabase. Fields marked with an asterisk are required.
       </p>
 
-      {state.status === "success" ? (
-        <div
-          role="status"
-          className="rounded-2xl border border-brand-teal/40 bg-brand-teal/10 px-4 py-3 text-sm font-semibold text-brand-teal"
-        >
-          Property saved! Refreshing your dashboard shortly.
-        </div>
-      ) : null}
+      <div aria-live="polite" role="status" className="sr-only">
+        {toast?.message ?? ""}
+      </div>
 
-      {state.status === "error" ? (
+      {toast ? (
         <div
-          role="alert"
-          className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600"
+          role={toast.type === "error" ? "alert" : "status"}
+          className={toast.type === "error"
+            ? "rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600"
+            : "rounded-2xl border border-brand-teal/40 bg-brand-teal/10 px-4 py-3 text-sm font-semibold text-brand-teal"}
         >
-          {state.message}
+          {toast.message}
         </div>
       ) : null}
 
@@ -368,3 +387,8 @@ function FormField({
     </label>
   );
 }
+
+
+
+
+

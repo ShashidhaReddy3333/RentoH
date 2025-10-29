@@ -196,19 +196,20 @@ export async function getMany(
   sort: PropertySort = "newest",
   page = 1
 ): Promise<PaginatedResult<Property>> {
-  if (hasSupabaseEnv) {
-    try {
-      return await fetchManyFromSupabase(filters, sort, page);
-    } catch (error) {
-      console.warn("[properties] Falling back to mock listings", error);
-    }
+  const normalizedFilters = normalizeFilters(filters);
+
+  if (!hasSupabaseEnv) {
+    const filtered = applyFilters(mockProperties, normalizedFilters);
+    const sorted = applySort(filtered, sort);
+    return paginate(sorted, page);
   }
 
-  const filtered = applyFilters(mockProperties, filters);
-  const sorted = applySort(filtered, sort);
-  const paged = paginate(sorted, page);
-
-  return paged;
+  try {
+    return await fetchManyFromSupabase(normalizedFilters, sort, page);
+  } catch (error) {
+    console.error("[properties] Supabase query failed", error);
+    throw error;
+  }
 }
 
 export function mapPropertyFromSupabaseRow(record: SupabasePropertyRow): Property {
@@ -441,4 +442,61 @@ function mapStatus(value: string | null | undefined): Property["status"] | undef
   return undefined;
 }
 
+function normalizeFilters(filters: PropertyFilters): PropertyFilters {
+  const result: PropertyFilters = {};
+
+  if (filters.city?.trim()) {
+    result.city = filters.city.trim();
+  }
+
+  if (typeof filters.min === "number" && Number.isFinite(filters.min)) {
+    result.min = filters.min;
+  }
+
+  if (typeof filters.max === "number" && Number.isFinite(filters.max)) {
+    result.max = filters.max;
+  }
+
+  if (typeof filters.beds === "number" && filters.beds > 0) {
+    result.beds = filters.beds;
+  }
+
+  if (typeof filters.baths === "number" && filters.baths > 0) {
+    result.baths = filters.baths;
+  }
+
+  if (filters.type) {
+    result.type = filters.type;
+  }
+
+  if (filters.pets === true) {
+    result.pets = true;
+  }
+
+  if (filters.furnished === true) {
+    result.furnished = true;
+  }
+
+  if (filters.verified === true) {
+    result.verified = true;
+  }
+
+  if (filters.neighborhood?.trim()) {
+    result.neighborhood = filters.neighborhood.trim();
+  }
+
+  if (filters.availableFrom) {
+    result.availableFrom = filters.availableFrom;
+  }
+
+  if (Array.isArray(filters.amenities) && filters.amenities.length > 0) {
+    result.amenities = filters.amenities.filter(Boolean);
+  }
+
+  if (filters.keywords?.trim()) {
+    result.keywords = filters.keywords.trim();
+  }
+
+  return result;
+}
 

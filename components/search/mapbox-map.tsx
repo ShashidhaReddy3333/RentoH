@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import type { Property } from "@/lib/types";
-import { env } from "@/lib/env";
+import { clientEnv } from "@/lib/env";
 
 type MapboxMapProps = {
   properties: Property[];
@@ -15,7 +15,7 @@ type MapboxMapProps = {
 export default function MapboxMap({ properties }: MapboxMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
-  const mapboxToken = env.NEXT_PUBLIC_MAPBOX_TOKEN;
+  const mapboxToken = clientEnv.NEXT_PUBLIC_MAPBOX_TOKEN;
 
   useEffect(() => {
     // Only load mapbox-gl if we have a token and container

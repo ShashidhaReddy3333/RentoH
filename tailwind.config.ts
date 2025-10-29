@@ -7,9 +7,9 @@ const config: Config = {
       colors: {
         brand: {
           teal: "var(--brand-teal)",
-          blue: "var(--brand-blue)",
-          green: "var(--brand-green)",
-          yellow: "var(--brand-yellow)",
+          blue: "var(--brand-blue, #1E88E5)",
+          green: "var(--brand-green, #43A047)",
+          yellow: "var(--brand-yellow, #F9A825)",
           dark: "var(--brand-dark)",
           bg: "var(--brand-bg)",
         },
@@ -28,7 +28,12 @@ const config: Config = {
           ring: '#FFB300', // visible amber focus ring
         },
       },
-      borderRadius: { card: "var(--radius-card)" },
+      borderRadius: {
+        card: "var(--radius-card)",
+        lg: "16px",
+        xl: "24px",
+        "2xl": "32px",
+      },
       maxWidth: { container: "var(--container)" },
       spacing: { section: "var(--section-y)" },
       fontFamily: { sans: ["Inter", "system-ui", "sans-serif"] },

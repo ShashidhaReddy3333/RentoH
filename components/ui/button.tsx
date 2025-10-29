@@ -40,3 +40,18 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 );
 
 Button.displayName = "Button";
+
+export function BaseButton({
+  className = "",
+  ...props
+}: React.ButtonHTMLAttributes<HTMLButtonElement>) {
+  return (
+    <button
+      className={clsx(
+        "rounded-xl px-4 py-2 shadow transition hover:shadow-md focus-visible:outline-none",
+        className
+      )}
+      {...props}
+    />
+  );
+}

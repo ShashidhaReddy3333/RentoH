@@ -3,6 +3,7 @@
 import Image from "next/image";
 import React, { useCallback, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { clientEnv } from "@/lib/env";
 
 type UploadedImage = {
   key: string; // storage path
@@ -10,6 +11,9 @@ type UploadedImage = {
   isCover?: boolean;
   uploading?: boolean;
 };
+
+const reorderButtonClass =
+  "flex h-6 w-6 items-center justify-center rounded-full border border-black/10 text-xs text-text-muted transition hover:bg-brand-teal/10 hover:text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal disabled:opacity-40";
 
 export default function ListingImageUploader({ name = "images" }: { name?: string }) {
   const [images, setImages] = useState<UploadedImage[]>([]);
@@ -33,10 +37,7 @@ export default function ListingImageUploader({ name = "images" }: { name?: strin
         setImages((s) => [...s, temp]);
 
         try {
-          const bucketName =
-            process.env["NEXT_PUBLIC_SUPABASE_BUCKET_LISTINGS"] ||
-            process.env["SUPABASE_STORAGE_BUCKET_LISTINGS"] ||
-            "listing-media";
+          const bucketName = clientEnv.NEXT_PUBLIC_SUPABASE_BUCKET_LISTINGS ?? "listing-media";
           const res = await supabase.storage.from(bucketName).upload(path, file, { upsert: false });
           if (res.error) throw res.error;
 
@@ -102,14 +103,16 @@ export default function ListingImageUploader({ name = "images" }: { name?: strin
         {images.map((img, idx) => (
           <div key={img.key} className="relative rounded-lg border p-2">
             {img.uploading ? (
-              <div className="flex h-40 items-center justify-center">Uploading...</div>
+              <div className="flex h-40 items-center justify-center" role="status" aria-live="polite">
+                Uploading...
+              </div>
             ) : (
               <Image
                 src={img.url}
                 alt={`listing-${idx}`}
                 className="h-40 w-full object-cover"
-                width={200} // Provide appropriate width
-                height={160} // Provide appropriate height
+                width={200}
+                height={160}
               />
             )}
 
@@ -123,11 +126,23 @@ export default function ListingImageUploader({ name = "images" }: { name?: strin
                 </button>
               </div>
               <div className="flex gap-1">
-                <button type="button" disabled={idx === 0} onClick={() => move(idx, idx - 1)} className="text-xs">
-                  ←
+                <button
+                  type="button"
+                  disabled={idx === 0}
+                  onClick={() => move(idx, idx - 1)}
+                  className={reorderButtonClass}
+                  aria-label="Move image earlier"
+                >
+                  <span aria-hidden="true">Up</span>
                 </button>
-                <button type="button" disabled={idx === images.length - 1} onClick={() => move(idx, idx + 1)} className="text-xs">
-                  →
+                <button
+                  type="button"
+                  disabled={idx === images.length - 1}
+                  onClick={() => move(idx, idx + 1)}
+                  className={reorderButtonClass}
+                  aria-label="Move image later"
+                >
+                  <span aria-hidden="true">Down</span>
                 </button>
               </div>
             </div>
@@ -141,3 +156,5 @@ export default function ListingImageUploader({ name = "images" }: { name?: strin
     </div>
   );
 }
+
+

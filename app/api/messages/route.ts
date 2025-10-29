@@ -7,16 +7,14 @@ import { MessageQueryParams } from "@/lib/validators/messages";
 import { generateDigestForUser } from "@/lib/notifications/digest";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { validateCsrfToken } from "@/lib/http/csrf";
+import { rateLimit } from "@/lib/server/rate-limit";
+import { logWarn } from "@/lib/server/logger";
 
 // Hardened message payload validator with strict UUID and string validation
 const MessagePayload = z.object({
   threadId: z.string().uuid("Invalid thread ID format"),
   body: z.string().min(1, "Message body cannot be empty").max(2000, "Message body too long")
 });
-
-// Message rate limiting settings
-const MIN_INTERVAL_BETWEEN_MESSAGES = 500; // ms
-const lastMessageTime = new Map<string, number>();
 
 export async function POST(request: NextRequest) {
   try {
@@ -37,6 +35,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "Invalid or missing CSRF token", code: "INVALID_CSRF" },
         { status: 403 }
+      );
+    }
+
+    const ip = request.headers.get("x-forwarded-for") ?? "anon";
+    if (!rateLimit(`POST:/api/messages:${ip}`)) {
+      logWarn("rate_limited", { ip });
+      return NextResponse.json(
+        { error: "Too Many Requests", code: "RATE_LIMIT" },
+        { status: 429 }
       );
     }
 
@@ -72,20 +79,6 @@ export async function POST(request: NextRequest) {
     }
 
     const userId = session.user.id;
-
-    // Check message rate limiting
-    const now = Date.now();
-    const lastTime = lastMessageTime.get(userId) || 0;
-    if (now - lastTime < MIN_INTERVAL_BETWEEN_MESSAGES) {
-      return NextResponse.json(
-        { error: "Please wait before sending another message", code: "RATE_LIMIT" },
-        { 
-          status: 429,
-          headers: { "X-RateLimit-Reset": (lastTime + MIN_INTERVAL_BETWEEN_MESSAGES).toString() }
-        }
-      );
-    }
-    lastMessageTime.set(userId, now);
 
     // Verify thread exists and user is a participant
     const { data: thread, error: threadError } = await supabase
@@ -156,10 +149,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       { success: true },
-      { 
-        status: 200,
-        headers: { "X-RateLimit-Reset": (now + MIN_INTERVAL_BETWEEN_MESSAGES).toString() }
-      }
+      { status: 200 }
     );
 
   } catch (error) {

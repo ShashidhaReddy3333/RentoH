@@ -1,11 +1,19 @@
 import type { Metadata } from "next";
 
-import MapPane from "@/components/MapPane";
+import { Suspense } from "react";
+import nextDynamic from "next/dynamic";
+
 import PropertyGrid from "@/components/PropertyGrid";
 import SearchClient from "./SearchClient";
 import { getMany } from "@/lib/data-access/properties";
 import type { PropertyFilters, PropertySort } from "@/lib/types";
 import type { Property } from "@/lib/types";
+import { env } from "@/lib/env";
+
+const MapPane = nextDynamic(() => import("@/components/MapPane"), {
+  ssr: false,
+  loading: () => <div className="h-96 w-full animate-pulse rounded-2xl bg-surface" />
+});
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
@@ -13,8 +21,8 @@ export const fetchCache = "force-no-store";
 export async function generateMetadata(): Promise<Metadata> {
   const title = "Search rentals - Rento";
   const description = "Search by neighborhood, amenities, available date and more.";
-  const siteUrl = process.env["NEXT_PUBLIC_SITE_URL"] ?? "https://rento.example";
-  const url = `${siteUrl.replace(/\/$/, "")}/search`;
+  const siteUrl = (env.NEXT_PUBLIC_SITE_URL ?? "https://rento-h.vercel.app").replace(/\/$/, "");
+  const url = `${siteUrl}/search`;
 
   return {
     title,
@@ -59,14 +67,22 @@ export default async function SearchPage({
       </div>
 
       {result.items.length === 0 ? (
-        <div className="rounded-md border border-black/5 bg-white p-6 text-sm text-text-muted">
-          <p className="font-semibold">No results</p>
-          <p className="mt-2">Try different keywords or remove filters to broaden your search.</p>
+        <div className="rounded-md border border-black/5 bg-white p-6 text-sm">
+          <p className="font-semibold text-brand-dark">No results</p>
+          <ul className="mt-2 list-disc space-y-1 pl-5 text-text-muted">
+            <li>Remove or relax filters.</li>
+            <li>Try searching a nearby city.</li>
+            <li>Broaden your price range.</li>
+          </ul>
         </div>
-      ) : view === "map" ? (
-        <MapPane properties={result.items} />
       ) : (
-        <PropertyGrid properties={result.items} hasMore={Boolean(result.nextPage)} />
+        <Suspense fallback={<div className="animate-pulse rounded-3xl border border-black/5 bg-white p-6">Loading...</div>}>
+          {view === "map" ? (
+            <MapPane properties={result.items} />
+          ) : (
+            <PropertyGrid properties={result.items} hasMore={Boolean(result.nextPage)} />
+          )}
+        </Suspense>
       )}
     </div>
   );
