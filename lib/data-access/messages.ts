@@ -50,8 +50,8 @@ export async function listThreads(): Promise<MessageThread[]> {
         last_message,
         unread_count,
         updated_at,
-        tenant_profile:tenant!message_threads_tenant_id_fkey ( full_name, avatar_url ),
-        landlord_profile:landlord!message_threads_landlord_id_fkey ( full_name, avatar_url )
+        tenant_profile:profiles!message_threads_tenant_id_fkey ( full_name, avatar_url ),
+        landlord_profile:profiles!message_threads_landlord_id_fkey ( full_name, avatar_url )
       `
     )
     .or(`tenant_id.eq.${user.id},landlord_id.eq.${user.id}`)

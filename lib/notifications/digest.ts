@@ -20,12 +20,12 @@ export async function generateDigestForUser(userId: string, opts: DigestOpts = {
   const trigger = opts.trigger ?? "manual";
 
   if (trigger === "message" && !prefs.emailNotifications.newMessages) {
-    console.log(`[digest] user=${userId} has disabled email newMessages — skipping`);
+    console.log(`[digest] user=${userId} has disabled email newMessages - skipping`);
     return null;
   }
 
   if (trigger === "application" && !prefs.emailNotifications.applications) {
-    console.log(`[digest] user=${userId} has disabled email applications — skipping`);
+    console.log(`[digest] user=${userId} has disabled email applications - skipping`);
     return null;
   }
 
@@ -37,8 +37,8 @@ export async function generateDigestForUser(userId: string, opts: DigestOpts = {
   const { data: threads } = await supabase
     .from("message_threads")
     .select("id")
-    .or(`owner_id.eq.${userId},participant_ids.cs.{${userId}}`);
-  
+    .or(`tenant_id.eq.${userId},landlord_id.eq.${userId}`);
+
   const threadIds = threads?.map((t: { id: string }) => t.id) ?? [];
 
   let recentMessages: MessageRow[] = [];

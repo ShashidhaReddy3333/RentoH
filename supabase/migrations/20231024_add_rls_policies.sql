@@ -7,29 +7,29 @@ ALTER TABLE favorites ENABLE ROW LEVEL SECURITY;
 -- Properties Policies
 CREATE POLICY "Public properties are viewable by everyone"
 ON properties FOR SELECT
-USING (status = 'published');
+USING (status = 'active');
 
 CREATE POLICY "Landlords can manage their own properties"
 ON properties FOR ALL
-USING (owner_id = auth.uid())
-WITH CHECK (owner_id = auth.uid());
+USING (landlord_id = auth.uid())
+WITH CHECK (landlord_id = auth.uid());
 
 -- Message Threads Policies
 CREATE POLICY "Users can view threads they participate in"
 ON message_threads FOR SELECT
 USING (
-  owner_id = auth.uid() OR 
-  auth.uid() = ANY(participant_ids)
+  tenant_id = auth.uid() OR 
+  landlord_id = auth.uid()
 );
 
 CREATE POLICY "Thread owners can update their threads"
 ON message_threads FOR UPDATE
-USING (owner_id = auth.uid())
-WITH CHECK (owner_id = auth.uid());
+USING (landlord_id = auth.uid())
+WITH CHECK (landlord_id = auth.uid());
 
 CREATE POLICY "Users can create threads with themselves as owner"
 ON message_threads FOR INSERT
-WITH CHECK (owner_id = auth.uid());
+WITH CHECK (auth.uid() = tenant_id OR auth.uid() = landlord_id);
 
 -- Messages Policies
 CREATE POLICY "Users can view messages in their threads"
@@ -39,8 +39,8 @@ USING (
     SELECT 1 FROM message_threads
     WHERE message_threads.id = messages.thread_id
     AND (
-      owner_id = auth.uid() OR
-      auth.uid() = ANY(participant_ids)
+      tenant_id = auth.uid() OR
+      landlord_id = auth.uid()
     )
   )
 );
@@ -53,8 +53,8 @@ WITH CHECK (
     SELECT 1 FROM message_threads
     WHERE message_threads.id = messages.thread_id
     AND (
-      owner_id = auth.uid() OR
-      auth.uid() = ANY(participant_ids)
+      tenant_id = auth.uid() OR
+      landlord_id = auth.uid()
     )
   )
 );

@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
     // Verify thread exists and user is a participant
     const { data: thread, error: threadError } = await supabase
       .from("message_threads")
-      .select("participant_ids, owner_id")
+      .select("tenant_id, landlord_id")
       .eq("id", payload.threadId)
       .single();
 
@@ -101,11 +101,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Ensure sender.id === auth.uid() - verify user is thread owner or participant
-    const isOwner = thread.owner_id === userId;
-    const isParticipant = thread.participant_ids?.includes(userId) ?? false;
-    
-    if (!isOwner && !isParticipant) {
+    // Ensure sender.id === auth.uid() - verify user is thread participant
+    const isTenant = thread.tenant_id === userId;
+    const isLandlord = thread.landlord_id === userId;
+
+    if (!isTenant && !isLandlord) {
       return NextResponse.json(
         { error: "Not authorized to send messages in this thread", code: "FORBIDDEN" },
         { status: 403 }
@@ -130,15 +130,8 @@ export async function POST(request: NextRequest) {
     // Trigger a consolidated digest for the recipient (dev stub — logs/email stub)
     try {
       let recipientId: string | undefined;
-      // thread.owner_id is the owner; thread.participant_ids may be an array of other participant ids
       if (thread) {
-        if (thread.owner_id === userId) {
-          // pick first participant that is not the sender
-          const participants = (thread.participant_ids as string[] | undefined) ?? undefined;
-          recipientId = participants?.find((id) => id !== userId) ?? undefined;
-        } else {
-          recipientId = thread.owner_id as string | undefined;
-        }
+        recipientId = userId === thread.landlord_id ? thread.tenant_id : thread.landlord_id;
       }
 
       if (recipientId) {
@@ -204,10 +197,10 @@ export async function GET(request: NextRequest) {
       .limit(query.limit);
 
     if (query.threadId) {
-      // Verify user is thread participant or owner
+      // Verify user is thread participant
       const { data: thread, error: threadError } = await supabase!
         .from("message_threads")
-        .select("participant_ids, owner_id")
+        .select("tenant_id, landlord_id")
         .eq("id", query.threadId)
         .single();
 
@@ -215,17 +208,17 @@ export async function GET(request: NextRequest) {
         throw new HttpError(404, "Thread not found", "THREAD_NOT_FOUND");
       }
 
-      if (thread.owner_id !== user.id && !thread.participant_ids?.includes(user.id)) {
+      if (thread.tenant_id !== user.id && thread.landlord_id !== user.id) {
         throw new HttpError(403, "Not authorized to view this thread", "NOT_PARTICIPANT");
       }
 
       messagesQuery = messagesQuery.eq("thread_id", query.threadId);
     } else {
-      // Only fetch messages from threads where user is owner or participant
+      // Only fetch messages from threads where user is a participant
       const { data: threads } = await supabase!
         .from("message_threads")
         .select("id")
-        .or(`owner_id.eq.${user.id},participant_ids.cs.{${user.id}}`);
+        .or(`tenant_id.eq.${user.id},landlord_id.eq.${user.id}`);
 
       const threadIds = threads?.map(t => t.id) || [];
       if (threadIds.length === 0) {
