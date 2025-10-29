@@ -120,7 +120,23 @@ export default function SignUpClient() {
 
       window.location.href = "/profile?toast=welcome";
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Sign up failed";
+      console.error("[sign-up]", err);
+      let message = "Sign up failed";
+      if (err instanceof Error && err.message) {
+        message = err.message;
+      } else if (err && typeof err === "object") {
+        const withMessage = err as { message?: unknown; error_description?: unknown; error?: unknown };
+        const candidate =
+          withMessage.message ??
+          withMessage.error_description ??
+          withMessage.error ??
+          (typeof err === "string" ? err : null);
+        if (typeof candidate === "string" && candidate.trim().length > 0) {
+          message = candidate;
+        }
+      } else if (typeof err === "string" && err.trim().length > 0) {
+        message = err;
+      }
       setError(message);
     } finally {
       setPending(false);
