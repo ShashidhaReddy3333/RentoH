@@ -32,15 +32,24 @@ export default function SignUpClient() {
     setError(null);
 
     const fd = new FormData(e.currentTarget);
-    const raw = Object.fromEntries(fd.entries());
+    const formEntries = Object.fromEntries(fd.entries());
+    const rawUserType = fd.get("user_type");
+    const normalizedUserType =
+      typeof rawUserType === "string" ? rawUserType.toLowerCase() : rawUserType;
+
     const parsed = signUpSchema.safeParse({
-      ...raw,
-      user_type: raw.user_type?.toString().toLowerCase(),
+      ...formEntries,
+      user_type: normalizedUserType,
       photo: fd.get("photo")
     });
 
     if (!parsed.success) {
       setError(parsed.error.issues[0]?.message ?? "Invalid form");
+      return;
+    }
+
+    if (!supabase) {
+      setError("Supabase not configured.");
       return;
     }
 
