@@ -65,8 +65,27 @@ export default function SignUpClient() {
         }
       });
       if (signErr) throw signErr;
-      const user = signRes.user;
-      if (!user) throw new Error("No user");
+      let { user, session } = signRes;
+
+      if (!session) {
+        const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
+          email: data.email,
+          password: data.password
+        });
+        if (signInErr) {
+          if (signInErr.message?.toLowerCase().includes("email not confirmed")) {
+            setError("Check your email to confirm your account, then sign in to finish setting up your profile.");
+            return;
+          }
+          throw signInErr;
+        }
+        session = signInData.session;
+        user = signInData.user;
+      }
+
+      if (!user || !session) {
+        throw new Error("Unable to establish a Supabase session.");
+      }
 
       let photo_url: string | undefined;
       const fileEntry = fd.get("photo");
