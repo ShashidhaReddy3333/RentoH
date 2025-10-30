@@ -50,7 +50,7 @@ export default function ProfileForm({
       const user = userData?.user;
       if (!user) throw new Error("Not signed in");
 
-      let photo_url = initialProfile?.photo_url ?? null;
+      let avatar_url = initialProfile?.avatar_url ?? null;
       const fileEntry = fd.get("photo");
       const file = fileEntry instanceof File ? fileEntry : null;
       if (file && file.size > 0) {
@@ -61,7 +61,7 @@ export default function ProfileForm({
           .upload(key, file, { upsert: true, contentType: file.type || "image/*" });
         if (upErr) throw upErr;
         const { data: pub } = supabase.storage.from("profiles-avatars").getPublicUrl(key);
-        photo_url = pub?.publicUrl ?? null;
+        avatar_url = pub?.publicUrl ?? null;
       }
 
       const { error } = await supabase.from("profiles").upsert(
@@ -75,7 +75,7 @@ export default function ProfileForm({
           address: normalize(data.address ?? null),
           contact_method: data.contact_method ?? null,
           dob: normalize(data.dob ?? null),
-          photo_url
+          avatar_url
         },
         { onConflict: "id" }
       );
@@ -191,10 +191,10 @@ export default function ProfileForm({
             Profile Photo
           </label>
           <input id="photo" name="photo" type="file" accept="image/*" className="mt-1 w-full rounded-lg border p-2" />
-          {initialProfile?.photo_url && (
+          {initialProfile?.avatar_url && (
             <div className="mt-2 h-20 w-20 overflow-hidden rounded-full">
               <Image
-                src={initialProfile.photo_url}
+                src={initialProfile.avatar_url}
                 alt="Avatar"
                 width={80}
                 height={80}

@@ -49,7 +49,7 @@ export default async function ProfilePage() {
           address: metaString("address"),
           contact_method: metaString("contact_method"),
           dob: metaString("dob"),
-          photo_url: metaString("photo_url")
+          avatar_url: metaString("avatar_url")
         },
         { onConflict: "id" }
       )
