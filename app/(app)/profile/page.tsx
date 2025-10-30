@@ -25,27 +25,31 @@ export default async function ProfilePage() {
   let { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
 
   if (!profile) {
-    const meta = user.user_metadata ?? {};
-    const normalize = (value?: unknown) => {
+    const meta = (user.user_metadata ?? {}) as Record<string, unknown>;
+    const metaString = (key: string) => {
+      const value = meta[key];
       if (typeof value !== "string") return null;
       const trimmed = value.trim();
       return trimmed.length ? trimmed : null;
     };
+
+    const fallbackFullName = metaString("full_name") ?? user.email ?? "";
+    const fallbackUserType = metaString("user_type") ?? "tenant";
 
     const { data: inserted } = await supabase
       .from("profiles")
       .upsert(
         {
           id: user.id,
-          full_name: (meta.full_name as string | undefined) ?? user.email ?? "",
+          full_name: fallbackFullName,
           email: user.email ?? "",
-          phone: (meta.phone as string | undefined) ?? "",
-          user_type: (meta.user_type as string | undefined) ?? "tenant",
-          city: normalize(meta.city),
-          address: normalize(meta.address),
-          contact_method: normalize(meta.contact_method),
-          dob: normalize(meta.dob),
-          photo_url: normalize(meta.photo_url)
+          phone: metaString("phone") ?? "",
+          user_type: fallbackUserType,
+          city: metaString("city"),
+          address: metaString("address"),
+          contact_method: metaString("contact_method"),
+          dob: metaString("dob"),
+          photo_url: metaString("photo_url")
         },
         { onConflict: "id" }
       )
