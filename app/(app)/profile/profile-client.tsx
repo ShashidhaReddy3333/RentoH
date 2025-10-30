@@ -64,21 +64,23 @@ export default function ProfileForm({
         avatar_url = pub?.publicUrl ?? null;
       }
 
-      const { error } = await supabase.from("profiles").upsert(
-        {
-          id: user.id,
-          full_name: data.full_name,
-          email: data.email ?? email,
-          phone: data.phone,
-          user_type: data.user_type,
-          city: normalize(data.city ?? null),
-          address: normalize(data.address ?? null),
-          contact_method: data.contact_method ?? null,
-          dob: normalize(data.dob ?? null),
-          avatar_url
-        },
-        { onConflict: "id" }
-      );
+      const payload = {
+        full_name: data.full_name,
+        email: data.email ?? email,
+        phone: data.phone,
+        user_type: data.user_type,
+        city: normalize(data.city ?? null),
+        address: normalize(data.address ?? null),
+        contact_method: data.contact_method ?? null,
+        dob: normalize(data.dob ?? null),
+        avatar_url
+      };
+
+      const response = initialProfile
+        ? await supabase.from("profiles").update(payload).eq("id", user.id)
+        : await supabase.from("profiles").insert({ ...payload, id: user.id });
+
+      const { error } = response;
       if (error) throw error;
       setMsg("Profile updated");
     } catch (err) {
