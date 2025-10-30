@@ -18,11 +18,13 @@ export default function ChatThread({ messages, loading = false, currentUserId }:
   const lastMessageRef = useRef<HTMLDivElement>(null);
   const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
   const [presenceByUser, setPresenceByUser] = useState<Record<string, ThreadPresence>>({});
+  const threadId = messages[0]?.threadId ?? "";
+  const lastMessageId = messages[messages.length - 1]?.id ?? "";
 
   useEffect(() => {
-    if (!currentUserId || !messages[0]?.threadId) return;
+    if (!currentUserId || !threadId) return;
     
-    const presence = setupThreadPresence(messages[0].threadId, currentUserId);
+    const presence = setupThreadPresence(threadId, currentUserId);
     void presence.join();
 
     const handleSync = (event: Event) => {
@@ -48,14 +50,15 @@ export default function ChatThread({ messages, loading = false, currentUserId }:
     }, 500);
 
     window.addEventListener("thread:presence:sync", handleSync);
-    document.querySelector("[data-testid=message-input]")?.addEventListener("input", handleInput);
+    const inputEl = document.querySelector("[data-testid=message-input]");
+    inputEl?.addEventListener("input", handleInput);
 
     return () => {
       presence.leave();
       window.removeEventListener("thread:presence:sync", handleSync);
-      document.querySelector("[data-testid=message-input]")?.removeEventListener("input", handleInput);
+      inputEl?.removeEventListener("input", handleInput);
     };
-  }, [currentUserId, messages[0]?.threadId, messages]);
+  }, [currentUserId, threadId]);
 
   useEffect(() => {
     const viewport = viewportRef.current;
@@ -64,11 +67,11 @@ export default function ChatThread({ messages, loading = false, currentUserId }:
     
     lastMessage.scrollIntoView({ behavior: "smooth" });
     
-    if (currentUserId) {
-      const presence = setupThreadPresence(messages[0]?.threadId ?? "", currentUserId);
+    if (currentUserId && threadId) {
+      const presence = setupThreadPresence(threadId, currentUserId);
       void presence.updateReadStatus();
     }
-  }, [messages.length, currentUserId, messages[0]?.threadId, messages]);
+  }, [messages.length, currentUserId, threadId, lastMessageId]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     const viewport = viewportRef.current;

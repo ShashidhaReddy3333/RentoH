@@ -224,7 +224,7 @@ export default function SignUpClient() {
                 className="mt-1"
               />
               <span>
-                <span className="block text-sm font-semibold text-brand-dark">I'm looking for a place</span>
+                <span className="block text-sm font-semibold text-brand-dark">I&apos;m looking for a place</span>
                 <span className="text-xs text-text-muted">Browse, save favorites, and message landlords.</span>
               </span>
             </label>
@@ -236,7 +236,7 @@ export default function SignUpClient() {
                 className="mt-1"
               />
               <span>
-                <span className="block text-sm font-semibold text-brand-dark">I'm listing a property</span>
+                <span className="block text-sm font-semibold text-brand-dark">I&apos;m listing a property</span>
                 <span className="text-xs text-text-muted">Create listings, manage inquiries, and track applications.</span>
               </span>
             </label>
