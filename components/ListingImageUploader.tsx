@@ -1,135 +1,264 @@
 "use client";
 
 import Image from "next/image";
-import React, { useCallback, useState } from "react";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import React, { useCallback, useEffect, useState } from "react";
+
 import { clientEnv } from "@/lib/env";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 type UploadedImage = {
-  key: string; // storage path
-  url: string; // public url (or signed)
+  key: string;
+  url: string;
+  previewUrl?: string;
   isCover?: boolean;
-  uploading?: boolean;
+  uploading: boolean;
 };
 
 const reorderButtonClass =
   "flex h-6 w-6 items-center justify-center rounded-full border border-black/10 text-xs text-text-muted transition hover:bg-brand-teal/10 hover:text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal disabled:opacity-40";
 
-export default function ListingImageUploader({ name = "images" }: { name?: string }) {
-  const [images, setImages] = useState<UploadedImage[]>([]);
+function sanitizeFilename(name: string) {
+  return name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
+}
 
+function uniqueId() {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+  return `${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+}
+
+export default function ListingImageUploader({ name = "images" }: { name?: string }) {
   const supabase = createSupabaseBrowserClient();
+  const bucketName = clientEnv.NEXT_PUBLIC_SUPABASE_BUCKET_LISTINGS ?? "listings";
+
+  const [images, setImages] = useState<UploadedImage[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    return () => {
+      images.forEach((img) => {
+        if (img.previewUrl) {
+          URL.revokeObjectURL(img.previewUrl);
+        }
+      });
+    };
+  }, [images]);
+
+  const updateImage = useCallback((key: string, updater: (current: UploadedImage) => UploadedImage | null) => {
+    setImages((prev) => {
+      const next: UploadedImage[] = [];
+      for (const image of prev) {
+        if (image.key !== key) {
+          next.push(image);
+          continue;
+        }
+        const updated = updater(image);
+        if (!updated) {
+          if (image.previewUrl) {
+            URL.revokeObjectURL(image.previewUrl);
+          }
+          continue;
+        }
+        if (image.previewUrl && image.previewUrl !== updated.previewUrl && !updated.previewUrl) {
+          URL.revokeObjectURL(image.previewUrl);
+        }
+        next.push(updated);
+      }
+      return next;
+    });
+  }, []);
 
   const handleFiles = useCallback(
     async (files: FileList | null) => {
       if (!files || files.length === 0) return;
+
+      setError(null);
+
       if (!supabase) {
-        console.warn("[uploader] Supabase client unavailable");
+        setError("Supabase is not configured. Image uploads are disabled.");
         return;
       }
 
-      const uploadPromises = Array.from(files).map(async (file) => {
-        const id = `${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
-        const path = `listings/${id}_${file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_")}`;
+      const { data: userResult, error: userError } = await supabase.auth.getUser();
+      const user = userResult?.user;
+      if (userError || !user) {
+        setError("You need to be signed in as a landlord to upload listing photos.");
+        return;
+      }
 
-        // optimistic UI entry
-        const temp: UploadedImage = { key: path, url: "", uploading: true };
-        setImages((s) => [...s, temp]);
+      const uploads = Array.from(files).map(async (file) => {
+        const key = `${user.id}/${uniqueId()}-${sanitizeFilename(file.name)}`;
+        const previewUrl = URL.createObjectURL(file);
+
+        setImages((prev) => [
+          ...prev,
+          {
+            key,
+            url: previewUrl,
+            previewUrl,
+            uploading: true
+          }
+        ]);
 
         try {
-          const bucketName = clientEnv.NEXT_PUBLIC_SUPABASE_BUCKET_LISTINGS ?? "listing-media";
-          const res = await supabase.storage.from(bucketName).upload(path, file, { upsert: false });
-          if (res.error) throw res.error;
+          const { error: uploadError } = await supabase.storage
+            .from(bucketName)
+            .upload(key, file, {
+              cacheControl: "3600",
+              upsert: false
+            });
+          if (uploadError) throw uploadError;
 
-          const { data } = supabase.storage.from(bucketName).getPublicUrl(path);
-          const url = data?.publicUrl ?? "";
+          const { data: publicData } = supabase.storage.from(bucketName).getPublicUrl(key);
+          const publicUrl = publicData?.publicUrl ?? "";
 
-          setImages((s) => s.map((it) => (it.key === path ? { ...it, url, uploading: false } : it)));
-        } catch (err) {
-          console.error("[uploader] upload failed", err);
-          setImages((s) => s.filter((it) => it.key !== path));
+          updateImage(key, (image) => ({
+            ...image,
+            url: publicUrl,
+            previewUrl: undefined,
+            uploading: false
+          }));
+        } catch (uploadErr) {
+          console.error("[listings] Failed to upload image", uploadErr);
+          setError("Failed to upload one of the images. Please try again.");
+          setImages((prev) => {
+            const next = prev.filter((img) => {
+              if (img.key === key && img.previewUrl) {
+                URL.revokeObjectURL(img.previewUrl);
+              }
+              return img.key !== key;
+            });
+            return next;
+          });
         }
       });
 
-      await Promise.all(uploadPromises);
+      await Promise.all(uploads);
     },
-    [supabase]
+    [bucketName, supabase, updateImage]
   );
 
-  const onDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    handleFiles(e.dataTransfer.files);
-  };
+  const onDrop = useCallback(
+    (event: React.DragEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      handleFiles(event.dataTransfer.files);
+    },
+    [handleFiles]
+  );
 
-  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    handleFiles(e.target.files);
-    e.currentTarget.value = "";
-  };
+  const onFileChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      handleFiles(event.target.files);
+      event.currentTarget.value = "";
+    },
+    [handleFiles]
+  );
 
-  const removeImage = (key: string) => {
-    setImages((s) => s.filter((i) => i.key !== key));
-  };
+  const removeImage = useCallback((key: string) => {
+    setImages((prev) => {
+      const next: UploadedImage[] = [];
+      for (const image of prev) {
+        if (image.key === key) {
+          if (image.previewUrl) {
+            URL.revokeObjectURL(image.previewUrl);
+          }
+          continue;
+        }
+        next.push(image);
+      }
+      return next;
+    });
+  }, []);
 
-  const move = (from: number, to: number) => {
-    setImages((s) => {
-      const copy = [...s];
-      if (from < 0 || from >= copy.length || to < 0 || to > copy.length) return s;
+  const move = useCallback((from: number, to: number) => {
+    setImages((prev) => {
+      const copy = [...prev];
+      if (from < 0 || from >= copy.length || to < 0 || to >= copy.length) {
+        return prev;
+      }
+
       const [item] = copy.splice(from, 1);
-      if (!item) return s;
+      if (!item) return prev;
       copy.splice(to, 0, item);
       return copy;
     });
-  };
+  }, []);
 
-  const setCover = (key: string) => {
-    setImages((s) => s.map((i) => ({ ...i, isCover: i.key === key })));
-  };
+  const setCover = useCallback((key: string) => {
+    setImages((prev) => prev.map((image) => ({ ...image, isCover: image.key === key })));
+  }, []);
 
   return (
     <div>
       <div
         onDragOver={(e) => e.preventDefault()}
         onDrop={onDrop}
-        className="rounded-lg border border-dashed p-4 text-center"
+        className="rounded-lg border border-dashed border-black/10 p-4 text-center transition hover:border-brand-teal focus-within:border-brand-teal"
+        aria-label="Upload listing images"
       >
-        <p className="text-sm text-text-muted">Drag & drop images here or</p>
-        <label className="mt-2 inline-block cursor-pointer rounded-md bg-brand-teal px-4 py-2 text-sm text-white">
-          <input type="file" accept="image/*" multiple onChange={onFileChange} className="sr-only" />
+        <p className="text-sm text-text-muted">Drag and drop images here or</p>
+        <label className="mt-2 inline-block cursor-pointer rounded-md bg-brand-teal px-4 py-2 text-sm font-medium text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal">
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={onFileChange}
+            className="sr-only"
+            aria-label="Choose images to upload"
+          />
           Upload images
         </label>
+        <p className="mt-2 text-xs text-text-muted">PNG or JPEG up to 5MB each.</p>
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-3">
-        {images.map((img, idx) => (
-          <div key={img.key} className="relative rounded-lg border p-2">
+      {error ? (
+        <p className="mt-3 rounded-md border border-red-200 bg-red-50 p-2 text-sm text-red-700" role="alert">
+          {error}
+        </p>
+      ) : null}
+
+      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {images.map((img, index) => (
+          <div key={img.key} className="relative rounded-lg border border-black/10 p-2 shadow-sm">
             {img.uploading ? (
-              <div className="flex h-40 items-center justify-center" role="status" aria-live="polite">
+              <div className="flex h-40 items-center justify-center text-sm text-text-muted" role="status" aria-live="polite">
                 Uploading...
               </div>
             ) : (
               <Image
                 src={img.url}
-                alt={`listing-${idx}`}
-                className="h-40 w-full object-cover"
-                width={200}
-                height={160}
+                alt={img.isCover ? "Cover photo preview" : `Listing image ${index + 1}`}
+                className="h-40 w-full rounded-md object-cover"
+                width={320}
+                height={240}
               />
             )}
 
             <div className="mt-2 flex items-center justify-between gap-2">
-              <div className="flex gap-2">
-                <button type="button" className="text-xs" onClick={() => setCover(img.key)}>
-                  {img.isCover ? "Cover" : "Set cover"}
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <button
+                  type="button"
+                  className="rounded-full border border-black/10 px-2 py-1 transition hover:border-brand-teal hover:text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal"
+                  onClick={() => setCover(img.key)}
+                  aria-pressed={img.isCover}
+                >
+                  {img.isCover ? "Cover photo" : "Set as cover"}
                 </button>
-                <button type="button" className="text-xs" onClick={() => removeImage(img.key)}>
+                <button
+                  type="button"
+                  className="rounded-full border border-black/10 px-2 py-1 transition hover:border-red-500 hover:text-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+                  onClick={() => removeImage(img.key)}
+                >
                   Remove
                 </button>
               </div>
+
               <div className="flex gap-1">
                 <button
                   type="button"
-                  disabled={idx === 0}
-                  onClick={() => move(idx, idx - 1)}
+                  disabled={index === 0}
+                  onClick={() => move(index, index - 1)}
                   className={reorderButtonClass}
                   aria-label="Move image earlier"
                 >
@@ -137,8 +266,8 @@ export default function ListingImageUploader({ name = "images" }: { name?: strin
                 </button>
                 <button
                   type="button"
-                  disabled={idx === images.length - 1}
-                  onClick={() => move(idx, idx + 1)}
+                  disabled={index === images.length - 1}
+                  onClick={() => move(index, index + 1)}
                   className={reorderButtonClass}
                   aria-label="Move image later"
                 >
@@ -147,7 +276,6 @@ export default function ListingImageUploader({ name = "images" }: { name?: strin
               </div>
             </div>
 
-            {/* Hidden inputs so the parent form receives the image keys and cover info */}
             <input type="hidden" name={`${name}[]`} value={img.key} />
             {img.isCover ? <input type="hidden" name="cover" value={img.key} /> : null}
           </div>
@@ -156,5 +284,3 @@ export default function ListingImageUploader({ name = "images" }: { name?: strin
     </div>
   );
 }
-
-

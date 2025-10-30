@@ -4,7 +4,7 @@ const serverSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
   SUPABASE_JWT_SECRET: z.string().min(1).optional(),
-  SUPABASE_STORAGE_BUCKET_LISTINGS: z.string().min(1).default("listing-media"),
+  SUPABASE_STORAGE_BUCKET_LISTINGS: z.string().min(1).default("listings"),
   HEALTH_CHECK_TOKEN: z.string().min(1).optional(),
   BYPASS_SUPABASE_AUTH: z.enum(["0", "1"]).optional()
 });
@@ -12,7 +12,7 @@ const serverSchema = z.object({
 const clientSchema = z.object({
   NEXT_PUBLIC_SUPABASE_URL: z.string().url().optional(),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(10).optional(),
-  NEXT_PUBLIC_SUPABASE_BUCKET_LISTINGS: z.string().min(1).default("listing-media"),
+  NEXT_PUBLIC_SUPABASE_BUCKET_LISTINGS: z.string().min(1).default("listings"),
   NEXT_PUBLIC_SITE_URL: z.string().url().default("https://rento-h.vercel.app"),
   NEXT_PUBLIC_MAPBOX_TOKEN: z.string().min(1).optional()
 });
@@ -45,7 +45,7 @@ if (!clientParsed.success) {
   console.warn("[env] Missing or invalid public environment variables", clientParsed.error.flatten().fieldErrors);
 }
 
-const DEFAULT_BUCKET = "listing-media";
+const DEFAULT_BUCKET = "listings";
 const DEFAULT_SITE_URL = "https://rento-h.vercel.app";
 
 type ClientEnv = z.infer<typeof clientSchema>;

@@ -82,9 +82,10 @@ export default function BrowseClient({
 
   useEffect(() => {
     properties.slice(0, 6).forEach((property) => {
-      if (prefetchedIds.current.has(property.id)) return;
-      prefetchedIds.current.add(property.id);
-      router.prefetch(`/property/${property.id}` as Route);
+      const detailTarget = property.slug ?? property.id;
+      if (prefetchedIds.current.has(detailTarget)) return;
+      prefetchedIds.current.add(detailTarget);
+      router.prefetch(`/property/${detailTarget}` as Route);
     });
   }, [properties, router]);
 

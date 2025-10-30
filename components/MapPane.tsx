@@ -15,6 +15,7 @@ export default function MapPane({ properties }: MapPaneProps) {
     () =>
       properties.slice(0, 8).map((property) => ({
         id: property.id,
+        slug: property.slug ?? property.id,
         label: property.title,
         price: property.price
       })),
@@ -47,16 +48,16 @@ export default function MapPane({ properties }: MapPaneProps) {
         <div className="grid gap-3">
           {items.map((property, idx) => (
             <div
-              key={property.id}
+              key={property.slug ?? property.id}
               ref={(el) => { itemRefs.current[idx] = el; }}
               tabIndex={focusIdx === idx ? 0 : -1}
               role="button"
               aria-label={`Open ${property.label}`}
-              onClick={() => router?.push(`/property/${property.id}`)}
+              onClick={() => router?.push(`/property/${property.slug ?? property.id}`)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
-                  router?.push(`/property/${property.id}`);
+                  router?.push(`/property/${property.slug ?? property.id}`);
                 } else if (e.key === "ArrowDown") {
                   const next = Math.min(items.length - 1, idx + 1);
                   focusItem(next);

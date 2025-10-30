@@ -3,6 +3,7 @@ import { mockProperties } from "@/lib/mock";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createClient } from "@supabase/supabase-js";
 import { getSupabaseClientWithUser } from "@/lib/supabase/auth";
+import { createSlug } from "@/lib/utils/slug";
 import type {
   PaginatedResult,
   Property,
@@ -11,6 +12,7 @@ import type {
 } from "@/lib/types";
 
 const PAGE_SIZE = 12;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export type SupabasePropertyRow = {
   id: string;
@@ -106,7 +108,8 @@ async function fetchManyFromSupabase(
   }
   let query = supabase
     .from("properties")
-    .select(PROPERTY_COLUMNS, { count: "exact" });
+    .select(PROPERTY_COLUMNS, { count: "exact" })
+    .eq("status", "active");
 
   if (filters.city) {
     query = query.ilike("city", `%${filters.city}%`);
@@ -205,7 +208,14 @@ export async function getMany(
   }
 
   try {
-    return await fetchManyFromSupabase(normalizedFilters, sort, page);
+    const result = await fetchManyFromSupabase(normalizedFilters, sort, page);
+    if (result.items.length === 0 && env.NODE_ENV !== "production") {
+      console.warn("[properties] Supabase returned no listings; falling back to mock data for previews.");
+      const filtered = applyFilters(mockProperties, normalizedFilters);
+      const sorted = applySort(filtered, sort);
+      return paginate(sorted, page);
+    }
+    return result;
   } catch (error) {
     console.error("[properties] Supabase query failed", error);
     throw error;
@@ -354,7 +364,7 @@ export async function getById(id: string): Promise<Property | null> {
   const supabase = createSupabaseServerClient();
   if (!supabase) {
     console.warn("[properties] Supabase unavailable, checking mock data");
-    return mockProperties.find(p => p.id === id) ?? null;
+    return findMockProperty(id);
   }
   
   const { data, error } = await supabase
@@ -365,16 +375,21 @@ export async function getById(id: string): Promise<Property | null> {
 
   if (error || !data) {
     console.error("[properties] Failed to load property by id", error);
-    return mockProperties.find(p => p.id === id) ?? null;
+    return findMockProperty(id);
   }
 
-  const prop = mapPropertyFromSupabaseRow(data);
-  const images = toStringArray(data.images);
-  if (images.length === 0) return prop;
+  return mapRowToPropertyWithAssets(data);
+}
 
-  const bucket = env.SUPABASE_STORAGE_BUCKET_LISTINGS || "listing-media";
+async function mapRowToPropertyWithAssets(record: SupabasePropertyRow): Promise<Property> {
+  const prop = mapPropertyFromSupabaseRow(record);
+  const images = toStringArray(record.images);
+  if (images.length === 0) {
+    return prop;
+  }
 
-  // If we have a service role key, create short-lived signed URLs for each image path.
+  const bucket = env.SUPABASE_STORAGE_BUCKET_LISTINGS || "listings";
+
   if (env.SUPABASE_SERVICE_ROLE_KEY) {
     const service = createClient(env.NEXT_PUBLIC_SUPABASE_URL!, env.SUPABASE_SERVICE_ROLE_KEY);
     const signedPromises = images.map(async (img) => {
@@ -385,7 +400,7 @@ export async function getById(id: string): Promise<Property | null> {
           return `${env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${bucket}/${encodeURIComponent(img)}`;
         }
         return signed.signedUrl;
-      } catch (e) {
+      } catch {
         return `${env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${bucket}/${encodeURIComponent(img)}`;
       }
     });
@@ -394,9 +409,44 @@ export async function getById(id: string): Promise<Property | null> {
     return { ...prop, images: signedUrls };
   }
 
-  // No service key — fall back to public URL pattern
-  const publicUrls = images.map((img) => (img.startsWith("http") ? img : `${env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${bucket}/${encodeURIComponent(img)}`));
+  const publicUrls = images.map((img) =>
+    img.startsWith("http")
+      ? img
+      : `${env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${bucket}/${encodeURIComponent(img)}`
+  );
   return { ...prop, images: publicUrls };
+}
+
+export async function getBySlugOrId(identifier: string): Promise<Property | null> {
+  if (!identifier) {
+    return null;
+  }
+
+  if (!hasSupabaseEnv) {
+    return findMockProperty(identifier);
+  }
+
+  const supabase = createSupabaseServerClient();
+  if (!supabase) {
+    return findMockProperty(identifier);
+  }
+
+  if (UUID_PATTERN.test(identifier)) {
+    return getById(identifier);
+  }
+
+  const { data, error } = await supabase
+    .from("properties")
+    .select(PROPERTY_COLUMNS)
+    .eq("slug", identifier)
+    .maybeSingle();
+
+  if (error || !data) {
+    console.warn("[properties] Failed to load property by slug", identifier, error);
+    return getById(identifier);
+  }
+
+  return mapRowToPropertyWithAssets(data);
 }
 
 export async function listOwnedProperties(limit = 4): Promise<Property[]> {
@@ -418,6 +468,25 @@ export async function listOwnedProperties(limit = 4): Promise<Property[]> {
   }
 
   return data.map(mapPropertyFromSupabaseRow);
+}
+
+function findMockProperty(identifier: string): Property | null {
+  if (!identifier) {
+    return null;
+  }
+
+  const normalized = identifier.trim();
+  const normalizedSlug = createSlug(normalized);
+
+  return (
+    mockProperties.find((property) => {
+      if (property.id === normalized) {
+        return true;
+      }
+      const propertySlug = property.slug ?? createSlug(property.title);
+      return propertySlug === normalized || propertySlug === normalizedSlug;
+    }) ?? null
+  );
 }
 
 function toStringArray(value: string[] | string | null | undefined): string[] {
@@ -499,4 +568,3 @@ function normalizeFilters(filters: PropertyFilters): PropertyFilters {
 
   return result;
 }
-

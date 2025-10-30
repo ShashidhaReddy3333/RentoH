@@ -1,10 +1,12 @@
 'use server';
 
 import { revalidatePath } from "next/cache";
+import { randomUUID } from "node:crypto";
 import { z } from "zod";
 
 import { hasSupabaseEnv, env } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSlug } from "@/lib/utils/slug";
 
 export const ListingSchema = z.object({
   title: z.string().min(3, "Title is required"),
@@ -175,9 +177,12 @@ export async function createListingAction(
       orderedImages = [coverKey, ...imagesArr.filter((i) => i !== coverKey)];
     }
 
+    const slug = `${createSlug(values.title)}-${randomUUID().split("-")[0]}`;
+
     const { error } = await supabase.from("properties").insert({
       landlord_id: user.id,
       title: values.title,
+      slug,
       price: values.rent,
       address: values.street,
       postal_code: values.postalCode,
@@ -206,6 +211,7 @@ export async function createListingAction(
 
     revalidatePath("/dashboard");
     revalidatePath("/browse");
+    revalidatePath(`/property/${slug}`);
 
     return { status: "success" };
   } catch (error) {

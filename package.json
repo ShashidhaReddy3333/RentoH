@@ -10,6 +10,7 @@
         "typecheck": "tsc --noEmit",
         "test": "vitest run",
         "e2e": "playwright test",
+        "seed:properties": "node scripts/seed-properties.js",
         "analyze": "cross-env ANALYZE=true next build",
         "analyze:unused": "node scripts/analyze-unused.js",
         "analyze:bundle": "npx nextjs-bundle-analysis --build-output .next --budget scripts/bundle-budget.json",

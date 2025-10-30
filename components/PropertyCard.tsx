@@ -24,7 +24,8 @@ export default function PropertyCard({ property }: PropertyCardProps) {
   const router = useRouter();
   const go = (e?: React.MouseEvent | React.KeyboardEvent) => {
     if (e) e.stopPropagation();
-    router.push(`/property/${property.id}`);
+    const target = property.slug ?? property.id;
+    router.push(`/property/${target}`);
   };
   return (
     <article
@@ -72,7 +73,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
             <span className="ml-1 text-sm font-medium text-text-muted">/month</span>
           </p>
           <Link
-            href={`/property/${property.id}`}
+            href={`/property/${property.slug ?? property.id}`}
             className="line-clamp-2 text-base font-semibold text-brand-dark transition hover:text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal"
             prefetch
           >

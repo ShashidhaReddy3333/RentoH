@@ -191,12 +191,20 @@ CREATE POLICY profiles_update ON public.profiles
 
 -- Properties policies
 DROP POLICY IF EXISTS properties_read ON public.properties;
+DROP POLICY IF EXISTS properties_read_public ON public.properties;
+DROP POLICY IF EXISTS properties_read_owner ON public.properties;
 DROP POLICY IF EXISTS properties_insert ON public.properties;
 DROP POLICY IF EXISTS properties_update ON public.properties;
 DROP POLICY IF EXISTS properties_delete ON public.properties;
 
-CREATE POLICY properties_read ON public.properties
-  FOR SELECT USING (true);
+CREATE POLICY properties_read_public ON public.properties
+  FOR SELECT USING (
+    status = 'active'
+    AND (verified IS TRUE OR is_verified IS TRUE)
+  );
+
+CREATE POLICY properties_read_owner ON public.properties
+  FOR SELECT USING (auth.uid() = landlord_id);
 
 CREATE POLICY properties_insert ON public.properties
   FOR INSERT WITH CHECK (auth.uid() = landlord_id);
@@ -387,7 +395,11 @@ BEGIN
       COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.raw_user_meta_data->>'name'),
       ''
     ),
-    COALESCE(NEW.raw_app_meta_data->>'role', 'tenant')
+    COALESCE(
+      NULLIF(NEW.raw_app_meta_data->>'role', ''),
+      NULLIF(NEW.raw_user_meta_data->>'role', ''),
+      'tenant'
+    )
   )
   ON CONFLICT (id) DO UPDATE
     SET email = EXCLUDED.email,

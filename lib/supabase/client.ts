@@ -1,9 +1,9 @@
 "use client";
 
-import { createBrowserClient } from '@supabase/ssr';
-import type { SupabaseClient } from '@supabase/supabase-js';
+import { createBrowserClient } from "@supabase/ssr";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { clientEnv } from '@/lib/env';
+import { clientEnv } from "@/lib/env";
 
 let browserClient: SupabaseClient | null = null;
 
@@ -12,9 +12,9 @@ export function createSupabaseBrowserClient(): SupabaseClient | null {
   const supabaseAnonKey = clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    if (process.env.NODE_ENV !== 'test') {
+    if (process.env.NODE_ENV !== "test") {
       console.warn(
-        "[supabase] Browser client unavailable — add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to enable auth."
+        "[supabase] Browser client unavailable - add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to enable Supabase features."
       );
     }
     return null;

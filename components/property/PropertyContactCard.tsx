@@ -11,19 +11,22 @@ type PropertyContactCardProps = {
   propertyId: string;
   propertyTitle: string;
   isAuthenticated: boolean;
+  propertySlug?: string;
 };
 
 export function PropertyContactCard({
   propertyId,
   propertyTitle,
-  isAuthenticated
+  isAuthenticated,
+  propertySlug
 }: PropertyContactCardProps) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
   const handleMessageClick = () => {
     if (!isAuthenticated) {
-      window.location.href = `/auth/sign-in?next=/property/${propertyId}`;
+      const detailTarget = propertySlug ?? propertyId;
+      window.location.href = `/auth/sign-in?next=/property/${detailTarget}`;
       return;
     }
 

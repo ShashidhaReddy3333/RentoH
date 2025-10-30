@@ -1,11 +1,17 @@
 export const dynamic = "force-dynamic";
 
-import { env } from "@/lib/env";
+import { notFound } from "next/navigation";
+
+import { clientEnv, env } from "@/lib/env";
 
 export default function DebugPage() {
-  const hasSupabaseUrl = Boolean(env.NEXT_PUBLIC_SUPABASE_URL);
-  const hasSupabaseAnonKey = Boolean(env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
-  const hasSiteUrl = Boolean(env.NEXT_PUBLIC_SITE_URL);
+  if (env.NODE_ENV !== "development") {
+    notFound();
+  }
+
+  const hasSupabaseUrl = Boolean(clientEnv.NEXT_PUBLIC_SUPABASE_URL);
+  const hasSupabaseAnonKey = Boolean(clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+  const hasSiteUrl = Boolean(clientEnv.NEXT_PUBLIC_SITE_URL);
   const nodeEnv = env.NODE_ENV;
 
   return (

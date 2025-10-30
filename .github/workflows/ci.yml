@@ -1,23 +1,32 @@
 name: CI
-on: [push, pull_request]
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      NEXT_PUBLIC_SUPABASE_URL: https://xssqgtbqmyklwmxnynig.supabase.co
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhzc3FndGJxbXlrbHdteG55bmlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MTA3NzAsImV4cCI6MjA3NjA4Njc3MH0._vMTqOwfG2NzYJQp4Cgg5-DTCwekzABHe9ZQcnTkkPA
-      NEXT_PUBLIC_SUPABASE_BUCKET_LISTINGS: listing-media
-      NEXT_PUBLIC_SITE_URL: https://rento-h.vercel.app
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
         with:
-          version: 9
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: "pnpm"
-      - run: pnpm i
-      - run: pnpm lint
-      - run: pnpm -s tsc --noEmit
-      - run: pnpm build
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm run test
