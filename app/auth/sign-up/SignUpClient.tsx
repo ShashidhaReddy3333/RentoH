@@ -61,7 +61,15 @@ export default function SignUpClient() {
         email: data.email,
         password: data.password,
         options: {
-          data: { full_name: data.full_name, user_type: data.user_type }
+          data: {
+            full_name: data.full_name,
+            user_type: data.user_type,
+            phone: data.phone,
+            city: data.city ?? null,
+            address: data.address ?? null,
+            contact_method: data.contact_method ?? null,
+            dob: data.dob ?? null
+          }
         }
       });
       if (signErr) throw signErr;
