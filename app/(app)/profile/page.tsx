@@ -162,10 +162,5 @@ export default async function ProfilePage() {
 
   const { formProfile, prefs } = mapProfileForForm(profile, fallback);
 
-  return (
-    <div className="container mx-auto max-w-4xl px-4 py-6">
-      <h1 className="mb-4 text-2xl font-semibold">Your profile</h1>
-      <ProfileForm initialProfile={formProfile} email={formProfile.email} initialPrefs={prefs} />
-    </div>
-  );
+  return <ProfileForm initialProfile={formProfile} email={formProfile.email} initialPrefs={prefs} />;
 }
