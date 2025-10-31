@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const userType = z.enum(["tenant", "landlord", "both"]);
+export const userType = z.enum(["tenant", "landlord"]);
 export const contactMethod = z.enum(["email", "phone", "chat"]);
 
 export const signUpSchema = z
