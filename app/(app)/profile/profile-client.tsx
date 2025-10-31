@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 
+import { clientEnv } from "@/lib/env";
 import { profileUpdateSchema } from "@/lib/schemas/profile";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { Profile } from "@/lib/types/profile";
@@ -39,12 +40,22 @@ function isPlainRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+function resolveBucketName(value?: string | null): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed.length ? trimmed : null;
+}
+
 export default function ProfileForm({ initialProfile, initialPrefs, email }: Props) {
   const profile = initialProfile ?? EMPTY_PROFILE;
   const supabase = createSupabaseBrowserClient();
+  const avatarBucket =
+    resolveBucketName(clientEnv.NEXT_PUBLIC_SUPABASE_BUCKET_AVATARS) ??
+    resolveBucketName(clientEnv.NEXT_PUBLIC_SUPABASE_BUCKET_LISTINGS) ??
+    "listings";
 
   const [pending, setPending] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ kind: "success" | "error"; text: string } | null>(null);
 
   const normalize = (value?: string | null) => {
     if (!value) return null;
@@ -54,10 +65,10 @@ export default function ProfileForm({ initialProfile, initialPrefs, email }: Pro
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setMsg(null);
+    setToast(null);
 
     if (!supabase) {
-      setMsg("Supabase not configured.");
+      setToast({ kind: "error", text: "Supabase not configured." });
       return;
     }
 
@@ -68,7 +79,8 @@ export default function ProfileForm({ initialProfile, initialPrefs, email }: Pro
     });
 
     if (!parsed.success) {
-      setMsg(parsed.error.issues[0]?.message ?? "Invalid form");
+      const text = parsed.error.issues[0]?.message ?? "Invalid form";
+      setToast({ kind: "error", text });
       return;
     }
 
@@ -87,10 +99,10 @@ export default function ProfileForm({ initialProfile, initialPrefs, email }: Pro
         const ext = file.name.split(".").pop() || "jpg";
         const key = `${user.id}/avatar.${ext}`;
         const { error: upErr } = await supabase.storage
-          .from("profiles-avatars")
+          .from(avatarBucket)
           .upload(key, file, { upsert: true, contentType: file.type || "image/*" });
         if (upErr) throw upErr;
-        const { data: pub } = supabase.storage.from("profiles-avatars").getPublicUrl(key);
+        const { data: pub } = supabase.storage.from(avatarBucket).getPublicUrl(key);
         avatar_url = pub?.publicUrl ?? null;
       }
 
@@ -138,7 +150,7 @@ export default function ProfileForm({ initialProfile, initialPrefs, email }: Pro
         throw response.error;
       }
 
-      setMsg("Profile updated");
+      setToast({ kind: "success", text: "Profile updated" });
     } catch (err) {
       let message = "Update failed";
       if (err instanceof Error) {
@@ -152,7 +164,11 @@ export default function ProfileForm({ initialProfile, initialPrefs, email }: Pro
           message = candidate;
         }
       }
-      setMsg(message);
+      if (/row-level security/i.test(message)) {
+        message =
+          "Avatar upload was blocked by Supabase storage policies. Ensure authenticated users can upload to the configured avatar bucket.";
+      }
+      setToast({ kind: "error", text: message });
     } finally {
       setPending(false);
     }
@@ -164,7 +180,17 @@ export default function ProfileForm({ initialProfile, initialPrefs, email }: Pro
 
   return (
     <form onSubmit={onSubmit} className="space-y-4 rounded-2xl border border-black/10 bg-white p-6 shadow-soft">
-      {msg && <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{msg}</div>}
+      {toast && (
+        <div
+          className={`rounded-md border p-3 text-sm ${
+            toast.kind === "success"
+              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+              : "border-rose-200 bg-rose-50 text-rose-700"
+          }`}
+        >
+          {toast.text}
+        </div>
+      )}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div>
           <label className="text-sm font-medium" htmlFor="full_name">
