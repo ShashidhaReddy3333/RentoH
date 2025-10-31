@@ -1,24 +1,24 @@
 // Shared static data
 export const LANDING_DATA = {
   stats: [
-    { label: "Verified listings", value: "120+" },
-    { label: "Active landlords", value: "65" },
-    { label: "Tours booked this month", value: "48" }
+    { label: "Quality-checked listings", value: "120+" },
+    { label: "Verified owners online now", value: "65" },
+    { label: "Tours scheduled this month", value: "48" }
   ],
   steps: [
     {
-      title: "Browse verified homes",
-      description: "Use filters to match by price, neighbourhood, amenities, and pet policies.",
+      title: "Filter matches faster",
+      description: "Dial in price, commute, and amenities to get smart suggestions in seconds.",
       icon: "MagnifyingGlass"
     },
     {
-      title: "Book tours & apply",
-      description: "Message landlords instantly, schedule tours, and submit applications in-app.",
+      title: "Tour and apply in one place",
+      description: "Chat with owners, lock tour times, and send applications without losing the thread.",
       icon: "ClipboardDocumentCheck"
     },
     {
-      title: "Move in with support",
-      description: "Track applications, receive updates, and stay secure with verified partners.",
+      title: "Settle in confidently",
+      description: "Track approvals, receive reminders, and lean on verified partners for each step.",
       icon: "Key"
     }
   ]
