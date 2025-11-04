@@ -80,7 +80,7 @@ function buildOrderedImages(images: string[] | undefined, cover?: string): strin
   const sanitizedCover = typeof cover === "string" ? cover.trim() : "";
   const filtered = (images ?? []).map((image) => image.trim()).filter((image) => image.length > 0);
   const unique = Array.from(new Set(filtered));
-  if (sanitizedCover) {
+  if (sanitizedCover && unique.includes(sanitizedCover)) {
     const withoutCover = unique.filter((image) => image !== sanitizedCover);
     return [sanitizedCover, ...withoutCover];
   }
@@ -153,31 +153,56 @@ export async function saveDraftAction(formData: FormData): Promise<ListingFormSt
 
   const values = parsed.data;
   const orderedImages = buildOrderedImages(values.images, coverKey);
+  const now = new Date().toISOString();
 
-  const { error } = await supabase.from("properties").upsert({
-    landlord_id: user.id,
-    title: values.title,
-    price: values.rent,
-    address: values.street,
-    postal_code: values.postalCode,
-    city: values.city,
-    type: values.propertyType,
-    beds: values.beds,
-    baths: values.baths,
-    area: values.area,
-    amenities: values.amenities ?? [],
-    images: orderedImages,
-    pets: values.pets ?? false,
-    smoking: values.smoking ?? false,
-    parking: values.parking,
-    available_from: values.availableFrom,
-    rent_frequency: values.rentFrequency,
-    description: values.description,
-    status: "draft",
-    verified: false,
-    furnished: false,
-    updated_at: new Date().toISOString()
-  });
+  const { data: existingDraft, error: draftLookupError } = await supabase
+    .from("properties")
+    .select("id, slug")
+    .eq("landlord_id", user.id)
+    .eq("status", "draft")
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (draftLookupError) {
+    console.error("[listings] Failed to look up existing draft", draftLookupError);
+  }
+
+  const draftId = existingDraft?.id ?? randomUUID();
+  const landlordSuffix = user.id?.slice(0, 8) ?? randomUUID().split("-")[0];
+  const draftSlug = existingDraft?.slug ?? `${createSlug(values.title)}-${landlordSuffix}-draft`;
+
+  const { error } = await supabase
+    .from("properties")
+    .upsert(
+      {
+        id: draftId,
+        landlord_id: user.id,
+        title: values.title,
+        slug: draftSlug,
+        price: values.rent,
+        address: values.street,
+        postal_code: values.postalCode,
+        city: values.city,
+        type: values.propertyType,
+        beds: values.beds,
+        baths: values.baths,
+        area: values.area,
+        amenities: values.amenities ?? [],
+        images: orderedImages,
+        pets: values.pets ?? false,
+        smoking: values.smoking ?? false,
+        parking: values.parking,
+        available_from: values.availableFrom,
+        rent_frequency: values.rentFrequency,
+        description: values.description,
+        status: "draft",
+        verified: false,
+        furnished: false,
+        updated_at: now
+      },
+      { onConflict: "id" }
+    );
 
   if (error) {
     console.error("[listings] Failed to save draft", error);

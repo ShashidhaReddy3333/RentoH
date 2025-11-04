@@ -90,4 +90,24 @@ describe("Listing Schema Validation", () => {
       expect(errors.description).toBeDefined();
     }
   });
+
+  it("should coerce boolean form values accurately", () => {
+    const listing = {
+      title: "Checkbox Test",
+      rent: 999,
+      street: "12 Form Lane",
+      city: "Ajax",
+      postalCode: "A1A 1A1",
+      propertyType: "house",
+      beds: 3,
+      baths: 2,
+      pets: "false",
+      smoking: "on",
+      description: "Ensure pets=false remains false while smoking checkbox is true."
+    };
+
+    const result = ListingSchema.parse(listing);
+    expect(result.pets).toBe(false);
+    expect(result.smoking).toBe(true);
+  });
 });

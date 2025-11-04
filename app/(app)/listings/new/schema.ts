@@ -5,6 +5,22 @@ import { z } from "zod";
  * server actions module so it can be reused by client components and tests
  * without triggering Next.js `use server` export restrictions.
  */
+const formBoolean = z.preprocess(
+  (value) => {
+    if (typeof value === "string") {
+      const normalized = value.trim().toLowerCase();
+      if (["true", "1", "yes", "on"].includes(normalized)) {
+        return true;
+      }
+      if (["false", "0", "no", "off", ""].includes(normalized)) {
+        return false;
+      }
+    }
+    return value;
+  },
+  z.boolean()
+);
+
 export const ListingSchema = z.object({
   title: z.string().min(3, "Title is required"),
   rent: z.coerce.number().int().positive("Rent must be greater than zero"),
@@ -17,8 +33,8 @@ export const ListingSchema = z.object({
   area: z.coerce.number().int().min(0, "Area required").optional(),
   amenities: z.array(z.string()).optional(),
   images: z.array(z.string()).optional(),
-  pets: z.coerce.boolean().optional(),
-  smoking: z.coerce.boolean().optional(),
+  pets: formBoolean.optional(),
+  smoking: formBoolean.optional(),
   parking: z.string().optional(),
   availableFrom: z.string().optional(),
   rentFrequency: z.enum(["monthly", "weekly", "biweekly"]).default("monthly"),
