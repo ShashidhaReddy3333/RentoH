@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ListingSchema } from "@/app/(app)/listings/new/actions";
+import { ListingSchema } from "@/app/(app)/listings/new/schema";
 
 describe("Listing Schema Validation", () => {
   it("should validate a complete listing", () => {

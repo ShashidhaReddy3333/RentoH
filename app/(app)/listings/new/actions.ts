@@ -2,31 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { randomUUID } from "node:crypto";
-import { z } from "zod";
 
 import { hasSupabaseEnv, env } from "@/lib/env";
+import { addMockProperty } from "@/lib/mock";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSlug } from "@/lib/utils/slug";
-
-export const ListingSchema = z.object({
-  title: z.string().min(3, "Title is required"),
-  rent: z.coerce.number().int().positive("Rent must be greater than zero"),
-  street: z.string().min(3, "Street address is required"),
-  city: z.string().min(2, "City is required"),
-  postalCode: z.string().min(3, "Postal code is required"),
-  propertyType: z.enum(["apartment", "condo", "house", "townhouse"]),
-  beds: z.coerce.number().int().min(0, "Beds required"),
-  baths: z.coerce.number().int().min(0, "Baths required"),
-  area: z.coerce.number().int().min(0, "Area required").optional(),
-  amenities: z.array(z.string()).optional(),
-  images: z.array(z.string()).optional(),
-  pets: z.coerce.boolean().optional(),
-  smoking: z.coerce.boolean().optional(),
-  parking: z.string().optional(),
-  availableFrom: z.string().optional(),
-  rentFrequency: z.enum(["monthly", "weekly", "biweekly"]).default("monthly"),
-  description: z.string().min(10, "Description should be at least 10 characters")
-});
+import type { Property } from "@/lib/types";
+import { ListingSchema } from "./schema";
 
 export type ListingFormState =
   | { status: "idle" }
@@ -34,14 +16,110 @@ export type ListingFormState =
   | { status: "error"; message: string }
   | { status: "auto-saved"; timestamp: number };
 
-export const initialListingFormState: ListingFormState = { status: "idle" };
+const DRAFT_STORAGE_KEY = "__rento_listing_draft__";
+
+type DraftStore = {
+  [key: string]: Record<string, unknown> | undefined;
+};
+
+type ListingValues = ReturnType<typeof ListingSchema.parse>;
+
+function cloneDraftData(input: Record<string, unknown> | undefined) {
+  if (!input) return undefined;
+  const result: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(input)) {
+    if (Array.isArray(value)) {
+      result[key] = [...value];
+    } else {
+      result[key] = value;
+    }
+  }
+  return result;
+}
+
+function persistDraft(data: Record<string, unknown>) {
+  const store = globalThis as DraftStore;
+  store[DRAFT_STORAGE_KEY] = cloneDraftData(data);
+}
+
+function readPersistedDraft(): Record<string, unknown> | undefined {
+  const store = globalThis as DraftStore;
+  const data = store[DRAFT_STORAGE_KEY];
+  return cloneDraftData(data);
+}
+
+function clearPersistedDraft() {
+  const store = globalThis as DraftStore;
+  if (DRAFT_STORAGE_KEY in store) {
+    delete store[DRAFT_STORAGE_KEY];
+  }
+}
+
+function formDataToObject(formData: FormData): Record<string, unknown> {
+  const raw: Record<string, unknown> = {};
+  for (const [key, value] of formData.entries()) {
+    if (key.endsWith("[]")) {
+      const bareKey = key.slice(0, -2);
+      const stringValue = typeof value === "string" ? value : String(value);
+      const existing = raw[bareKey];
+      if (Array.isArray(existing)) {
+        raw[bareKey] = [...existing, stringValue];
+      } else if (existing) {
+        raw[bareKey] = [existing, stringValue].flat().map((item) => (typeof item === "string" ? item : String(item)));
+      } else {
+        raw[bareKey] = [stringValue];
+      }
+    } else {
+      raw[key] = typeof value === "string" ? value : String(value);
+    }
+  }
+  return raw;
+}
+
+function buildOrderedImages(images: string[] | undefined, cover?: string): string[] {
+  const sanitizedCover = typeof cover === "string" ? cover.trim() : "";
+  const filtered = (images ?? []).map((image) => image.trim()).filter((image) => image.length > 0);
+  const unique = Array.from(new Set(filtered));
+  if (sanitizedCover) {
+    const withoutCover = unique.filter((image) => image !== sanitizedCover);
+    return [sanitizedCover, ...withoutCover];
+  }
+  return unique;
+}
+
+function toMockProperty(values: ListingValues, slug: string, orderedImages: string[]): Property {
+  return {
+    id: randomUUID(),
+    slug,
+    title: values.title,
+    images: orderedImages,
+    price: values.rent,
+    beds: values.beds,
+    baths: values.baths,
+    type: values.propertyType,
+    city: values.city,
+    verified: false,
+    pets: values.pets ?? false,
+    furnished: false,
+    createdAt: new Date().toISOString(),
+    address: values.street,
+    description: values.description,
+    amenities: values.amenities && values.amenities.length > 0 ? values.amenities : undefined,
+    area: typeof values.area === "number" ? values.area : undefined,
+    availableFrom: values.availableFrom,
+    status: "draft"
+  };
+}
 
 export async function saveDraftAction(formData: FormData): Promise<ListingFormState> {
+  const raw = formDataToObject(formData);
+  const coverKey = typeof raw.cover === "string" ? raw.cover : undefined;
+
   if (!hasSupabaseEnv) {
     if (env.NODE_ENV === "production") {
       return { status: "error", message: "Missing Supabase configuration. Please set up your environment variables." };
     }
-    // In dev mode, we'll just pretend the save worked
+    persistDraft(raw);
     return { status: "auto-saved", timestamp: Date.now() };
   }
 
@@ -50,29 +128,21 @@ export async function saveDraftAction(formData: FormData): Promise<ListingFormSt
     return { status: "error", message: "Supabase client unavailable." };
   }
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  const {
+    data: { user },
+    error: authError
+  } = await supabase.auth.getUser();
   if (authError || !user) {
     return { status: "error", message: "You must be signed in to save drafts." };
   }
 
-  const role = (user.app_metadata?.["role"] as string | undefined) ?? 
-               (user.user_metadata?.["role"] as string | undefined) ?? 
-               "tenant";
+  const role =
+    (user.app_metadata?.["role"] as string | undefined) ??
+    (user.user_metadata?.["role"] as string | undefined) ??
+    "tenant";
 
   if (role !== "landlord" && role !== "admin") {
     return { status: "error", message: "Only landlord accounts can create drafts." };
-  }
-
-  // Build raw object from form data
-  const entries = Array.from(formData.entries());
-  const raw: Record<string, unknown> = {};
-  for (const [key, value] of entries) {
-    if (key.endsWith("[]")) {
-      const k = key.slice(0, -2);
-      raw[k] = Array.isArray(raw[k]) ? [...(raw[k] as string[]), String(value)] : [String(value)];
-    } else {
-      raw[key] = value;
-    }
   }
 
   const parsed = ListingSchema.safeParse(raw);
@@ -82,6 +152,7 @@ export async function saveDraftAction(formData: FormData): Promise<ListingFormSt
   }
 
   const values = parsed.data;
+  const orderedImages = buildOrderedImages(values.images, coverKey);
 
   const { error } = await supabase.from("properties").upsert({
     landlord_id: user.id,
@@ -95,7 +166,7 @@ export async function saveDraftAction(formData: FormData): Promise<ListingFormSt
     baths: values.baths,
     area: values.area,
     amenities: values.amenities ?? [],
-    images: Array.isArray(values.images) ? values.images : values.images ? [values.images] : [],
+    images: orderedImages,
     pets: values.pets ?? false,
     smoking: values.smoking ?? false,
     parking: values.parking,
@@ -113,6 +184,8 @@ export async function saveDraftAction(formData: FormData): Promise<ListingFormSt
     return { status: "error", message: error.message };
   }
 
+  persistDraft(raw);
+
   return { status: "auto-saved", timestamp: Date.now() };
 }
 
@@ -121,16 +194,8 @@ export async function createListingAction(
   formData: FormData
 ): Promise<ListingFormState> {
   try {
-    const entries = Array.from(formData.entries());
-    const raw: Record<string, unknown> = {};
-    for (const [key, value] of entries) {
-      if (key.endsWith("[]")) {
-        const k = key.slice(0, -2);
-        raw[k] = Array.isArray(raw[k]) ? [...(raw[k] as string[]), String(value)] : [String(value)];
-      } else {
-        raw[key] = value;
-      }
-    }
+    const raw = formDataToObject(formData);
+    const coverKey = typeof raw.cover === "string" ? raw.cover : undefined;
 
     const parsed = ListingSchema.safeParse(raw);
     if (!parsed.success) {
@@ -138,9 +203,17 @@ export async function createListingAction(
     }
 
     const values = parsed.data;
+    const orderedImages = buildOrderedImages(values.images, coverKey);
+    const slug = `${createSlug(values.title)}-${randomUUID().split("-")[0]}`;
 
     if (!hasSupabaseEnv) {
-      return { status: "error", message: "Missing Supabase configuration. Please set up your environment variables." };
+      if (env.NODE_ENV === "production") {
+        return { status: "error", message: "Missing Supabase configuration. Please set up your environment variables." };
+      }
+
+      addMockProperty(toMockProperty(values, slug, orderedImages));
+      clearPersistedDraft();
+      return { status: "success" };
     }
 
     const supabase = createSupabaseServerClient();
@@ -165,19 +238,6 @@ export async function createListingAction(
     if (role !== "landlord" && role !== "admin") {
       return { status: "error", message: "Only landlord accounts can create listings." };
     }
-
-    const imagesArr: string[] = Array.isArray(values.images)
-      ? (values.images as string[])
-      : values.images
-        ? [values.images as unknown as string]
-        : [];
-    const coverKey = (values as { cover?: string }).cover;
-    let orderedImages = imagesArr;
-    if (coverKey) {
-      orderedImages = [coverKey, ...imagesArr.filter((i) => i !== coverKey)];
-    }
-
-    const slug = `${createSlug(values.title)}-${randomUUID().split("-")[0]}`;
 
     const { error } = await supabase.from("properties").insert({
       landlord_id: user.id,
@@ -209,6 +269,8 @@ export async function createListingAction(
       return { status: "error", message: error.message };
     }
 
+    clearPersistedDraft();
+
     revalidatePath("/dashboard");
     revalidatePath("/browse");
     revalidatePath(`/property/${slug}`);
@@ -223,7 +285,14 @@ export async function createListingAction(
 
 export async function fetchDraftAction(): Promise<ListingFormState & { data?: Record<string, unknown> }> {
   if (!hasSupabaseEnv) {
-    return { status: "error", message: "Missing Supabase configuration. Please set up your environment variables." };
+    if (env.NODE_ENV === "production") {
+      return { status: "error", message: "Missing Supabase configuration. Please set up your environment variables." };
+    }
+    const draft = readPersistedDraft();
+    if (!draft) {
+      return { status: "idle" };
+    }
+    return { status: "success", data: draft };
   }
 
   const supabase = createSupabaseServerClient();
@@ -231,7 +300,10 @@ export async function fetchDraftAction(): Promise<ListingFormState & { data?: Re
     return { status: "error", message: "Supabase client unavailable." };
   }
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  const {
+    data: { user },
+    error: authError
+  } = await supabase.auth.getUser();
   if (authError || !user) {
     return { status: "error", message: "You must be signed in to view drafts." };
   }
@@ -255,7 +327,7 @@ export async function fetchDraftAction(): Promise<ListingFormState & { data?: Re
   }
 
   // Transform DB schema to form fields
-  const formData = {
+  const formData: Record<string, unknown> = {
     title: data.title,
     rent: data.price,
     street: data.address,
@@ -272,8 +344,10 @@ export async function fetchDraftAction(): Promise<ListingFormState & { data?: Re
     parking: data.parking,
     availableFrom: data.available_from,
     rentFrequency: data.rent_frequency,
-    description: data.description,
+    description: data.description
   };
+
+  persistDraft(formData);
 
   return { status: "success", data: formData };
 }
