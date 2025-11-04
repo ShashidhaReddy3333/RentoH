@@ -38,18 +38,18 @@ function cloneDraftData(input: Record<string, unknown> | undefined) {
 }
 
 function persistDraft(data: Record<string, unknown>) {
-  const store = globalThis as DraftStore;
+  const store = globalThis as unknown as DraftStore;
   store[DRAFT_STORAGE_KEY] = cloneDraftData(data);
 }
 
 function readPersistedDraft(): Record<string, unknown> | undefined {
-  const store = globalThis as DraftStore;
+  const store = globalThis as unknown as DraftStore;
   const data = store[DRAFT_STORAGE_KEY];
   return cloneDraftData(data);
 }
 
 function clearPersistedDraft() {
-  const store = globalThis as DraftStore;
+  const store = globalThis as unknown as DraftStore;
   if (DRAFT_STORAGE_KEY in store) {
     delete store[DRAFT_STORAGE_KEY];
   }
@@ -113,7 +113,8 @@ function toMockProperty(values: ListingValues, slug: string, orderedImages: stri
 
 export async function saveDraftAction(formData: FormData): Promise<ListingFormState> {
   const raw = formDataToObject(formData);
-  const coverKey = typeof raw.cover === "string" ? raw.cover : undefined;
+  const coverValue = raw["cover"];
+  const coverKey = typeof coverValue === "string" ? coverValue : undefined;
 
   if (!hasSupabaseEnv) {
     if (env.NODE_ENV === "production") {
@@ -220,7 +221,8 @@ export async function createListingAction(
 ): Promise<ListingFormState> {
   try {
     const raw = formDataToObject(formData);
-    const coverKey = typeof raw.cover === "string" ? raw.cover : undefined;
+    const coverValue = raw["cover"];
+    const coverKey = typeof coverValue === "string" ? coverValue : undefined;
 
     const parsed = ListingSchema.safeParse(raw);
     if (!parsed.success) {
