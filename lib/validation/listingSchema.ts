@@ -79,7 +79,7 @@ const imageArray = z
 export const listingFormSchema = z
   .object({
     title: z.string().min(3, "Title is required").max(120, "Keep titles under 120 characters").trim(),
-    streetAddress: z.string().min(3, "Street address is required").trim(),
+    street: z.string().min(3, "Street address is required").trim(),
     city: z.string().min(2, "City is required").max(60).trim(),
     postalCode: z
       .string()
@@ -163,7 +163,8 @@ export const listingFormSchema = z
 
     return {
       ...values,
-      street: values.streetAddress,
+      street: values.street,
+      streetAddress: values.street,
       rent: Number(values.rent),
       beds: Number(values.beds),
       baths: Number(values.baths),
