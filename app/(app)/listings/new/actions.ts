@@ -298,7 +298,7 @@ export async function createListingAction(
       available_from: values.availableFrom,
       rent_frequency: values.rentFrequency,
       description: values.description,
-      status: "draft",
+      status: "active",
       verified: false,
       furnished: false
     });
