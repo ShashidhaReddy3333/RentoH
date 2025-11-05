@@ -1,7 +1,8 @@
 "use client";
 
+import clsx from "clsx";
 import type { ReactNode } from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 
 import { buttonStyles } from "@/components/ui/button";
@@ -36,6 +37,55 @@ export default function NewListingClient() {
   // know drafts are stored in-memory.
   const browserSupabase = createSupabaseBrowserClient();
   const isDevMode = !browserSupabase;
+
+  const fieldErrors = useMemo(() => {
+    if (state.status === "validation-error") {
+      return state.fieldErrors;
+    }
+    if (autoSaveState.status === "validation-error") {
+      return autoSaveState.fieldErrors;
+    }
+    return undefined;
+  }, [state, autoSaveState]);
+
+  const formErrors = useMemo(() => {
+    if (state.status === "validation-error" && state.formErrors?.length) {
+      return state.formErrors;
+    }
+    if (autoSaveState.status === "validation-error" && autoSaveState.formErrors?.length) {
+      return autoSaveState.formErrors;
+    }
+    return undefined;
+  }, [state, autoSaveState]);
+
+  const fieldHasError = useCallback(
+    (name: string) => Boolean(fieldErrors?.[name]?.length),
+    [fieldErrors]
+  );
+
+  const fieldErrorMessage = useCallback(
+    (name: string) => fieldErrors?.[name]?.[0],
+    [fieldErrors]
+  );
+
+  const errorIdFor = useCallback(
+    (name: string) => (fieldHasError(name) ? `${name}-error` : undefined),
+    [fieldHasError]
+  );
+
+  const inputClassName = useCallback(
+    (name: string) =>
+      clsx("input", fieldHasError(name) && "border-red-500 focus:border-red-500 focus:ring-red-500"),
+    [fieldHasError]
+  );
+
+  const describedBy = useCallback(
+    (name: string, extra?: string) => {
+      const ids = [extra, errorIdFor(name)].filter(Boolean).join(" ");
+      return ids.length ? ids : undefined;
+    },
+    [errorIdFor]
+  );
 
   useEffect(() => {
     async function loadDraft() {
@@ -91,7 +141,7 @@ export default function NewListingClient() {
     };
   }, [debouncedHandleFormChange]);
   useEffect(() => {
-    if (state.status === "error") {
+    if (state.status === "error" || state.status === "validation-error") {
       setToast({ type: "error", message: state.message });
     } else if (state.status === "success") {
       setToast({ type: "success", message: "Listing created! Redirecting..." });
@@ -145,25 +195,39 @@ export default function NewListingClient() {
         <div role="status" className="rounded-2xl border border-brand-teal/40 bg-brand-teal/10 px-4 py-3 text-sm font-semibold text-brand-teal">
           Draft auto-saved at {new Date(autoSaveState.timestamp).toLocaleTimeString()}
         </div>
+      ) : autoSaveState.status === "validation-error" ? (
+        <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">
+          {autoSaveState.message}
+        </div>
       ) : autoSaveState.status === "error" ? (
         <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">
           {autoSaveState.message}
         </div>
       ) : null}
 
+      {formErrors?.length ? (
+        <ul role="alert" className="list-disc space-y-1 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+          {formErrors.map((error) => (
+            <li key={error}>{error}</li>
+          ))}
+        </ul>
+      ) : null}
+
 
       <div className="grid gap-6 md:grid-cols-2">
-        <FormField label="Title" htmlFor="title" required>
+        <FormField label="Title" htmlFor="title" required error={fieldErrorMessage("title")}>
           <input
             id="title"
             name="title"
             required
-            className="input"
+            className={inputClassName("title")}
             placeholder="Downtown loft with skyline views"
+            aria-invalid={fieldHasError("title")}
+            aria-describedby={describedBy("title")}
           />
         </FormField>
 
-        <FormField label="Rent ($)" htmlFor="rent" required>
+        <FormField label="Rent ($)" htmlFor="rent" required error={fieldErrorMessage("rent")}>
           <input
             id="rent"
             name="rent"
@@ -171,9 +235,10 @@ export default function NewListingClient() {
             min={0}
             step={50}
             required
-            className="input"
+            className={inputClassName("rent")}
             inputMode="numeric"
-            aria-describedby="rent-help"
+            aria-describedby={describedBy("rent", "rent-help")}
+            aria-invalid={fieldHasError("rent")}
             placeholder="2300"
           />
           <span id="rent-help" className="text-xs text-text-muted">
@@ -181,7 +246,7 @@ export default function NewListingClient() {
           </span>
         </FormField>
 
-        <FormField label="Beds" htmlFor="beds" required>
+        <FormField label="Beds" htmlFor="beds" required error={fieldErrorMessage("beds")}>
           <input
             id="beds"
             name="beds"
@@ -189,12 +254,14 @@ export default function NewListingClient() {
             min={0}
             step={1}
             required
-            className="input"
+            className={inputClassName("beds")}
             placeholder="2"
+            aria-invalid={fieldHasError("beds")}
+            aria-describedby={describedBy("beds")}
           />
         </FormField>
 
-        <FormField label="Baths" htmlFor="baths" required>
+        <FormField label="Baths" htmlFor="baths" required error={fieldErrorMessage("baths")}>
           <input
             id="baths"
             name="baths"
@@ -202,59 +269,76 @@ export default function NewListingClient() {
             min={0}
             step={1}
             required
-            className="input"
+            className={inputClassName("baths")}
             placeholder="1"
+            aria-invalid={fieldHasError("baths")}
+            aria-describedby={describedBy("baths")}
           />
         </FormField>
 
-        <FormField label="Area (sqft)" htmlFor="area">
+        <FormField label="Area (sqft)" htmlFor="area" error={fieldErrorMessage("area")}>
           <input
             id="area"
             name="area"
             type="number"
             min={0}
             step={10}
-            className="input"
+            className={inputClassName("area")}
             placeholder="900"
+            aria-invalid={fieldHasError("area")}
+            aria-describedby={describedBy("area")}
           />
         </FormField>
 
-        <FormField label="Street address" htmlFor="street" required>
+        <FormField label="Street address" htmlFor="street" required error={fieldErrorMessage("street")}>
           <input
             id="street"
             name="street"
             required
-            className="input"
+            className={inputClassName("street")}
             placeholder="123 King Street W"
+            aria-invalid={fieldHasError("street")}
+            aria-describedby={describedBy("street")}
           />
         </FormField>
 
-        <FormField label="City" htmlFor="city" required>
+        <FormField label="City" htmlFor="city" required error={fieldErrorMessage("city")}>
           <input
             id="city"
             name="city"
             required
-            className="input"
+            className={inputClassName("city")}
             placeholder="Waterloo"
+            aria-invalid={fieldHasError("city")}
+            aria-describedby={describedBy("city")}
           />
         </FormField>
 
-        <FormField label="Postal code" htmlFor="postalCode" required>
+        <FormField label="Postal code" htmlFor="postalCode" required error={fieldErrorMessage("postalCode")}>
           <input
             id="postalCode"
             name="postalCode"
             required
-            className="input uppercase"
+            className={clsx(inputClassName("postalCode"), "uppercase")}
             placeholder="N2L 0A1"
-            aria-describedby="postal-help"
+            aria-describedby={describedBy("postalCode", "postal-help")}
+            aria-invalid={fieldHasError("postalCode")}
           />
           <span id="postal-help" className="text-xs text-text-muted">
             Format as ANA NAN for Canadian addresses.
           </span>
         </FormField>
 
-        <FormField label="Property type" htmlFor="propertyType" required>
-          <select id="propertyType" name="propertyType" required className="input" defaultValue="">
+        <FormField label="Property type" htmlFor="propertyType" required error={fieldErrorMessage("propertyType")}>
+          <select
+            id="propertyType"
+            name="propertyType"
+            required
+            className={inputClassName("propertyType")}
+            defaultValue=""
+            aria-invalid={fieldHasError("propertyType")}
+            aria-describedby={describedBy("propertyType")}
+          >
             <option value="" disabled>
               Select type
             </option>
@@ -266,13 +350,15 @@ export default function NewListingClient() {
           </select>
         </FormField>
 
-        <FormField label="Amenities" htmlFor="amenities">
+        <FormField label="Amenities" htmlFor="amenities" error={fieldErrorMessage("amenities")}>
           <select
             id="amenities"
             name="amenities"
             multiple
-            className="input"
+            className={inputClassName("amenities")}
             size={4}
+            aria-invalid={fieldHasError("amenities")}
+            aria-describedby={describedBy("amenities")}
           >
             <option value="laundry">Laundry</option>
             <option value="gym">Gym</option>
@@ -286,42 +372,65 @@ export default function NewListingClient() {
           <span className="text-xs text-text-muted">Hold Ctrl (Windows) or Cmd (Mac) to select multiple.</span>
         </FormField>
 
-        <FormField label="Pets allowed?" htmlFor="pets">
-          <select id="pets" name="pets" className="input">
+        <FormField label="Pets allowed?" htmlFor="pets" error={fieldErrorMessage("pets")}>
+          <select
+            id="pets"
+            name="pets"
+            className={inputClassName("pets")}
+            aria-invalid={fieldHasError("pets")}
+            aria-describedby={describedBy("pets")}
+          >
             <option value="">Select</option>
             <option value="true">Yes</option>
             <option value="false">No</option>
           </select>
         </FormField>
 
-        <FormField label="Smoking allowed?" htmlFor="smoking">
-          <select id="smoking" name="smoking" className="input">
+        <FormField label="Smoking allowed?" htmlFor="smoking" error={fieldErrorMessage("smoking")}>
+          <select
+            id="smoking"
+            name="smoking"
+            className={inputClassName("smoking")}
+            aria-invalid={fieldHasError("smoking")}
+            aria-describedby={describedBy("smoking")}
+          >
             <option value="">Select</option>
             <option value="true">Yes</option>
             <option value="false">No</option>
           </select>
         </FormField>
 
-        <FormField label="Parking" htmlFor="parking">
+        <FormField label="Parking" htmlFor="parking" error={fieldErrorMessage("parking")}>
           <input
             id="parking"
             name="parking"
-            className="input"
+            className={inputClassName("parking")}
             placeholder="e.g. 1 spot, underground, street"
+            aria-invalid={fieldHasError("parking")}
+            aria-describedby={describedBy("parking")}
           />
         </FormField>
 
-        <FormField label="Available from" htmlFor="availableFrom">
+        <FormField label="Available from" htmlFor="availableFrom" error={fieldErrorMessage("availableFrom")}>
           <input
             id="availableFrom"
             name="availableFrom"
             type="date"
-            className="input"
+            className={inputClassName("availableFrom")}
+            aria-invalid={fieldHasError("availableFrom")}
+            aria-describedby={describedBy("availableFrom")}
           />
         </FormField>
 
-        <FormField label="Rent frequency" htmlFor="rentFrequency">
-          <select id="rentFrequency" name="rentFrequency" className="input" defaultValue="monthly">
+        <FormField label="Rent frequency" htmlFor="rentFrequency" error={fieldErrorMessage("rentFrequency")}>
+          <select
+            id="rentFrequency"
+            name="rentFrequency"
+            className={inputClassName("rentFrequency")}
+            defaultValue="monthly"
+            aria-invalid={fieldHasError("rentFrequency")}
+            aria-describedby={describedBy("rentFrequency")}
+          >
             <option value="monthly">Monthly</option>
             <option value="weekly">Weekly</option>
             <option value="biweekly">Biweekly</option>
@@ -330,20 +439,27 @@ export default function NewListingClient() {
 
       </div>
 
-      <FormField label="Description" htmlFor="description" required>
+      <FormField label="Description" htmlFor="description" required error={fieldErrorMessage("description")}>
         <textarea
           id="description"
           name="description"
           required
           rows={4}
-          className="input"
+          className={clsx(inputClassName("description"), "min-h-[120px]")}
           placeholder="Highlight key amenities, nearby transit, and what makes this rental unique."
+          aria-invalid={fieldHasError("description")}
+          aria-describedby={describedBy("description")}
         />
       </FormField>
 
       <div>
         <h3 className="mb-2 text-sm font-semibold text-brand-dark">Photos</h3>
         <ListingImageUploader />
+        {fieldHasError("images") ? (
+          <p id="images-error" className="mt-2 text-sm text-red-600" role="alert">
+            {fieldErrorMessage("images")}
+          </p>
+        ) : null}
       </div>
 
       <div className="flex justify-end">
@@ -370,21 +486,28 @@ function FormField({
   label,
   htmlFor,
   children,
-  required
+  required,
+  error
 }: {
   label: string;
   htmlFor: string;
   children: ReactNode;
   required?: boolean;
+  error?: string;
 }) {
   return (
-    <label htmlFor={htmlFor} className="grid gap-2 text-sm font-semibold text-brand-dark">
-      <span>
+    <div className="grid gap-2 text-sm text-brand-dark">
+      <label htmlFor={htmlFor} className="font-semibold text-brand-dark">
         {label}
         {required ? <span className="ml-1 text-brand-teal" aria-hidden="true">*</span> : null}
-      </span>
+      </label>
       {children}
-    </label>
+      {error ? (
+        <p id={`${htmlFor}-error`} className="text-xs font-medium text-red-600" role="alert">
+          {error}
+        </p>
+      ) : null}
+    </div>
   );
 }
 

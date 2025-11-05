@@ -14,7 +14,8 @@ export type ListingFormState =
   | { status: "idle" }
   | { status: "success" }
   | { status: "error"; message: string }
-  | { status: "auto-saved"; timestamp: number };
+  | { status: "auto-saved"; timestamp: number }
+  | { status: "validation-error"; message: string; fieldErrors: Record<string, string[]>; formErrors?: string[] };
 
 const DRAFT_STORAGE_KEY = "__rento_listing_draft__";
 
@@ -148,8 +149,13 @@ export async function saveDraftAction(formData: FormData): Promise<ListingFormSt
 
   const parsed = ListingSchema.safeParse(raw);
   if (!parsed.success) {
-    // For auto-save, we don't want to show validation errors
-    return { status: "error", message: "Invalid draft data" };
+    const { fieldErrors, formErrors } = parsed.error.flatten();
+    return {
+      status: "validation-error",
+      message: "Draft not saved. Complete the required fields to enable auto-save.",
+      fieldErrors,
+      formErrors
+    };
   }
 
   const values = parsed.data;
@@ -226,7 +232,13 @@ export async function createListingAction(
 
     const parsed = ListingSchema.safeParse(raw);
     if (!parsed.success) {
-      return { status: "error", message: "Please check the highlighted fields." };
+      const { fieldErrors, formErrors } = parsed.error.flatten();
+      return {
+        status: "validation-error",
+        message: "Please check the highlighted fields.",
+        fieldErrors,
+        formErrors
+      };
     }
 
     const values = parsed.data;

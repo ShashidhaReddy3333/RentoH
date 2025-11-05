@@ -10,8 +10,6 @@
  *  SEED_LANDLORD_EMAIL, SEED_LANDLORD_PASSWORD
  */
 
-const { createClient } = require("@supabase/supabase-js");
-
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -22,8 +20,6 @@ if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
 
 const LANDLORD_EMAIL = process.env.SEED_LANDLORD_EMAIL ?? "demo-landlord@rento.test";
 const LANDLORD_PASSWORD = process.env.SEED_LANDLORD_PASSWORD ?? "Rent0!Demo";
-
-const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
 const listings = [
   {
@@ -118,7 +114,7 @@ const listings = [
   }
 ];
 
-async function ensureLandlordUser() {
+async function ensureLandlordUser(supabase) {
   const { data: existing } = await supabase.auth.admin.getUserByEmail(LANDLORD_EMAIL);
   if (existing?.user) {
     return existing.user.id;
@@ -152,8 +148,8 @@ async function ensureLandlordUser() {
   return landlordId;
 }
 
-async function seed() {
-  const landlordId = await ensureLandlordUser();
+async function seed(supabase) {
+  const landlordId = await ensureLandlordUser(supabase);
 
   const rows = listings.map((listing) => ({
     landlord_id: landlordId,
@@ -182,9 +178,7 @@ async function seed() {
     updated_at: new Date().toISOString()
   }));
 
-  const { error } = await supabase
-    .from("properties")
-    .upsert(rows, { onConflict: "slug" });
+  const { error } = await supabase.from("properties").upsert(rows, { onConflict: "slug" });
 
   if (error) {
     console.error("Failed to seed properties:", error.message);
@@ -197,7 +191,13 @@ async function seed() {
   console.log(`- Listings upserted: ${rows.length}`);
 }
 
-seed().catch((error) => {
+async function main() {
+  const { createClient } = await import("@supabase/supabase-js");
+  const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+  await seed(supabase);
+}
+
+main().catch((error) => {
   console.error("Seeding failed:", error);
   process.exit(1);
 });
