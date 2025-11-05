@@ -22,6 +22,17 @@ const propertyTypes = [
   { value: "townhouse", label: "Townhouse" }
 ];
 
+const amenitiesOptions = [
+  { value: "laundry", label: "Laundry" },
+  { value: "gym", label: "Gym" },
+  { value: "pool", label: "Pool" },
+  { value: "ac", label: "A/C" },
+  { value: "balcony", label: "Balcony" },
+  { value: "storage", label: "Storage" },
+  { value: "elevator", label: "Elevator" },
+  { value: "wheelchair", label: "Wheelchair Access" }
+];
+
 const initialListingFormState: ListingFormState = { status: "idle" };
 type ToastState = { type: "error" | "success"; message: string } | null;
 
@@ -93,11 +104,22 @@ export default function NewListingClient() {
       if (result.status === "success" && result.data && formRef.current) {
         const form = formRef.current;
         Object.entries(result.data).forEach(([key, value]) => {
+          if (Array.isArray(value)) {
+            const checkboxGroup = form.querySelectorAll<HTMLInputElement>(`input[name="${key}[]"]`);
+            if (checkboxGroup.length > 0) {
+              const normalized = value.map((item) => String(item));
+              checkboxGroup.forEach((checkbox) => {
+                checkbox.checked = normalized.includes(checkbox.value);
+              });
+              return;
+            }
+          }
+
           const element = form.elements.namedItem(key);
           if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement || element instanceof HTMLSelectElement) {
             if (Array.isArray(value)) {
               if (element instanceof HTMLSelectElement && element.multiple) {
-                Array.from(element.options).forEach(option => {
+                Array.from(element.options).forEach((option) => {
                   option.selected = value.includes(option.value);
                 });
               }
@@ -350,27 +372,45 @@ export default function NewListingClient() {
           </select>
         </FormField>
 
-        <FormField label="Amenities" htmlFor="amenities" error={fieldErrorMessage("amenities")}>
-          <select
-            id="amenities"
-            name="amenities"
-            multiple
-            className={inputClassName("amenities")}
-            size={4}
-            aria-invalid={fieldHasError("amenities")}
-            aria-describedby={describedBy("amenities")}
+        <div className="grid gap-2 text-sm text-brand-dark">
+          <span id="amenities-label" className="font-semibold text-brand-dark">
+            Amenities
+          </span>
+          <div
+            role="group"
+            aria-labelledby="amenities-label"
+            aria-describedby={fieldHasError("amenities") ? "amenities-error" : undefined}
+            className={clsx(
+              "grid gap-2 rounded-2xl border border-black/10 p-4",
+              fieldHasError("amenities") && "border-red-500"
+            )}
           >
-            <option value="laundry">Laundry</option>
-            <option value="gym">Gym</option>
-            <option value="pool">Pool</option>
-            <option value="ac">A/C</option>
-            <option value="balcony">Balcony</option>
-            <option value="storage">Storage</option>
-            <option value="elevator">Elevator</option>
-            <option value="wheelchair">Wheelchair Access</option>
-          </select>
-          <span className="text-xs text-text-muted">Hold Ctrl (Windows) or Cmd (Mac) to select multiple.</span>
-        </FormField>
+            <p className="text-xs text-text-muted">
+              Select all amenities that apply to this listing.
+            </p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {amenitiesOptions.map((amenity) => (
+                <label
+                  key={amenity.value}
+                  className="flex items-center gap-2 rounded-xl border border-black/5 bg-black/5 px-3 py-2 text-sm font-medium text-text-muted transition hover:border-brand-teal hover:text-brand-teal dark:bg-white/5"
+                >
+                  <input
+                    type="checkbox"
+                    name="amenities[]"
+                    value={amenity.value}
+                    className="h-4 w-4 rounded border-black/20 text-brand-teal focus:ring-brand-teal"
+                  />
+                  <span>{amenity.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+          {fieldHasError("amenities") ? (
+            <p id="amenities-error" className="text-xs font-medium text-red-600" role="alert">
+              {fieldErrorMessage("amenities")}
+            </p>
+          ) : null}
+        </div>
 
         <FormField label="Pets allowed?" htmlFor="pets" error={fieldErrorMessage("pets")}>
           <select
