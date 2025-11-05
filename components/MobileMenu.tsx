@@ -31,9 +31,10 @@ type User = {
 type MobileMenuProps = {
   profile: Profile | null;
   user: User | null;
+  hasUnreadMessages?: boolean;
 };
 
-export function MobileMenu({ profile, user }: MobileMenuProps) {
+export function MobileMenu({ profile, user, hasUnreadMessages = false }: MobileMenuProps) {
   const isAuthenticated = Boolean(profile && user);
 
   return (
@@ -41,51 +42,77 @@ export function MobileMenu({ profile, user }: MobileMenuProps) {
       {isAuthenticated && profile && user && (
         <ProfileMenuMobile profile={profile} user={user} />
       )}
-      <MobileMenuButton profile={profile} user={user} />
+      <MobileMenuButton profile={profile} user={user} hasUnreadMessages={hasUnreadMessages} />
     </div>
   );
 }
 
 function MobileMenuButton({
   user,
-  profile
+  profile,
+  hasUnreadMessages
 }: {
   user: User | null;
   profile: Profile | null;
+  hasUnreadMessages: boolean;
 }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const isAuthenticated = Boolean(user && profile);
   const isLandlord = user?.role === "landlord" || user?.role === "admin";
+  const buttonLabel = mobileMenuOpen
+    ? "Close menu"
+    : hasUnreadMessages
+      ? "Open menu, unread messages available"
+      : "Open menu";
 
   return (
     <>
       <button
         type="button"
         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-        className="rounded-lg p-2 text-text-muted hover:bg-surface hover:text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal"
-        aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+        className="relative rounded-lg p-2 text-text-muted hover:bg-surface hover:text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal"
+        aria-label={buttonLabel}
       >
         {mobileMenuOpen ? (
           <XMarkIcon className="h-6 w-6" />
         ) : (
           <Bars3Icon className="h-6 w-6" />
         )}
+        {hasUnreadMessages && !mobileMenuOpen && (
+          <span
+            className="absolute -right-0.5 top-1 inline-flex h-2.5 w-2.5 rounded-full bg-brand-green"
+            aria-hidden="true"
+          />
+        )}
       </button>
 
       {mobileMenuOpen && (
         <div className="fixed inset-x-0 top-[73px] border-t border-black/5 bg-white shadow-lg lg:hidden z-50">
           <nav className="mx-auto max-w-7xl space-y-1 px-4 py-4">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={{ pathname: link.href }}
-                onClick={() => setMobileMenuOpen(false)}
-                className="block rounded-lg px-3 py-2 text-sm font-medium text-text-muted transition hover:bg-surface hover:text-brand-teal"
-              >
-                {link.label}
-              </Link>
-            ))}
+            {navLinks.map((link) => {
+              const isMessagesLink = link.href === "/messages";
+              const showUnread = isMessagesLink && hasUnreadMessages;
+              const linkLabel = showUnread ? `${link.label} (unread)` : link.label;
+
+              return (
+                <Link
+                  key={link.href}
+                  href={{ pathname: link.href }}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="relative flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm font-medium text-text-muted transition hover:bg-surface hover:text-brand-teal"
+                  aria-label={linkLabel}
+                >
+                  <span>{link.label}</span>
+                  {showUnread && (
+                    <span
+                      className="inline-flex h-2.5 w-2.5 rounded-full bg-brand-green"
+                      aria-hidden="true"
+                    />
+                  )}
+                </Link>
+              );
+            })}
             {isLandlord && (
               <Link
                 href={{ pathname: "/listings/new" }}

@@ -99,14 +99,14 @@ export default function ChatThread({ messages, loading = false, currentUserId }:
 
   return (
     <section 
-      className="flex h-full flex-col rounded-3xl border border-black/5 bg-white shadow-soft"
+      className="flex h-full min-h-[320px] flex-col overflow-hidden rounded-3xl border border-black/5 bg-white shadow-soft"
       role="region"
       aria-label="Chat messages"
     >
-      <header className="flex items-center justify-between border-b border-black/5 px-6 py-4">
+      <header className="flex items-center justify-between border-b border-black/5 px-4 py-3 sm:px-6 sm:py-4">
         <div>
-          <h2 className="text-base font-semibold text-brand-dark">Conversation</h2>
-          <p className="text-xs text-text-muted" aria-live="polite">
+          <h2 className="text-lg font-semibold text-brand-dark">Conversation</h2>
+          <p className="text-xs text-text-muted sm:text-sm" aria-live="polite">
             {typingUsers.size > 0 
               ? `${typingUsers.size === 1 ? "Someone is" : "Multiple people are"} typing...`
               : "Messages are synced when Supabase is connected."}
@@ -121,7 +121,7 @@ export default function ChatThread({ messages, loading = false, currentUserId }:
         aria-label="Conversation messages"
         tabIndex={0}
         onKeyDown={handleKeyDown}
-        className="flex-1 space-y-4 overflow-y-auto px-6 py-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal"
+        className="flex-1 space-y-5 overflow-y-auto px-4 py-4 pb-24 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal sm:space-y-6 sm:px-6 sm:py-6 sm:pb-28"
       >
         {loading ? (
           <div className="flex flex-col gap-3" aria-label="Loading messages">
@@ -135,7 +135,7 @@ export default function ChatThread({ messages, loading = false, currentUserId }:
               <div 
                 key={message.id}
                 ref={idx === messages.length - 1 ? lastMessageRef : undefined}
-                className="focus-within:outline-none focus-within:ring-2 focus-within:ring-brand-teal rounded-xl"
+                className="rounded-2xl focus-within:outline-none focus-within:ring-2 focus-within:ring-brand-teal"
               >
                 <Bubble
                   align={message.senderId === currentUserId ? "right" : "left"}
@@ -148,11 +148,14 @@ export default function ChatThread({ messages, loading = false, currentUserId }:
             ))}
             {typingUsers.size > 0 && (
               <div 
-                className="flex items-center gap-2 text-sm text-text-muted"
+                className="flex items-center gap-2 text-xs text-text-muted sm:text-sm"
                 aria-live="polite"
                 role="status"
               >
-                <span className="animate-pulse">•••</span>
+                <span
+                  className="inline-flex h-2 w-2 animate-pulse rounded-full bg-brand-teal/80"
+                  aria-hidden="true"
+                />
                 {typingUsers.size === 1 ? "Someone is typing..." : "Multiple people are typing..."}
               </div>
             )}
@@ -178,12 +181,13 @@ function Bubble({
   seen?: boolean;
   skeleton?: boolean;
 }) {
-  const baseClasses = "max-w-[80%] rounded-3xl px-4 py-3 text-sm shadow-soft sm:max-w-[65%]";
+  const baseClasses =
+    "max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-soft sm:max-w-[70%] sm:px-5 sm:text-base";
 
   const alignClass =
     align === "right"
-      ? "ml-auto rounded-br-md bg-brand-teal text-white"
-      : "mr-auto rounded-bl-md bg-surface text-brand-dark";
+      ? "ml-auto bg-brand-teal text-white"
+      : "mr-auto border border-black/5 bg-surface text-brand-dark";
 
   const formattedTimestamp =
     timestamp &&
@@ -198,19 +202,19 @@ function Bubble({
   if (skeleton) {
     return (
       <div className={`flex ${align === "right" ? "justify-end" : "justify-start"}`}>
-        <span className={`${baseClasses} ${alignClass} h-14 animate-pulse`} />
+        <span className={`${baseClasses} ${alignClass} h-12 animate-pulse sm:h-14`} />
       </div>
     );
   }
 
   return (
     <div
-      className={`flex ${align === "right" ? "justify-end" : "justify-start"} flex-col gap-2`}
+      className={`flex ${align === "right" ? "justify-end" : "justify-start"} flex-col gap-1.5 sm:gap-2`}
       role="group"
       aria-label={`${senderLabel} said ${text ?? ""}`}
     >
       <span className={`${baseClasses} ${alignClass}`}>{text}</span>
-      <div className="flex items-center gap-2 text-xs text-text-muted">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-medium text-text-muted/80 sm:text-xs">
         {formattedTimestamp && (
           <time
             dateTime={timestamp}

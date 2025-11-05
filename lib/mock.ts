@@ -374,7 +374,9 @@ export function addMockProperty(property: Property) {
 export function updateMockProperty(id: string, updater: (property: Property) => Property) {
   const index = mockProperties.findIndex((property) => property.id === id);
   if (index === -1) return;
-  mockProperties[index] = updater(mockProperties[index]);
+  const current = mockProperties[index];
+  if (!current) return;
+  mockProperties[index] = updater(current);
 }
 
 export function removeMockProperty(id: string) {

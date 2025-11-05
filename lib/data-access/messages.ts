@@ -124,6 +124,27 @@ export async function sendMessage(threadId: string, text: string): Promise<Messa
   return mapMessageFromSupabase(data);
 }
 
+export async function hasUnreadThreads(): Promise<boolean> {
+  const { supabase, user } = await getSupabaseClientWithUser();
+  if (!supabase || !user) {
+    return false;
+  }
+
+  const { data, error } = await supabase
+    .from("message_threads")
+    .select("unread_count")
+    .or(`tenant_id.eq.${user.id},landlord_id.eq.${user.id}`)
+    .gt("unread_count", 0)
+    .limit(1);
+
+  if (error) {
+    console.error("[messages] Failed to check unread threads", error);
+    return false;
+  }
+
+  return Boolean(data && data.some((row) => (row.unread_count ?? 0) > 0));
+}
+
 function mapThreadFromSupabase(record: SupabaseThreadRow, currentUserId: string): MessageThread {
   const tenantProfile = Array.isArray(record.tenant_profile)
     ? record.tenant_profile[0] ?? null

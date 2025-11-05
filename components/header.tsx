@@ -4,6 +4,7 @@ import { unstable_noStore as noStore } from "next/cache";
 import { MagnifyingGlassIcon, ShieldCheckIcon } from "@heroicons/react/24/outline";
 
 import { SignOutButton } from "@/components/auth/SignOutButton";
+import { hasUnreadThreads } from "@/lib/data-access/messages";
 import { getProfile, getCurrentUser } from "@/lib/data-access/profile";
 import { buttonStyles } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
@@ -15,7 +16,9 @@ const navLinks = [
   { href: "/messages" as const, label: "Messages" }
 ];
 
-export default function Header() {
+export default async function Header() {
+  noStore();
+  const hasUnreadMessages = await hasUnreadThreads().catch(() => false);
   return (
     <header className="sticky top-0 z-40 border-b border-black/5 bg-brand-bg/80 backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4">
@@ -23,15 +26,31 @@ export default function Header() {
         
         {/* Desktop Navigation */}
         <nav className="hidden items-center gap-1 lg:flex">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={{ pathname: link.href }}
-              className="rounded-full px-3 py-2 text-sm font-medium text-text-muted transition hover:text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg"
-            >
-              {link.label}
-            </Link>
-          ))}
+          {navLinks.map((link) => {
+            const isMessagesLink = link.href === "/messages";
+            const showUnread = isMessagesLink && hasUnreadMessages;
+            const linkLabel = showUnread ? `${link.label} (unread)` : link.label;
+            return (
+              <Link
+                key={link.href}
+                href={{ pathname: link.href }}
+                className={`relative rounded-full px-3 py-2 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg ${
+                  showUnread ? "text-brand-dark hover:text-brand-teal" : "text-text-muted hover:text-brand-teal"
+                }`}
+                aria-label={linkLabel}
+              >
+                <span className="inline-flex items-center gap-2">
+                  {link.label}
+                  {showUnread && (
+                    <span
+                      className="inline-flex h-2.5 w-2.5 animate-pulse rounded-full bg-brand-green"
+                      aria-hidden="true"
+                    />
+                  )}
+                </span>
+              </Link>
+            );
+          })}
         </nav>
         
         {/* Desktop Actions */}
@@ -55,7 +74,7 @@ export default function Header() {
         <div className="flex items-center gap-2 lg:hidden">
           <ThemeToggle showLabel={false} />
           <Suspense fallback={<SignInButtons />}>
-            <MobileMenuWrapper />
+            <MobileMenuWrapper hasUnreadMessages={hasUnreadMessages} />
           </Suspense>
         </div>
       </div>
@@ -151,12 +170,12 @@ async function ProfileMenu() {
 }
 
 
-async function MobileMenuWrapper() {
+async function MobileMenuWrapper({ hasUnreadMessages }: { hasUnreadMessages: boolean }) {
   noStore();
   const profile = await getProfile().catch(() => null);
   const user = await getCurrentUser().catch(() => null);
 
-  return <MobileMenu profile={profile} user={user} />;
+  return <MobileMenu profile={profile} user={user} hasUnreadMessages={hasUnreadMessages} />;
 }
 
 function SignInButtons() {
