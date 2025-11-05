@@ -88,15 +88,6 @@ function MobileMenuButton({
             ))}
             {isLandlord && (
               <Link
-                href={{ pathname: "/dashboard/listings" }}
-                onClick={() => setMobileMenuOpen(false)}
-                className="block rounded-lg px-3 py-2 text-sm font-medium text-text-muted transition hover:bg-surface hover:text-brand-teal"
-              >
-                My Listings
-              </Link>
-            )}
-            {isLandlord && (
-              <Link
                 href={{ pathname: "/listings/new" }}
                 onClick={() => setMobileMenuOpen(false)}
                 className="block rounded-lg px-3 py-2 text-sm font-semibold text-brand-teal transition hover:bg-brand-teal/10"

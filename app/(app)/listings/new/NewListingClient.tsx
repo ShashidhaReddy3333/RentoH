@@ -7,7 +7,13 @@ import { useFormState, useFormStatus } from "react-dom";
 
 import { buttonStyles } from "@/components/ui/button";
 
-import { createListingAction, saveDraftAction, fetchDraftAction, type ListingFormState } from "./actions";
+import {
+  createListingAction,
+  saveDraftAction,
+  fetchDraftAction,
+  updateListingAction,
+  type ListingFormState
+} from "./actions";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import dynamic from "next/dynamic";
 import { useDebounce } from "@/lib/utils/hooks/index";
@@ -36,8 +42,47 @@ const amenitiesOptions = [
 const initialListingFormState: ListingFormState = { status: "idle" };
 type ToastState = { type: "error" | "success"; message: string } | null;
 
-export default function NewListingClient() {
-  const [state, formAction] = useFormState(createListingAction, initialListingFormState);
+type ListingFormMode = "create" | "edit";
+
+type InitialListingValues = {
+  title?: string;
+  rent?: number;
+  street?: string;
+  city?: string;
+  postalCode?: string;
+  propertyType?: string;
+  beds?: number;
+  baths?: number;
+  area?: number | null;
+  amenities?: string[];
+  pets?: boolean | null;
+  smoking?: boolean | null;
+  parking?: string | null;
+  availableFrom?: string | null;
+  rentFrequency?: "monthly" | "weekly" | "biweekly" | null;
+  description?: string;
+};
+
+type ListingImageInput = { key: string; url: string; isCover?: boolean };
+
+type ListingFormProps = {
+  mode?: ListingFormMode;
+  listingId?: string;
+  initialValues?: InitialListingValues;
+  initialImages?: ListingImageInput[];
+};
+
+export default function NewListingClient({
+  mode = "create",
+  listingId,
+  initialValues,
+  initialImages = []
+}: ListingFormProps) {
+  const isCreateMode = mode === "create";
+  const [state, formAction] = useFormState(
+    isCreateMode ? createListingAction : updateListingAction,
+    initialListingFormState
+  );
   const [autoSaveState, setAutoSaveState] = useState<ListingFormState>({ status: "idle" });
   const formRef = useRef<HTMLFormElement>(null);
   const router = useRouter();
@@ -48,6 +93,26 @@ export default function NewListingClient() {
   // know drafts are stored in-memory.
   const browserSupabase = createSupabaseBrowserClient();
   const isDevMode = !browserSupabase;
+
+  const amenitiesInitial = useMemo(() => initialValues?.amenities ?? [], [initialValues?.amenities]);
+  const petsInitial = initialValues?.pets;
+  const smokingInitial = initialValues?.smoking;
+  const rentFrequencyInitial = initialValues?.rentFrequency ?? "monthly";
+  const availableFromInitial = initialValues?.availableFrom
+    ? (initialValues.availableFrom.includes("T")
+        ? initialValues.availableFrom.split("T")[0]
+        : initialValues.availableFrom)
+    : "";
+  const petsSelectValue = petsInitial === true ? "true" : petsInitial === false ? "false" : "";
+  const smokingSelectValue = smokingInitial === true ? "true" : smokingInitial === false ? "false" : "";
+  const normalizedInitialImages = useMemo(
+    () =>
+      initialImages.map((image, index) => ({
+        ...image,
+        isCover: image.isCover ?? index === 0
+      })),
+    [initialImages]
+  );
 
   const fieldErrors = useMemo(() => {
     if (state.status === "validation-error") {
@@ -99,6 +164,7 @@ export default function NewListingClient() {
   );
 
   useEffect(() => {
+    if (!isCreateMode) return;
     async function loadDraft() {
       const result = await fetchDraftAction();
       if (result.status === "success" && result.data && formRef.current) {
@@ -132,18 +198,19 @@ export default function NewListingClient() {
   }
     }
     loadDraft();
-  }, []);
+  }, [isCreateMode]);
 
   const handleFormChange = useCallback(async () => {
-    if (!formRef.current) return;
+    if (!isCreateMode || !formRef.current) return;
     const formData = new FormData(formRef.current);
     const result = await saveDraftAction(formData);
     setAutoSaveState(result);
-  }, []);
+  }, [isCreateMode]);
 
   const debouncedHandleFormChange = useDebounce(handleFormChange, 2000);
 
   useEffect(() => {
+    if (!isCreateMode) return;
     if (!formRef.current) return;
     const form = formRef.current;
     const formElements = form.elements;
@@ -161,24 +228,28 @@ export default function NewListingClient() {
         }
       });
     };
-  }, [debouncedHandleFormChange]);
+  }, [debouncedHandleFormChange, isCreateMode]);
   useEffect(() => {
     if (state.status === "error" || state.status === "validation-error") {
       setToast({ type: "error", message: state.message });
     } else if (state.status === "success") {
-      setToast({ type: "success", message: "Listing created! Redirecting..." });
+      setToast({
+        type: "success",
+        message: isCreateMode ? "Listing created! Redirecting..." : "Listing updated successfully."
+      });
     } else if (state.status === "idle") {
       setToast(null);
     }
-  }, [state]);
+  }, [state, isCreateMode]);
 
   useEffect(() => {
+    if (!isCreateMode) return;
     if (state.status !== "success") return;
     const timeout = setTimeout(() => {
       router.push("/dashboard?toast=listing-created");
     }, 250);
     return () => clearTimeout(timeout);
-  }, [state.status, router]);
+  }, [state.status, router, isCreateMode]);
 
   return (
     <form
@@ -195,6 +266,8 @@ export default function NewListingClient() {
       <div aria-live="polite" role="status" className="sr-only">
         {toast?.message ?? ""}
       </div>
+
+      {mode === "edit" && listingId ? <input type="hidden" name="listingId" value={listingId} /> : null}
 
       {toast ? (
         <div
@@ -213,18 +286,20 @@ export default function NewListingClient() {
         </div>
       ) : null}
 
-      {autoSaveState.status === "auto-saved" ? (
-        <div role="status" className="rounded-2xl border border-brand-teal/40 bg-brand-teal/10 px-4 py-3 text-sm font-semibold text-brand-teal">
-          Draft auto-saved at {new Date(autoSaveState.timestamp).toLocaleTimeString()}
-        </div>
-      ) : autoSaveState.status === "validation-error" ? (
-        <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">
-          {autoSaveState.message}
-        </div>
-      ) : autoSaveState.status === "error" ? (
-        <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">
-          {autoSaveState.message}
-        </div>
+      {isCreateMode ? (
+        autoSaveState.status === "auto-saved" ? (
+          <div role="status" className="rounded-2xl border border-brand-teal/40 bg-brand-teal/10 px-4 py-3 text-sm font-semibold text-brand-teal">
+            Draft auto-saved at {new Date(autoSaveState.timestamp).toLocaleTimeString()}
+          </div>
+        ) : autoSaveState.status === "validation-error" ? (
+          <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">
+            {autoSaveState.message}
+          </div>
+        ) : autoSaveState.status === "error" ? (
+          <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">
+            {autoSaveState.message}
+          </div>
+        ) : null
       ) : null}
 
       {formErrors?.length ? (
@@ -246,6 +321,7 @@ export default function NewListingClient() {
             placeholder="Downtown loft with skyline views"
             aria-invalid={fieldHasError("title")}
             aria-describedby={describedBy("title")}
+            defaultValue={initialValues?.title ?? ""}
           />
         </FormField>
 
@@ -262,6 +338,7 @@ export default function NewListingClient() {
             aria-describedby={describedBy("rent", "rent-help")}
             aria-invalid={fieldHasError("rent")}
             placeholder="2300"
+            defaultValue={initialValues?.rent != null ? String(initialValues.rent) : ""}
           />
           <span id="rent-help" className="text-xs text-text-muted">
             Enter the rent before utilities and discounts.
@@ -280,6 +357,7 @@ export default function NewListingClient() {
             placeholder="2"
             aria-invalid={fieldHasError("beds")}
             aria-describedby={describedBy("beds")}
+            defaultValue={initialValues?.beds != null ? String(initialValues.beds) : ""}
           />
         </FormField>
 
@@ -295,6 +373,7 @@ export default function NewListingClient() {
             placeholder="1"
             aria-invalid={fieldHasError("baths")}
             aria-describedby={describedBy("baths")}
+            defaultValue={initialValues?.baths != null ? String(initialValues.baths) : ""}
           />
         </FormField>
 
@@ -309,6 +388,7 @@ export default function NewListingClient() {
             placeholder="900"
             aria-invalid={fieldHasError("area")}
             aria-describedby={describedBy("area")}
+            defaultValue={initialValues?.area != null ? String(initialValues.area) : ""}
           />
         </FormField>
 
@@ -321,6 +401,7 @@ export default function NewListingClient() {
             placeholder="123 King Street W"
             aria-invalid={fieldHasError("street")}
             aria-describedby={describedBy("street")}
+            defaultValue={initialValues?.street ?? ""}
           />
         </FormField>
 
@@ -333,6 +414,7 @@ export default function NewListingClient() {
             placeholder="Waterloo"
             aria-invalid={fieldHasError("city")}
             aria-describedby={describedBy("city")}
+            defaultValue={initialValues?.city ?? ""}
           />
         </FormField>
 
@@ -345,6 +427,7 @@ export default function NewListingClient() {
             placeholder="N2L 0A1"
             aria-describedby={describedBy("postalCode", "postal-help")}
             aria-invalid={fieldHasError("postalCode")}
+            defaultValue={initialValues?.postalCode ?? ""}
           />
           <span id="postal-help" className="text-xs text-text-muted">
             Format as ANA NAN for Canadian addresses.
@@ -357,7 +440,7 @@ export default function NewListingClient() {
             name="propertyType"
             required
             className={inputClassName("propertyType")}
-            defaultValue=""
+            defaultValue={initialValues?.propertyType ?? ""}
             aria-invalid={fieldHasError("propertyType")}
             aria-describedby={describedBy("propertyType")}
           >
@@ -399,6 +482,7 @@ export default function NewListingClient() {
                     name="amenities[]"
                     value={amenity.value}
                     className="h-4 w-4 rounded border-black/20 text-brand-teal focus:ring-brand-teal"
+                    defaultChecked={amenitiesInitial.includes(amenity.value)}
                   />
                   <span>{amenity.label}</span>
                 </label>
@@ -419,6 +503,7 @@ export default function NewListingClient() {
             className={inputClassName("pets")}
             aria-invalid={fieldHasError("pets")}
             aria-describedby={describedBy("pets")}
+            defaultValue={petsSelectValue}
           >
             <option value="">Select</option>
             <option value="true">Yes</option>
@@ -433,6 +518,7 @@ export default function NewListingClient() {
             className={inputClassName("smoking")}
             aria-invalid={fieldHasError("smoking")}
             aria-describedby={describedBy("smoking")}
+            defaultValue={smokingSelectValue}
           >
             <option value="">Select</option>
             <option value="true">Yes</option>
@@ -448,6 +534,7 @@ export default function NewListingClient() {
             placeholder="e.g. 1 spot, underground, street"
             aria-invalid={fieldHasError("parking")}
             aria-describedby={describedBy("parking")}
+            defaultValue={initialValues?.parking ?? ""}
           />
         </FormField>
 
@@ -459,6 +546,7 @@ export default function NewListingClient() {
             className={inputClassName("availableFrom")}
             aria-invalid={fieldHasError("availableFrom")}
             aria-describedby={describedBy("availableFrom")}
+            defaultValue={availableFromInitial}
           />
         </FormField>
 
@@ -467,7 +555,7 @@ export default function NewListingClient() {
             id="rentFrequency"
             name="rentFrequency"
             className={inputClassName("rentFrequency")}
-            defaultValue="monthly"
+            defaultValue={rentFrequencyInitial}
             aria-invalid={fieldHasError("rentFrequency")}
             aria-describedby={describedBy("rentFrequency")}
           >
@@ -489,12 +577,13 @@ export default function NewListingClient() {
           placeholder="Highlight key amenities, nearby transit, and what makes this rental unique."
           aria-invalid={fieldHasError("description")}
           aria-describedby={describedBy("description")}
+          defaultValue={initialValues?.description ?? ""}
         />
       </FormField>
 
       <div>
         <h3 className="mb-2 text-sm font-semibold text-brand-dark">Photos</h3>
-        <ListingImageUploader />
+        <ListingImageUploader initialImages={normalizedInitialImages} />
         {fieldHasError("images") ? (
           <p id="images-error" className="mt-2 text-sm text-red-600" role="alert">
             {fieldErrorMessage("images")}
@@ -503,13 +592,13 @@ export default function NewListingClient() {
       </div>
 
       <div className="flex justify-end">
-        <SubmitButton state={state} />
+        <SubmitButton state={state} mode={mode} />
       </div>
     </form>
   );
 }
 
-function SubmitButton({ state }: { state: ListingFormState }) {
+function SubmitButton({ state, mode }: { state: ListingFormState; mode: ListingFormMode }) {
   const { pending } = useFormStatus();
   return (
     <button
@@ -517,7 +606,15 @@ function SubmitButton({ state }: { state: ListingFormState }) {
       className={buttonStyles({ variant: "primary", size: "lg" })}
       disabled={pending}
     >
-      {pending ? "Saving..." : state.status === "success" ? "Saved" : "Save listing"}
+      {pending
+        ? "Saving..."
+        : state.status === "success"
+          ? mode === "create"
+            ? "Saved"
+            : "Updated"
+          : mode === "create"
+            ? "Save listing"
+            : "Update listing"}
     </button>
   );
 }

@@ -371,6 +371,18 @@ export function addMockProperty(property: Property) {
   }
 }
 
+export function updateMockProperty(id: string, updater: (property: Property) => Property) {
+  const index = mockProperties.findIndex((property) => property.id === id);
+  if (index === -1) return;
+  mockProperties[index] = updater(mockProperties[index]);
+}
+
+export function removeMockProperty(id: string) {
+  const index = mockProperties.findIndex((property) => property.id === id);
+  if (index === -1) return;
+  mockProperties.splice(index, 1);
+}
+
 export function appendMockMessage(message: Message) {
   mockMessages = [...mockMessages, message];
 }

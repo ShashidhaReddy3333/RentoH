@@ -5,7 +5,6 @@ import { MagnifyingGlassIcon, ShieldCheckIcon } from "@heroicons/react/24/outlin
 
 import { SignOutButton } from "@/components/auth/SignOutButton";
 import { getProfile, getCurrentUser } from "@/lib/data-access/profile";
-import { LandlordNavLink } from "./LandlordNavLink";
 import { buttonStyles } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { MobileMenu } from "./MobileMenu";
@@ -33,9 +32,6 @@ export default function Header() {
               {link.label}
             </Link>
           ))}
-          <Suspense fallback={null}>
-            <LandlordNavLink />
-          </Suspense>
         </nav>
         
         {/* Desktop Actions */}
@@ -187,4 +183,3 @@ function SignInButtons() {
     </div>
   );
 }
-

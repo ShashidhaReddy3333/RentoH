@@ -28,12 +28,35 @@ function uniqueId() {
   return `${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
 }
 
-export default function ListingImageUploader({ name = "images" }: { name?: string }) {
+type ListingImageUploaderProps = {
+  name?: string;
+  initialImages?: Array<{ key: string; url: string; isCover?: boolean }>;
+};
+
+export default function ListingImageUploader({ name = "images", initialImages = [] }: ListingImageUploaderProps) {
   const supabase = createSupabaseBrowserClient();
   const bucketName = clientEnv.NEXT_PUBLIC_SUPABASE_BUCKET_LISTINGS ?? "listings";
 
-  const [images, setImages] = useState<UploadedImage[]>([]);
+  const [images, setImages] = useState<UploadedImage[]>(() =>
+    initialImages.map((image) => ({
+      key: image.key,
+      url: image.url,
+      isCover: Boolean(image.isCover),
+      uploading: false
+    }))
+  );
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setImages(
+      initialImages.map((image) => ({
+        key: image.key,
+        url: image.url,
+        isCover: Boolean(image.isCover),
+        uploading: false
+      }))
+    );
+  }, [initialImages]);
 
   useEffect(() => {
     return () => {

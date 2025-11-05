@@ -179,7 +179,7 @@ export default function ProfilePageClient({ initialProfile, initialPrefs, email 
           .upload(key, avatarFile, { upsert: true, contentType: avatarFile.type || "image/*" });
         if (uploadError) throw uploadError;
         const { data: publicUrl } = supabase.storage.from(avatarBucket).getPublicUrl(key);
-        avatar_url = publicUrl?.publicUrl ?? avatar_url;
+        avatar_url = publicUrl?.publicUrl ? `${publicUrl.publicUrl}?t=${Date.now()}` : avatar_url;
       }
 
       const basePrefs = isPlainRecord(initialPrefs) ? { ...initialPrefs } : {};

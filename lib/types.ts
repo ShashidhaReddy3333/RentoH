@@ -8,6 +8,7 @@ export type Property = {
   slug?: string;
   title: string;
   images: string[];
+  imageStoragePaths?: string[];
   price: number;
   beds: number;
   baths: number;
@@ -19,10 +20,14 @@ export type Property = {
   createdAt: string;
   isFavorite?: boolean;
   address?: string;
+  postalCode?: string;
   description?: string;
   amenities?: string[];
   area?: number;
   availableFrom?: string;
+  rentFrequency?: "monthly" | "weekly" | "biweekly";
+  parking?: string;
+  smoking?: boolean;
   neighborhood?: string;
   coordinates?: Coordinates;
   walkthroughVideoUrl?: string;
@@ -130,4 +135,3 @@ export type ApplicationSummary = {
   status: ApplicationStatus;
   submittedAt: string;
 };
-

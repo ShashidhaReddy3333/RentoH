@@ -1,13 +1,15 @@
+import Image from "next/image";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import EmptyState from "@/components/EmptyState";
-import PropertyCard from "@/components/PropertyCard";
 import { buttonStyles } from "@/components/ui/button";
 import { listOwnedProperties } from "@/lib/data-access/properties";
 import { getCurrentUser } from "@/lib/data-access/profile";
 import { hasSupabaseEnv } from "@/lib/env";
+import type { Property } from "@/lib/types";
+import { DeleteListingButton } from "./DeleteListingButton";
 
 export const metadata: Metadata = {
   title: "Manage Listings - Rento",
@@ -73,11 +75,7 @@ export default async function ManageListingsPage() {
           </span>
         </div>
         {activeListings.length ? (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {activeListings.map((property) => (
-              <PropertyCard key={property.id} property={property} />
-            ))}
-          </div>
+          <ListingGrid listings={activeListings} />
         ) : (
           <div className="rounded-3xl border border-dashed border-black/10 bg-white p-6 text-sm text-text-muted">
             You don&apos;t have any live listings yet. Publish one to reach verified renters.
@@ -93,11 +91,7 @@ export default async function ManageListingsPage() {
           </span>
         </div>
         {draftListings.length ? (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {draftListings.map((property) => (
-              <PropertyCard key={property.id} property={property} />
-            ))}
-          </div>
+          <ListingGrid listings={draftListings} />
         ) : (
           <div className="rounded-3xl border border-dashed border-black/10 bg-white p-6 text-sm text-text-muted">
             No drafts waiting. Start a new listing to save progress as a draft.
@@ -105,5 +99,73 @@ export default async function ManageListingsPage() {
         )}
       </section>
     </div>
+  );
+}
+
+function ListingGrid({ listings }: { listings: Property[] }) {
+  return (
+    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      {listings.map((listing) => (
+        <ListingCard key={listing.id} listing={listing} />
+      ))}
+    </div>
+  );
+}
+
+function ListingCard({ listing }: { listing: Property }) {
+  const coverImage = listing.images[0] ?? null;
+  const priceLabel = `$${listing.price.toLocaleString()}`;
+  const status = listing.status === "draft" ? "Draft" : "Active";
+
+  return (
+    <article className="flex h-full flex-col gap-4 rounded-3xl border border-black/5 bg-white p-4 shadow-soft">
+      <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl">
+        {coverImage ? (
+          <Image
+            src={coverImage}
+            alt={listing.title}
+            fill
+            sizes="(max-width: 768px) 100vw, 33vw"
+            className="object-cover"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-surface text-sm text-text-muted">
+            No photo yet
+          </div>
+        )}
+        <span
+          className={`absolute left-4 top-4 inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+            status === "Draft" ? "bg-brand-blue/10 text-brand-blue" : "bg-brand-green/10 text-brand-green"
+          }`}
+        >
+          {status}
+        </span>
+      </div>
+      <div className="space-y-2">
+        <h3 className="text-lg font-semibold text-brand-dark">{listing.title}</h3>
+        <p className="text-sm text-text-muted">{listing.city}</p>
+        <p className="text-sm font-semibold text-brand-teal">
+          {priceLabel} <span className="text-xs font-medium text-text-muted">/ {listing.rentFrequency ?? "monthly"}</span>
+        </p>
+        <p className="text-xs text-text-muted">
+          {listing.beds} beds · {listing.baths} baths{listing.area ? ` · ${listing.area} sqft` : ""}
+        </p>
+      </div>
+      <div className="mt-auto flex flex-wrap gap-2">
+        <Link
+          href={{ pathname: `/dashboard/listings/${listing.id}` }}
+          className={buttonStyles({ variant: "outline", size: "sm" })}
+        >
+          Edit
+        </Link>
+        <DeleteListingButton listingId={listing.id} listingTitle={listing.title} />
+        <Link
+          href={{ pathname: `/property/${listing.slug ?? listing.id}` }}
+          className={buttonStyles({ variant: "ghost", size: "sm" })}
+        >
+          View
+        </Link>
+      </div>
+    </article>
   );
 }

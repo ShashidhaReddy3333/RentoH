@@ -26,6 +26,7 @@ export type SupabasePropertyRow = {
   verified?: boolean | null;
   pets?: boolean | null;
   furnished?: boolean | null;
+  smoking?: boolean | null;
   images?: string[] | string | null;
   created_at?: string | null;
   address?: string | null;
@@ -34,6 +35,8 @@ export type SupabasePropertyRow = {
   amenities?: string[] | string | null;
   area?: number | null;
   available_from?: string | null;
+  rent_frequency?: string | null;
+  parking?: string | null;
   neighborhood?: string | null;
   latitude?: number | null;
   longitude?: number | null;
@@ -55,6 +58,7 @@ export const PROPERTY_COLUMNS = `
   verified,
   pets,
   furnished,
+  smoking,
   images,
   created_at,
   address,
@@ -63,6 +67,8 @@ export const PROPERTY_COLUMNS = `
   amenities,
   area,
   available_from,
+  rent_frequency,
+  parking,
   neighborhood,
   latitude,
   longitude,
@@ -223,25 +229,31 @@ export async function getMany(
 }
 
 export function mapPropertyFromSupabaseRow(record: SupabasePropertyRow): Property {
+  const imageStoragePaths = toStringArray(record.images);
   return {
     id: record.id,
     slug: record.slug ?? undefined,
     title: record.title,
-    images: toStringArray(record.images),
+    images: resolveImageUrls(imageStoragePaths),
+    imageStoragePaths,
     price: record.price,
     beds: record.beds,
     baths: record.baths,
     type: record.type,
     city: record.city,
+    postalCode: record.postal_code ?? undefined,
     verified: Boolean(record.verified),
     pets: Boolean(record.pets),
     furnished: Boolean(record.furnished),
+    smoking: record.smoking ?? undefined,
     createdAt: record.created_at ?? new Date().toISOString(),
     address: record.address ?? undefined,
     description: record.description ?? undefined,
     amenities: toStringArray(record.amenities),
     area: record.area ?? undefined,
     availableFrom: record.available_from ?? undefined,
+    rentFrequency: resolveRentFrequency(record.rent_frequency),
+    parking: record.parking ?? undefined,
     neighborhood: record.neighborhood ?? undefined,
     coordinates:
       typeof record.latitude === "number" && typeof record.longitude === "number"
@@ -406,7 +418,7 @@ async function mapRowToPropertyWithAssets(record: SupabasePropertyRow): Promise<
     });
 
     const signedUrls = await Promise.all(signedPromises);
-    return { ...prop, images: signedUrls };
+    return { ...prop, images: signedUrls, imageStoragePaths: images };
   }
 
   const publicUrls = images.map((img) =>
@@ -414,7 +426,7 @@ async function mapRowToPropertyWithAssets(record: SupabasePropertyRow): Promise<
       ? img
       : `${env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${bucket}/${encodeURIComponent(img)}`
   );
-  return { ...prop, images: publicUrls };
+  return { ...prop, images: publicUrls, imageStoragePaths: images };
 }
 
 export async function getBySlugOrId(identifier: string): Promise<Property | null> {
@@ -467,7 +479,8 @@ export async function listOwnedProperties(limit = 4): Promise<Property[]> {
     return [];
   }
 
-  return data.map(mapPropertyFromSupabaseRow);
+  const mapped = await Promise.all(data.map(mapRowToPropertyWithAssets));
+  return mapped;
 }
 
 function findMockProperty(identifier: string): Property | null {
@@ -504,8 +517,24 @@ function toStringArray(value: string[] | string | null | undefined): string[] {
   return [];
 }
 
+function resolveImageUrls(paths: string[]): string[] {
+  const bucket = env.SUPABASE_STORAGE_BUCKET_LISTINGS || "listings";
+  return paths.map((path) =>
+    path.startsWith("http")
+      ? path
+      : `${env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${bucket}/${encodeURIComponent(path)}`
+  );
+}
+
 function mapStatus(value: string | null | undefined): Property["status"] | undefined {
   if (value === "draft" || value === "active" || value === "archived") {
+    return value;
+  }
+  return undefined;
+}
+
+function resolveRentFrequency(value: string | null | undefined): Property["rentFrequency"] | undefined {
+  if (value === "monthly" || value === "weekly" || value === "biweekly") {
     return value;
   }
   return undefined;

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { randomUUID } from "node:crypto";
 
 import { hasSupabaseEnv, env } from "@/lib/env";
-import { addMockProperty } from "@/lib/mock";
+import { addMockProperty, updateMockProperty } from "@/lib/mock";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSlug } from "@/lib/utils/slug";
 import type { Property } from "@/lib/types";
@@ -318,6 +318,172 @@ export async function createListingAction(
   } catch (error) {
     console.error("[listings] Unexpected error creating listing", error);
     const message = error instanceof Error ? error.message : "Failed to create listing";
+    return { status: "error", message };
+  }
+}
+
+export async function updateListingAction(
+  _prev: ListingFormState,
+  formData: FormData
+): Promise<ListingFormState> {
+  try {
+    const raw = formDataToObject(formData);
+    const listingIdRaw = raw["listingId"];
+    const listingId = typeof listingIdRaw === "string" ? listingIdRaw : "";
+    if (!listingId) {
+      return { status: "error", message: "Listing not found." };
+    }
+    delete raw["listingId"];
+
+    const coverValue = raw["cover"];
+    const coverKey = typeof coverValue === "string" ? coverValue : undefined;
+    delete raw["cover"];
+
+    const parsed = ListingSchema.safeParse(raw);
+    if (!parsed.success) {
+      const { fieldErrors, formErrors } = parsed.error.flatten();
+      return {
+        status: "validation-error",
+        message: "Please check the highlighted fields.",
+        fieldErrors,
+        formErrors
+      };
+    }
+
+    const values = parsed.data;
+    const orderedImages = buildOrderedImages(values.images, coverKey);
+
+    if (!hasSupabaseEnv) {
+      if (env.NODE_ENV === "production") {
+        return { status: "error", message: "Missing Supabase configuration. Please set up your environment variables." };
+      }
+
+      updateMockProperty(listingId, (property) => ({
+        ...property,
+        title: values.title,
+        price: values.rent,
+        beds: values.beds,
+        baths: values.baths,
+        type: values.propertyType,
+        city: values.city,
+        address: values.street,
+        description: values.description,
+        amenities: values.amenities ?? [],
+        area: values.area ?? undefined,
+        pets: values.pets ?? false,
+        smoking: values.smoking ?? undefined,
+        availableFrom: values.availableFrom ?? undefined,
+        rentFrequency: values.rentFrequency ?? undefined,
+        parking: values.parking ?? undefined,
+        images: orderedImages,
+        imageStoragePaths: orderedImages
+      }));
+
+      revalidatePath("/dashboard");
+      revalidatePath("/dashboard/listings");
+      return { status: "success" };
+    }
+
+    const supabase = createSupabaseServerClient();
+    if (!supabase) {
+      return { status: "error", message: "Supabase client unavailable." };
+    }
+
+    const {
+      data: { user },
+      error: authError
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return { status: "error", message: "You must be signed in to update a listing." };
+    }
+
+    const role =
+      (user.app_metadata?.["role"] as string | undefined) ??
+      (user.user_metadata?.["role"] as string | undefined) ??
+      "tenant";
+
+    if (role !== "landlord" && role !== "admin") {
+      return { status: "error", message: "Only landlord accounts can update listings." };
+    }
+
+    const {
+      data: existing,
+      error: loadError
+    } = await supabase
+      .from("properties")
+      .select("id, landlord_id, slug, status, images")
+      .eq("id", listingId)
+      .maybeSingle();
+
+    if (loadError || !existing) {
+      return { status: "error", message: "Listing could not be found." };
+    }
+
+    if (existing.landlord_id !== user.id && role !== "admin") {
+      return { status: "error", message: "You do not have permission to update this listing." };
+    }
+
+    const previousImages: string[] = Array.isArray(existing.images)
+      ? (existing.images as string[])
+      : existing.images
+        ? [String(existing.images)]
+        : [];
+
+    const slug = existing.slug ?? `${createSlug(values.title)}-${randomUUID().split("-")[0]}`;
+    const status = typeof existing.status === "string" ? existing.status : "active";
+    const updatedAt = new Date().toISOString();
+
+    const { error: updateError } = await supabase
+      .from("properties")
+      .update({
+        title: values.title,
+        price: values.rent,
+        address: values.street,
+        postal_code: values.postalCode,
+        city: values.city,
+        type: values.propertyType,
+        beds: values.beds,
+        baths: values.baths,
+        area: values.area,
+        amenities: values.amenities ?? [],
+        images: orderedImages,
+        pets: values.pets ?? false,
+        smoking: values.smoking ?? false,
+        parking: values.parking,
+        available_from: values.availableFrom,
+        rent_frequency: values.rentFrequency,
+        description: values.description,
+        slug,
+        status,
+        updated_at: updatedAt
+      })
+      .eq("id", listingId);
+
+    if (updateError) {
+      console.error("[listings] Failed to update listing", updateError);
+      return { status: "error", message: updateError.message };
+    }
+
+    const removedImages = previousImages.filter((image) => !orderedImages.includes(image));
+    if (removedImages.length > 0) {
+      const bucket = env.SUPABASE_STORAGE_BUCKET_LISTINGS ?? "listings";
+      const { error: removeError } = await supabase.storage.from(bucket).remove(removedImages);
+      if (removeError) {
+        console.warn("[listings] Failed to remove stale images", removeError);
+      }
+    }
+
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/listings");
+    revalidatePath("/browse");
+    revalidatePath(`/property/${slug}`);
+    revalidatePath(`/property/${listingId}`);
+
+    return { status: "success" };
+  } catch (error) {
+    console.error("[listings] Unexpected error updating listing", error);
+    const message = error instanceof Error ? error.message : "Failed to update listing";
     return { status: "error", message };
   }
 }
