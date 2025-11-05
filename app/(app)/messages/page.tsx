@@ -19,13 +19,7 @@ export default async function MessagesPage({
   const messages = activeThreadId ? await getThreadMessages(activeThreadId) : [];
 
   return (
-    <div className="space-y-6">
-      <header className="space-y-2">
-        <h1 className="text-3xl font-semibold text-brand-dark">Messages</h1>
-        <p className="text-sm text-text-muted">
-          Review recent conversations, respond to renters, and keep communication organized.
-        </p>
-      </header>
+    <div className="flex h-screen w-full bg-slate-100">
       <MessagesClient
         threads={threads}
         initialMessages={messages}

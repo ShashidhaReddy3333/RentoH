@@ -39,7 +39,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
           go(e);
         }
       }}
-      className="group relative flex flex-col overflow-hidden rounded-3xl border border-black/5 bg-white shadow-soft transition hover:-translate-y-1 focus:outline-none focus-ring"
+      className="group relative flex h-full flex-col overflow-hidden rounded-3xl border border-black/5 bg-white shadow-soft transition hover:-translate-y-1 focus:outline-none focus-ring"
     >
       <div className="relative aspect-[4/3] w-full overflow-hidden">
         {property.images[0] ? (

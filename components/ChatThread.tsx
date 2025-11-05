@@ -1,29 +1,66 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import debounce from "lodash/debounce";
+import { format, formatDistanceToNowStrict, isSameDay, parseISO } from "date-fns";
 import type { RealtimePresenceState } from "@supabase/supabase-js";
+
+import Bubble from "@/components/messages/Bubble";
+import DayDivider from "@/components/messages/DayDivider";
 import type { Message } from "@/lib/types";
 import type { ThreadPresence } from "@/lib/realtime/thread-presence";
 import { setupThreadPresence } from "@/lib/realtime/thread-presence";
 
 type ChatThreadProps = {
   messages: Message[];
-  loading?: boolean;
   currentUserId?: string;
+  threadId?: string;
+  loading?: boolean;
+  onStatusChange?: (status?: string) => void;
 };
 
-export default function ChatThread({ messages, loading = false, currentUserId }: ChatThreadProps) {
-  const viewportRef = useRef<HTMLDivElement>(null);
-  const lastMessageRef = useRef<HTMLDivElement>(null);
+type GroupedMessage = {
+  day: string;
+  date: Date;
+  items: Message[];
+};
+
+export default function ChatThread({
+  messages,
+  currentUserId,
+  threadId,
+  loading = false,
+  onStatusChange
+}: ChatThreadProps) {
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const endRef = useRef<HTMLDivElement | null>(null);
   const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
   const [presenceByUser, setPresenceByUser] = useState<Record<string, ThreadPresence>>({});
-  const threadId = messages[0]?.threadId ?? "";
-  const lastMessageId = messages[messages.length - 1]?.id ?? "";
+
+  const scrollToBottom = useCallback(
+    (smooth = true) => {
+      endRef.current?.scrollIntoView({ behavior: smooth ? "smooth" : "auto" });
+    },
+    []
+  );
+
+  useEffect(() => {
+    scrollToBottom(false);
+  }, [threadId, scrollToBottom]);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const threshold = 120;
+    const distance = el.scrollHeight - el.scrollTop - el.clientHeight;
+    if (distance < threshold) {
+      scrollToBottom(true);
+    }
+  }, [messages, scrollToBottom]);
 
   useEffect(() => {
     if (!currentUserId || !threadId) return;
-    
+
     const presence = setupThreadPresence(threadId, currentUserId);
     void presence.join();
 
@@ -33,10 +70,12 @@ export default function ChatThread({ messages, loading = false, currentUserId }:
       const presenceMap: Record<string, ThreadPresence> = {};
       const typing = new Set<string>();
 
-      Object.values(state).forEach(presences => {
-        presences.forEach(p => {
+      Object.values(state).forEach((presences) => {
+        presences.forEach((p) => {
           presenceMap[p.userId] = p;
-          if (p.isTyping) typing.add(p.userId);
+          if (p.isTyping) {
+            typing.add(p.userId);
+          }
         });
       });
 
@@ -46,11 +85,11 @@ export default function ChatThread({ messages, loading = false, currentUserId }:
 
     const handleInput = debounce((event: Event) => {
       const textarea = event.target as HTMLTextAreaElement;
-      void presence.updateTypingStatus(textarea.value.length > 0);
-    }, 500);
+      void presence.updateTypingStatus(Boolean(textarea.value.trim()));
+    }, 400);
 
     window.addEventListener("thread:presence:sync", handleSync);
-    const inputEl = document.querySelector("[data-testid=message-input]");
+    const inputEl = document.querySelector<HTMLTextAreaElement>("[data-testid=message-input]");
     inputEl?.addEventListener("input", handleInput);
 
     return () => {
@@ -61,170 +100,109 @@ export default function ChatThread({ messages, loading = false, currentUserId }:
   }, [currentUserId, threadId]);
 
   useEffect(() => {
-    const viewport = viewportRef.current;
-    const lastMessage = lastMessageRef.current;
-    if (!viewport || !lastMessage) return;
-    
-    lastMessage.scrollIntoView({ behavior: "smooth" });
-    
-    if (currentUserId && threadId) {
-      const presence = setupThreadPresence(threadId, currentUserId);
-      void presence.updateReadStatus();
+    if (!currentUserId || !threadId) return;
+    const presence = setupThreadPresence(threadId, currentUserId);
+    void presence.updateReadStatus();
+  }, [messages, currentUserId, threadId]);
+
+  useEffect(() => {
+    if (!onStatusChange) return;
+    if (typingUsers.size > 0) {
+      onStatusChange(typingUsers.size === 1 ? "typing..." : "multiple people typing...");
+      return;
     }
-  }, [messages.length, currentUserId, threadId, lastMessageId]);
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    const viewport = viewportRef.current;
-    if (!viewport) return;
-
-    switch (e.key) {
-      case "ArrowUp":
-        e.preventDefault();
-        viewport.scrollTop -= 100;
-        break;
-      case "ArrowDown":
-        e.preventDefault();
-        viewport.scrollTop += 100;
-        break;
-      case "Home":
-        e.preventDefault();
-        viewport.scrollTop = 0;
-        break;
-      case "End":
-        e.preventDefault();
-        viewport.scrollTop = viewport.scrollHeight;
-        break;
+    const others = Object.values(presenceByUser).filter((presence) => presence.userId !== currentUserId);
+    if (others.length === 0) {
+      onStatusChange(undefined);
+      return;
     }
-  };
 
-  return (
-    <section 
-      className="flex h-full min-h-[320px] flex-col overflow-hidden rounded-3xl border border-black/5 bg-white shadow-soft"
-      role="region"
-      aria-label="Chat messages"
-    >
-      <header className="flex items-center justify-between border-b border-black/5 px-4 py-3 sm:px-6 sm:py-4">
-        <div>
-          <h2 className="text-lg font-semibold text-brand-dark">Conversation</h2>
-          <p className="text-xs text-text-muted sm:text-sm" aria-live="polite">
-            {typingUsers.size > 0 
-              ? `${typingUsers.size === 1 ? "Someone is" : "Multiple people are"} typing...`
-              : "Messages are synced when Supabase is connected."}
-          </p>
-        </div>
-      </header>
-      <div
-        ref={viewportRef}
-        role="log"
-        aria-live="polite"
-        aria-relevant="additions"
-        aria-label="Conversation messages"
-        tabIndex={0}
-        onKeyDown={handleKeyDown}
-        className="flex-1 space-y-5 overflow-y-auto px-4 py-4 pb-24 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal sm:space-y-6 sm:px-6 sm:py-6 sm:pb-28"
-      >
-        {loading ? (
-          <div className="flex flex-col gap-3" aria-label="Loading messages">
-            <Bubble skeleton align="left" />
-            <Bubble skeleton align="right" />
-            <Bubble skeleton align="left" />
-          </div>
-        ) : (
-          <>
-            {messages.map((message, idx) => (
-              <div 
-                key={message.id}
-                ref={idx === messages.length - 1 ? lastMessageRef : undefined}
-                className="rounded-2xl focus-within:outline-none focus-within:ring-2 focus-within:ring-brand-teal"
-              >
-                <Bubble
-                  align={message.senderId === currentUserId ? "right" : "left"}
-                  text={message.text}
-                  timestamp={message.createdAt}
-                  readAt={message.readAt}
-                  seen={presenceByUser[message.senderId]?.lastSeen !== undefined}
-                />
-              </div>
-            ))}
-            {typingUsers.size > 0 && (
-              <div 
-                className="flex items-center gap-2 text-xs text-text-muted sm:text-sm"
-                aria-live="polite"
-                role="status"
-              >
-                <span
-                  className="inline-flex h-2 w-2 animate-pulse rounded-full bg-brand-teal/80"
-                  aria-hidden="true"
-                />
-                {typingUsers.size === 1 ? "Someone is typing..." : "Multiple people are typing..."}
-              </div>
-            )}
-          </>
-        )}
-      </div>
-    </section>
-  );
-}
+    const lastSeen = others
+      .map((presence) => presence.lastSeen)
+      .filter(Boolean)
+      .sort()
+      .reverse()[0];
 
-function Bubble({
-  align,
-  text,
-  timestamp,
-  readAt,
-  seen = false,
-  skeleton = false
-}: {
-  align: "left" | "right";
-  text?: string;
-  timestamp?: string;
-  readAt?: string | null;
-  seen?: boolean;
-  skeleton?: boolean;
-}) {
-  const baseClasses =
-    "max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-soft sm:max-w-[70%] sm:px-5 sm:text-base";
+    if (lastSeen) {
+      try {
+        onStatusChange(`Last seen ${formatDistanceToNowStrict(parseISO(lastSeen), { addSuffix: true })}`);
+      } catch {
+        onStatusChange(undefined);
+      }
+    } else {
+      onStatusChange(undefined);
+    }
+  }, [typingUsers, presenceByUser, onStatusChange, currentUserId]);
 
-  const alignClass =
-    align === "right"
-      ? "ml-auto bg-brand-teal text-white"
-      : "mr-auto border border-black/5 bg-surface text-brand-dark";
+  const groupedMessages = useMemo<GroupedMessage[]>(() => {
+    if (!messages.length) return [];
+    return messages.reduce<GroupedMessage[]>((acc, message) => {
+      const createdAt = message.createdAt ? parseISO(message.createdAt) : new Date();
+      const day = format(createdAt, "PPP");
 
-  const formattedTimestamp =
-    timestamp &&
-    new Date(timestamp).toLocaleTimeString(undefined, {
-      hour: "numeric",
-      minute: "2-digit"
-    });
+      const lastGroup = acc[acc.length - 1];
+      if (lastGroup && isSameDay(lastGroup.date, createdAt)) {
+        lastGroup.items.push(message);
+        return acc;
+      }
 
-  const senderLabel = align === "right" ? "You" : "They";
-  const statusLabel = seen ? "Seen" : readAt ? "Read" : "";
-
-  if (skeleton) {
-    return (
-      <div className={`flex ${align === "right" ? "justify-end" : "justify-start"}`}>
-        <span className={`${baseClasses} ${alignClass} h-12 animate-pulse sm:h-14`} />
-      </div>
-    );
-  }
+      acc.push({ day, date: createdAt, items: [message] });
+      return acc;
+    }, []);
+  }, [messages]);
 
   return (
     <div
-      className={`flex ${align === "right" ? "justify-end" : "justify-start"} flex-col gap-1.5 sm:gap-2`}
-      role="group"
-      aria-label={`${senderLabel} said ${text ?? ""}`}
+      ref={scrollRef}
+      className="flex-1 overflow-y-auto px-4 py-4 scroll-smooth"
+      role="log"
+      aria-live="polite"
+      aria-relevant="additions"
+      data-testid="chat-thread"
     >
-      <span className={`${baseClasses} ${alignClass}`}>{text}</span>
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-medium text-text-muted/80 sm:text-xs">
-        {formattedTimestamp && (
-          <time
-            dateTime={timestamp}
-            aria-label={`${senderLabel} sent this at ${formattedTimestamp}`}
-          >
-            {formattedTimestamp}
-          </time>
-        )}
-        {statusLabel && <span aria-label={statusLabel}>{statusLabel}</span>}
-      </div>
+      {loading ? (
+        <p className="text-sm text-slate-500">Loading messages...</p>
+      ) : (
+        groupedMessages.map((group) => (
+          <section key={group.date.toISOString()} aria-label={group.day}>
+            <DayDivider label={group.day} />
+            <div className="flex flex-col gap-3">
+              {group.items.map((message, index) => {
+                const createdAt = message.createdAt ? parseISO(message.createdAt) : new Date();
+                const timeDisplay = format(createdAt, "p");
+                const status =
+                  message.senderId === currentUserId
+                    ? message.readAt
+                      ? "read"
+                      : "sent"
+                    : undefined;
+                const isLastMessage =
+                  group === groupedMessages[groupedMessages.length - 1] &&
+                  index === group.items.length - 1;
+
+                return (
+                  <div key={message.id} ref={isLastMessage ? endRef : undefined}>
+                    <Bubble
+                      me={message.senderId === currentUserId}
+                      text={message.text}
+                      time={message.createdAt}
+                      timeLabel={timeDisplay}
+                      status={status}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        ))
+      )}
+      {typingUsers.size > 0 ? (
+        <p className="mt-4 text-xs text-slate-500" aria-live="assertive">
+          {typingUsers.size === 1 ? "Someone is typing..." : "Multiple people are typing..."}
+        </p>
+      ) : null}
+      <div ref={endRef} aria-hidden="true" />
     </div>
   );
 }

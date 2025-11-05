@@ -23,12 +23,12 @@ function PropertyGridComponent({
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {loading
           ? Array.from({ length: 8 }).map((_, index) => (
-              <div key={index}>
+              <div key={index} className="h-full">
                 <Skeleton className="aspect-[4/5] rounded-3xl" />
               </div>
             ))
           : properties.map((property) => (
-              <div key={property.id}>
+              <div key={property.id} className="h-full">
                 <PropertyCard property={property} />
               </div>
             ))}

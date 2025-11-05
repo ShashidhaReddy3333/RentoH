@@ -95,8 +95,9 @@ export async function getFeatured(): Promise<Property[]> {
 
     if (error) throw error;
     if (!data) return mockProperties.slice(0, 6);
-    
-    return data.map(mapPropertyFromSupabaseRow);
+
+    const mapped = await Promise.all(data.map(mapRowToPropertyWithAssets));
+    return mapped;
   } catch (error) {
     console.error("[properties] Failed to load featured listings, falling back to mock data", error);
     return mockProperties.slice(0, 6);
@@ -194,7 +195,7 @@ async function fetchManyFromSupabase(
     throw error ?? new Error("Failed to load properties");
   }
 
-  const items = data.map(mapPropertyFromSupabaseRow);
+  const items = await Promise.all(data.map(mapRowToPropertyWithAssets));
   const totalCount = typeof count === "number" ? count : undefined;
   const hasNext = totalCount != null ? to + 1 < totalCount : items.length === PAGE_SIZE;
   return { items, nextPage: hasNext ? page + 1 : undefined };
@@ -409,11 +410,11 @@ async function mapRowToPropertyWithAssets(record: SupabasePropertyRow): Promise<
       try {
         const { data: signed, error: signErr } = await service.storage.from(bucket).createSignedUrl(img, 60 * 60);
         if (signErr || !signed) {
-          return `${env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${bucket}/${encodeURIComponent(img)}`;
+          return buildPublicStorageUrl(img) ?? img;
         }
         return signed.signedUrl;
       } catch {
-        return `${env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${bucket}/${encodeURIComponent(img)}`;
+        return buildPublicStorageUrl(img) ?? img;
       }
     });
 
@@ -421,11 +422,7 @@ async function mapRowToPropertyWithAssets(record: SupabasePropertyRow): Promise<
     return { ...prop, images: signedUrls, imageStoragePaths: images };
   }
 
-  const publicUrls = images.map((img) =>
-    img.startsWith("http")
-      ? img
-      : `${env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${bucket}/${encodeURIComponent(img)}`
-  );
+  const publicUrls = resolveImageUrls(images);
   return { ...prop, images: publicUrls, imageStoragePaths: images };
 }
 
@@ -517,13 +514,37 @@ function toStringArray(value: string[] | string | null | undefined): string[] {
   return [];
 }
 
-function resolveImageUrls(paths: string[]): string[] {
+function encodeStorageKey(path: string): string {
+  return path
+    .split("/")
+    .map((segment) => segment.trim())
+    .filter((segment) => segment.length > 0)
+    .map((segment) => encodeURIComponent(segment))
+    .join("/");
+}
+
+function buildPublicStorageUrl(path: string): string | null {
+  const baseUrl = env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!baseUrl) {
+    return null;
+  }
+
   const bucket = env.SUPABASE_STORAGE_BUCKET_LISTINGS || "listings";
-  return paths.map((path) =>
-    path.startsWith("http")
-      ? path
-      : `${env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${bucket}/${encodeURIComponent(path)}`
-  );
+  const normalized = path.replace(/^\/+/, "");
+  const encodedPath = encodeStorageKey(normalized);
+  return `${baseUrl}/storage/v1/object/public/${bucket}/${encodedPath}`;
+}
+
+function resolveImageUrls(paths: string[]): string[] {
+  return paths
+    .map((rawPath) => (typeof rawPath === "string" ? rawPath.trim() : ""))
+    .filter((path): path is string => path.length > 0)
+    .map((path) => {
+      if (path.toLowerCase().startsWith("http://") || path.toLowerCase().startsWith("https://")) {
+        return path;
+      }
+      return buildPublicStorageUrl(path) ?? path;
+    });
 }
 
 function mapStatus(value: string | null | undefined): Property["status"] | undefined {
