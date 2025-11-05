@@ -20,11 +20,18 @@ const config: Config = {
     extend: {
       colors: {
         brand: {
+          teal: "#2FB79A",
           blue: "#1E88E5",
           green: "#43A047",
           yellow: "#F9A825",
           dark: "#212121",
           bg: "#F5F5F5"
+        },
+        textc: "#1F2933",
+        text: {
+          DEFAULT: "#1F2933",
+          muted: "#52616B",
+          subtle: "#64748B"
         },
         surface: {
           DEFAULT: "#FFFFFF",

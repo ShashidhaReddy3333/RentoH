@@ -1,21 +1,25 @@
 "use client";
 
 import Image from "next/image";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 
 import { clientEnv } from "@/lib/env";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
+const MAX_FILE_COUNT = 12;
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+
 type UploadedImage = {
-  key: string;
+  id: string;
+  storageKey: string;
   url: string;
   previewUrl?: string;
-  isCover?: boolean;
+  isCover: boolean;
   uploading: boolean;
 };
 
 const reorderButtonClass =
-  "flex h-6 w-6 items-center justify-center rounded-full border border-black/10 text-xs text-text-muted transition hover:bg-brand-teal/10 hover:text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal disabled:opacity-40";
+  "flex h-6 w-6 items-center justify-center rounded-full border border-black/10 text-xs text-ink-muted transition hover:bg-brand-teal/10 hover:text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal disabled:opacity-40";
 
 function sanitizeFilename(name: string) {
   return name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
@@ -28,6 +32,35 @@ function uniqueId() {
   return `${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
 }
 
+async function readFileAsDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        resolve(reader.result);
+      } else {
+        reject(new Error("Unable to read file"));
+      }
+    };
+    reader.onerror = () => reject(reader.error ?? new Error("Unable to read file"));
+    reader.readAsDataURL(file);
+  });
+}
+
+function ensureCover(images: UploadedImage[]): UploadedImage[] {
+  if (images.length === 0) {
+    return images;
+  }
+  if (images.some((image) => image.isCover)) {
+    return images;
+  }
+  const [first, ...rest] = images;
+  if (!first) {
+    return images;
+  }
+  return [{ ...first, isCover: true }, ...rest];
+}
+
 type ListingImageUploaderProps = {
   name?: string;
   initialImages?: Array<{ key: string; url: string; isCover?: boolean }>;
@@ -37,26 +70,24 @@ export default function ListingImageUploader({ name = "images", initialImages = 
   const supabase = createSupabaseBrowserClient();
   const bucketName = clientEnv.NEXT_PUBLIC_SUPABASE_BUCKET_LISTINGS ?? "listings";
 
-  const [images, setImages] = useState<UploadedImage[]>(() =>
-    initialImages.map((image) => ({
-      key: image.key,
+  const normalizedInitialImages = useMemo<UploadedImage[]>(() => {
+    const hasCover = initialImages.some((image) => image.isCover);
+    return initialImages.map((image, index) => ({
+      id: image.key,
+      storageKey: image.key,
       url: image.url,
-      isCover: Boolean(image.isCover),
+      previewUrl: undefined,
+      isCover: hasCover ? Boolean(image.isCover) : index === 0,
       uploading: false
-    }))
-  );
+    }));
+  }, [initialImages]);
+
+  const [images, setImages] = useState<UploadedImage[]>(normalizedInitialImages);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setImages(
-      initialImages.map((image) => ({
-        key: image.key,
-        url: image.url,
-        isCover: Boolean(image.isCover),
-        uploading: false
-      }))
-    );
-  }, [initialImages]);
+    setImages(normalizedInitialImages);
+  }, [normalizedInitialImages]);
 
   useEffect(() => {
     return () => {
@@ -68,11 +99,11 @@ export default function ListingImageUploader({ name = "images", initialImages = 
     };
   }, [images]);
 
-  const updateImage = useCallback((key: string, updater: (current: UploadedImage) => UploadedImage | null) => {
+  const updateImage = useCallback((id: string, updater: (current: UploadedImage) => UploadedImage | null) => {
     setImages((prev) => {
       const next: UploadedImage[] = [];
       for (const image of prev) {
-        if (image.key !== key) {
+        if (image.id !== id) {
           next.push(image);
           continue;
         }
@@ -88,8 +119,48 @@ export default function ListingImageUploader({ name = "images", initialImages = 
         }
         next.push(updated);
       }
-      return next;
+      return ensureCover(next);
     });
+  }, []);
+
+  const removeImage = useCallback((id: string) => {
+    setImages((prev) => {
+      const next: UploadedImage[] = [];
+      for (const image of prev) {
+        if (image.id === id) {
+          if (image.previewUrl) {
+            URL.revokeObjectURL(image.previewUrl);
+          }
+          continue;
+        }
+        next.push(image);
+      }
+      return ensureCover(next);
+    });
+  }, []);
+
+  const move = useCallback((from: number, to: number) => {
+    setImages((prev) => {
+      const copy = [...prev];
+      if (from < 0 || from >= copy.length || to < 0 || to >= copy.length) {
+        return prev;
+      }
+      const [item] = copy.splice(from, 1);
+      if (!item) {
+        return prev;
+      }
+      copy.splice(to, 0, item);
+      return ensureCover(copy);
+    });
+  }, []);
+
+  const setCover = useCallback((id: string) => {
+    setImages((prev) =>
+      prev.map((image) => ({
+        ...image,
+        isCover: image.id === id
+      }))
+    );
   }, []);
 
   const handleFiles = useCallback(
@@ -98,8 +169,60 @@ export default function ListingImageUploader({ name = "images", initialImages = 
 
       setError(null);
 
+      if (images.length >= MAX_FILE_COUNT) {
+        setError(`You can upload up to ${MAX_FILE_COUNT} photos per listing.`);
+        return;
+      }
+
+      const availableSlots = MAX_FILE_COUNT - images.length;
+      const incomingFiles = Array.from(files).slice(0, availableSlots);
+      if (incomingFiles.length < files.length) {
+        setError(`Only the first ${availableSlots} images were added (limit ${MAX_FILE_COUNT}).`);
+      }
+
+      const validateFile = (file: File) => {
+        if (file.size > MAX_FILE_SIZE) {
+          throw new Error(`"${file.name}" is larger than 5MB.`);
+        }
+      };
+
+      try {
+        for (const file of incomingFiles) {
+          validateFile(file);
+        }
+      } catch (validationError) {
+        setError(validationError instanceof Error ? validationError.message : "Invalid file selected.");
+        return;
+      }
+
       if (!supabase) {
-        setError("Supabase is not configured. Image uploads are disabled.");
+        // Fallback mode: store files locally (useful when Supabase isn't configured in dev)
+        await Promise.all(
+          incomingFiles.map(async (file) => {
+            try {
+              const objectUrl = URL.createObjectURL(file);
+              const dataUrl = await readFileAsDataUrl(file);
+
+              setImages((prev) => {
+                const next: UploadedImage[] = [
+                  ...prev,
+                  {
+                    id: `local-${uniqueId()}`,
+                    storageKey: dataUrl,
+                    url: objectUrl,
+                    previewUrl: objectUrl,
+                    isCover: false,
+                    uploading: false
+                  }
+                ];
+                return ensureCover(next);
+              });
+            } catch (fallbackError) {
+              console.error("[listings] Failed to process image locally", fallbackError);
+              setError("We couldn't process one of the images locally. Please try again.");
+            }
+          })
+        );
         return;
       }
 
@@ -110,114 +233,74 @@ export default function ListingImageUploader({ name = "images", initialImages = 
         return;
       }
 
-      const uploads = Array.from(files).map(async (file) => {
-        const key = `${user.id}/${uniqueId()}-${sanitizeFilename(file.name)}`;
+      const uploads = incomingFiles.map(async (file) => {
+        const id = `${user.id}/${uniqueId()}-${sanitizeFilename(file.name)}`;
         const previewUrl = URL.createObjectURL(file);
 
-        setImages((prev) => [
-          ...prev,
-          {
-            key,
-            url: previewUrl,
-            previewUrl,
-            uploading: true
-          }
-        ]);
+        setImages((prev) => {
+          const next: UploadedImage[] = [
+            ...prev,
+            {
+              id,
+              storageKey: id,
+              url: previewUrl,
+              previewUrl,
+              isCover: false,
+              uploading: true
+            }
+          ];
+          return ensureCover(next);
+        });
 
         try {
           const { error: uploadError } = await supabase.storage
             .from(bucketName)
-            .upload(key, file, {
-              cacheControl: "3600",
-              upsert: false
-            });
+            .upload(id, file, { cacheControl: "3600", upsert: false });
           if (uploadError) throw uploadError;
 
-          const { data: publicData } = supabase.storage.from(bucketName).getPublicUrl(key);
+          const { data: publicData } = supabase.storage.from(bucketName).getPublicUrl(id);
           const publicUrl = publicData?.publicUrl ?? "";
 
-          updateImage(key, (image) => ({
+          updateImage(id, (image) => ({
             ...image,
-            url: publicUrl,
+            url: publicUrl || image.url,
             previewUrl: undefined,
             uploading: false
           }));
         } catch (uploadErr) {
           console.error("[listings] Failed to upload image", uploadErr);
           setError("Failed to upload one of the images. Please try again.");
-          setImages((prev) => {
-            const next = prev.filter((img) => {
-              if (img.key === key && img.previewUrl) {
-                URL.revokeObjectURL(img.previewUrl);
-              }
-              return img.key !== key;
-            });
-            return next;
-          });
+          removeImage(id);
         }
       });
 
       await Promise.all(uploads);
     },
-    [bucketName, supabase, updateImage]
+    [bucketName, images.length, removeImage, supabase, updateImage]
+  );
+
+  const onFileChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      void handleFiles(event.target.files);
+      event.target.value = "";
+    },
+    [handleFiles]
   );
 
   const onDrop = useCallback(
     (event: React.DragEvent<HTMLDivElement>) => {
       event.preventDefault();
-      handleFiles(event.dataTransfer.files);
+      void handleFiles(event.dataTransfer.files);
     },
     [handleFiles]
   );
-
-  const onFileChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      handleFiles(event.target.files);
-      event.currentTarget.value = "";
-    },
-    [handleFiles]
-  );
-
-  const removeImage = useCallback((key: string) => {
-    setImages((prev) => {
-      const next: UploadedImage[] = [];
-      for (const image of prev) {
-        if (image.key === key) {
-          if (image.previewUrl) {
-            URL.revokeObjectURL(image.previewUrl);
-          }
-          continue;
-        }
-        next.push(image);
-      }
-      return next;
-    });
-  }, []);
-
-  const move = useCallback((from: number, to: number) => {
-    setImages((prev) => {
-      const copy = [...prev];
-      if (from < 0 || from >= copy.length || to < 0 || to >= copy.length) {
-        return prev;
-      }
-
-      const [item] = copy.splice(from, 1);
-      if (!item) return prev;
-      copy.splice(to, 0, item);
-      return copy;
-    });
-  }, []);
-
-  const setCover = useCallback((key: string) => {
-    setImages((prev) => prev.map((image) => ({ ...image, isCover: image.key === key })));
-  }, []);
 
   return (
     <div>
       <div
-        onDragOver={(e) => e.preventDefault()}
+        onDragOver={(event) => event.preventDefault()}
         onDrop={onDrop}
-        className="rounded-lg border border-dashed border-black/10 p-4 text-center transition hover:border-brand-teal focus-within:border-brand-teal"
+        className="rounded-lg border border-dashed border-outline/80 p-4 text-center transition hover:border-brand-teal focus-within:border-brand-teal"
         aria-label="Upload listing images"
       >
         <p className="text-sm text-text-muted">Drag and drop images here or</p>
@@ -232,20 +315,20 @@ export default function ListingImageUploader({ name = "images", initialImages = 
           />
           Upload images
         </label>
-        <p className="mt-2 text-xs text-text-muted">PNG or JPEG up to 5MB each.</p>
+        <p className="mt-2 text-xs text-text-muted">PNG or JPEG up to 5MB each. Max {MAX_FILE_COUNT} images.</p>
       </div>
 
       {error ? (
-        <p className="mt-3 rounded-md border border-red-200 bg-red-50 p-2 text-sm text-red-700" role="alert">
+        <p className="mt-3 rounded-md border border-danger-subtle bg-danger-subtle/40 p-2 text-sm text-danger" role="alert">
           {error}
         </p>
       ) : null}
 
       <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
         {images.map((img, index) => (
-          <div key={img.key} className="relative rounded-lg border border-black/10 p-2 shadow-sm">
+          <div key={img.id} className="relative rounded-lg border border-outline/70 p-2 shadow-sm">
             {img.uploading ? (
-              <div className="flex h-40 items-center justify-center text-sm text-text-muted" role="status" aria-live="polite">
+              <div className="flex h-40 items-center justify-center text-sm text-ink-muted" role="status" aria-live="polite">
                 Uploading...
               </div>
             ) : (
@@ -255,6 +338,7 @@ export default function ListingImageUploader({ name = "images", initialImages = 
                 className="h-40 w-full rounded-md object-cover"
                 width={320}
                 height={240}
+                unoptimized
               />
             )}
 
@@ -262,16 +346,16 @@ export default function ListingImageUploader({ name = "images", initialImages = 
               <div className="flex flex-wrap items-center gap-2 text-xs">
                 <button
                   type="button"
-                  className="rounded-full border border-black/10 px-2 py-1 transition hover:border-brand-teal hover:text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal"
-                  onClick={() => setCover(img.key)}
+                  className="rounded-full border border-outline/60 px-2 py-1 transition hover:border-brand-teal hover:text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal"
+                  onClick={() => setCover(img.id)}
                   aria-pressed={img.isCover}
                 >
                   {img.isCover ? "Cover photo" : "Set as cover"}
                 </button>
                 <button
                   type="button"
-                  className="rounded-full border border-black/10 px-2 py-1 transition hover:border-red-500 hover:text-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
-                  onClick={() => removeImage(img.key)}
+                  className="rounded-full border border-outline/60 px-2 py-1 transition hover:border-danger hover:text-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger"
+                  onClick={() => removeImage(img.id)}
                 >
                   Remove
                 </button>
@@ -299,8 +383,8 @@ export default function ListingImageUploader({ name = "images", initialImages = 
               </div>
             </div>
 
-            <input type="hidden" name={`${name}[]`} value={img.key} />
-            {img.isCover ? <input type="hidden" name="cover" value={img.key} /> : null}
+            <input type="hidden" name={`${name}[]`} value={img.storageKey} />
+            {img.isCover ? <input type="hidden" name="cover" value={img.storageKey} /> : null}
           </div>
         ))}
       </div>
