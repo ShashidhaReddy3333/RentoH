@@ -87,7 +87,7 @@ export default function LandlordOnboardingPage() {
             </button>
             <Link
               href="/dashboard"
-              className={buttonStyles({ variant: 'outline' })}
+              className={buttonStyles({ variant: 'secondary' })}
             >
               Cancel
             </Link>

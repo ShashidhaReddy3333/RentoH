@@ -76,7 +76,7 @@ export function PropertyContactCard({
         </button>
         <a
           href="tel:+15195557421"
-          className={clsx(buttonStyles({ variant: "outline", size: "md" }), "w-full justify-center")}
+          className={clsx(buttonStyles({ variant: "secondary", size: "md" }), "w-full justify-center")}
           aria-label="Call the Rento support line"
         >
           <PhoneIcon className="h-5 w-5" aria-hidden="true" />

@@ -188,7 +188,7 @@ export default function BrowseClient({
                   <button
                     type="button"
                     onClick={handleClearFilters}
-                    className={buttonStyles({ variant: "outline", size: "md" })}
+                    className={buttonStyles({ variant: "secondary", size: "md" })}
                     data-testid="clear-filters"
                   >
                     Clear filters
@@ -214,7 +214,7 @@ export default function BrowseClient({
               <button
                 type="button"
                 onClick={handleClearFilters}
-                className={buttonStyles({ variant: "outline", size: "md" })}
+                className={buttonStyles({ variant: "secondary", size: "md" })}
                 data-testid="clear-filters"
               >
                 Clear filters

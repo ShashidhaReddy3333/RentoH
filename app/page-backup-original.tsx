@@ -139,7 +139,7 @@ export default async function HomePage() {
             Browse homes
             <span className="ml-2" aria-hidden="true">→</span>
           </Link>
-          <Link href="/auth/sign-up" className={buttonStyles({ variant: "outline", size: "lg" })} data-testid="cta-signup">
+          <Link href="/auth/sign-up" className={buttonStyles({ variant: "secondary", size: "lg" })} data-testid="cta-signup">
             Create account
           </Link>
         </div>
@@ -173,7 +173,7 @@ function FeaturedSection({ properties }: { properties: Awaited<ReturnType<typeof
         </div>
         <Link
           href="/browse"
-          className={buttonStyles({ variant: "outline", size: "sm" })}
+          className={buttonStyles({ variant: "secondary", size: "sm" })}
           data-testid="featured-browse"
         >
           Browse all

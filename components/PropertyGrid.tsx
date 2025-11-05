@@ -38,7 +38,7 @@ function PropertyGridComponent({
           <button
             type="button"
             onClick={onLoadMore}
-            className={buttonStyles({ variant: "outline", size: "md" })}
+          className={buttonStyles({ variant: "secondary", size: "md" })}
             data-testid="properties-load-more"
           >
             Load more

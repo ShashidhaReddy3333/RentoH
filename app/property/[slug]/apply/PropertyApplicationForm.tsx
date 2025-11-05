@@ -106,7 +106,7 @@ export function PropertyApplicationForm({ propertyId, landlordId, propertyTitle,
         </div>
 
         <div className="flex items-center justify-end gap-4">
-          <Button type="button" variant="outline" onClick={() => router.back()} disabled={isSubmitting}>
+          <Button type="button" variant="secondary" onClick={() => router.back()} disabled={isSubmitting}>
             Cancel
           </Button>
           <Button type="submit" disabled={isSubmitting}>

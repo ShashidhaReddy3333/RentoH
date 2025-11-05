@@ -137,7 +137,7 @@ export default async function HomePage() {
             Explore listings
             <span className="ml-2" aria-hidden="true">-&gt;</span>
           </Link>
-          <Link href="/auth/sign-up" className={buttonStyles({ variant: "outline", size: "lg" })} data-testid="cta-signup">
+          <Link href="/auth/sign-up" className={buttonStyles({ variant: "secondary", size: "lg" })} data-testid="cta-signup">
             Join Rento
           </Link>
         </div>
@@ -171,7 +171,7 @@ function FeaturedSection({ properties }: { properties: Awaited<ReturnType<typeof
         </div>
         <Link
           href="/browse"
-          className={buttonStyles({ variant: "outline", size: "sm" })}
+          className={buttonStyles({ variant: "secondary", size: "sm" })}
           data-testid="featured-browse"
         >
           See every listing

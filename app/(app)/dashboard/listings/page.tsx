@@ -154,7 +154,7 @@ function ListingCard({ listing }: { listing: Property }) {
       <div className="mt-auto flex flex-wrap gap-2">
         <Link
           href={{ pathname: `/dashboard/listings/${listing.id}` }}
-          className={buttonStyles({ variant: "outline", size: "sm" })}
+          className={buttonStyles({ variant: "secondary", size: "sm" })}
         >
           Edit
         </Link>

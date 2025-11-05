@@ -2,16 +2,15 @@
 
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
+
 import { buttonStyles } from '@/components/ui/button';
 import { LANDING_DATA } from '@/app/landing-data';
 
-// Dynamic imports for client components
 const SearchBar = dynamic(() => import('@/components/SearchBar'), {
   ssr: false,
   loading: SearchBarFallback
 });
 
-// Static elements
 function SearchBarFallback() {
   return (
     <div className="w-full rounded-3xl border border-black/5 bg-white p-6 shadow-soft">
@@ -64,15 +63,17 @@ export function CallToAction() {
       <div className="flex flex-wrap items-center gap-3">
         <Link
           href="/browse"
-          className={buttonStyles({ variant: "primary", size: "lg" })}
+          className={buttonStyles({ variant: 'primary', size: 'lg' })}
           data-testid="cta-browse"
         >
           Browse homes
-          <span className="ml-2" aria-hidden="true">→</span>
+          <span className="ml-2" aria-hidden="true">
+            &rarr;
+          </span>
         </Link>
         <Link
           href="/auth/sign-up"
-          className={buttonStyles({ variant: "outline", size: "lg" })}
+          className={buttonStyles({ variant: 'secondary', size: 'lg' })}
           data-testid="cta-signup"
         >
           Create account

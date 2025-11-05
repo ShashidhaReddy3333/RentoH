@@ -74,7 +74,7 @@ export default function ApplicationsClient({ applications, userRole }: Props) {
         <h1 className="text-2xl font-bold">Applications</h1>
         <div className="space-x-2">
           <Button
-            variant={filter === 'all' ? 'primary' : 'outline'}
+            variant={filter === 'all' ? 'primary' : 'secondary'}
             onClick={() => setFilter('all')}
           >
             All
@@ -82,7 +82,7 @@ export default function ApplicationsClient({ applications, userRole }: Props) {
           {Object.keys(statusColors).map(status => (
             <Button
               key={status}
-              variant={filter === status ? 'primary' : 'outline'}
+              variant={filter === status ? 'primary' : 'secondary'}
               onClick={() => setFilter(status)}
             >
               {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -132,7 +132,7 @@ export default function ApplicationsClient({ applications, userRole }: Props) {
                   )}
                   {app.status !== 'rejected' && (
                     <Button
-                      variant="destructive"
+                      variant="danger"
                       onClick={() => updateApplicationStatus(app.id, 'rejected', 'Application rejected')}
                     >
                       Reject
@@ -140,7 +140,7 @@ export default function ApplicationsClient({ applications, userRole }: Props) {
                   )}
                   {['submitted', 'reviewing'].includes(app.status) && (
                     <Button
-                      variant="outline"
+                      variant="secondary"
                       onClick={() => updateApplicationStatus(app.id, 'interview', 'Scheduled for interview')}
                     >
                       Schedule Interview

@@ -37,7 +37,7 @@ export function DeleteListingButton({ listingId, listingTitle }: DeleteListingBu
         type="button"
         onClick={handleDelete}
         disabled={isPending}
-        className={buttonStyles({ variant: "destructive", size: "sm" })}
+        className={buttonStyles({ variant: "danger", size: "sm" })}
       >
         {isPending ? "Deleting..." : "Delete"}
       </button>

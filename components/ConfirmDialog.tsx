@@ -51,7 +51,7 @@ export function ConfirmDialog({
               <button
                 type="button"
                 className={buttonStyles({
-                  variant: destructive ? "destructive" : "primary",
+                  variant: destructive ? "danger" : "primary",
                   size: "md"
                 })}
                 onClick={() => {

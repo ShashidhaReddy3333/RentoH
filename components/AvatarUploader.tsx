@@ -44,7 +44,7 @@ export default function AvatarUploader({ value, onChange }: AvatarUploaderProps)
       </div>
       <div className="grid gap-2 text-sm text-text-muted">
         <label
-          className={buttonStyles({ variant: "outline", size: "sm" })}
+          className={buttonStyles({ variant: "secondary", size: "sm" })}
         >
           <span>Change avatar</span>
           <input

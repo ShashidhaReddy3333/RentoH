@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { BaseButton } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 
 export default function Error({
   error,
@@ -10,14 +10,14 @@ export default function Error({
   reset: () => void;
 }) {
   return (
-    <div className="space-y-3 rounded-md border p-6">
-      <h2 className="text-lg font-semibold">Something went wrong</h2>
-      <p className="text-sm text-text-muted">
+    <div className="space-y-3 rounded-md border border-outline/80 bg-white p-6 shadow-sm">
+      <h2 className="text-lg font-semibold text-ink">Something went wrong</h2>
+      <p className="text-sm text-ink-muted">
         {error?.message ?? "Unknown error"}
       </p>
-      <BaseButton onClick={() => reset()} className="bg-black text-white">
+      <Button variant="primary" size="md" onClick={() => reset()}>
         Retry
-      </BaseButton>
+      </Button>
     </div>
   );
 }

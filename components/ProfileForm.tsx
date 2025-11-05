@@ -260,7 +260,7 @@ export default function ProfileForm({ profile, onSave, onDeleteAccount }: Profil
           </div>
           <button
             type="button"
-            className={buttonStyles({ variant: "outline", size: "sm" })}
+            className={buttonStyles({ variant: "secondary", size: "sm" })}
             data-testid="verification-start"
           >
             Start verification
@@ -300,7 +300,7 @@ export default function ProfileForm({ profile, onSave, onDeleteAccount }: Profil
         >
           <button
             type="button"
-            className={buttonStyles({ variant: "destructive", size: "md" })}
+            className={buttonStyles({ variant: "danger", size: "md" })}
             aria-describedby="danger-zone-description"
             disabled={deleting}
           >
@@ -347,4 +347,3 @@ function numberOrUndefined(value: string) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : undefined;
 }
-
