@@ -31,7 +31,16 @@ export default function Field({ id, label, hint, error, required, children }: Fi
       </label>
       {control}
       {hint && <span id={`${id}-hint`} className="text-xs text-textc/60">{hint}</span>}
-      {error && <span id={`${id}-error`} className="text-xs text-red-600">{error}</span>}
+      {error && (
+        <span
+          id={`${id}-error`}
+          className="text-xs text-danger"
+          role="alert"
+          aria-live="polite"
+        >
+          {error}
+        </span>
+      )}
     </div>
   );
 }

@@ -45,9 +45,12 @@ export default function SearchBar() {
     event.preventDefault();
     const nextErrors: Record<string, string> = {};
     const numRe = /^\d{1,}$/;
-  if (form["min"] && !numRe.test(form["min"].replace(/,/g, ""))) nextErrors["min"] = "Enter a valid number";
-  if (form["max"] && !numRe.test(form["max"].replace(/,/g, ""))) nextErrors["max"] = "Enter a valid number";
-  if (form["beds"] && !numRe.test(form["beds"].replace(/\+$/, ""))) nextErrors["beds"] = "Enter a valid number";
+    if (form["min"] && !numRe.test(form["min"].replace(/,/g, "")))
+      nextErrors["min"] = "Minimum price must be a whole number.";
+    if (form["max"] && !numRe.test(form["max"].replace(/,/g, "")))
+      nextErrors["max"] = "Maximum price must be a whole number.";
+    if (form["beds"] && !numRe.test(form["beds"].replace(/\+$/, "")))
+      nextErrors["beds"] = "Beds must be entered as a whole number (add + for or more).";
 
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors);

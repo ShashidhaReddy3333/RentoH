@@ -71,7 +71,7 @@ function MobileMenuButton({
       <button
         type="button"
         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-        className="relative rounded-lg p-2 text-text-muted hover:bg-surface hover:text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal"
+        className="relative rounded-lg p-2 text-text-muted transition hover:bg-surface hover:text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg"
         aria-label={buttonLabel}
       >
         {mobileMenuOpen ? (
@@ -88,7 +88,7 @@ function MobileMenuButton({
       </button>
 
       {mobileMenuOpen && (
-        <div className="fixed inset-x-0 top-[73px] border-t border-black/5 bg-white shadow-lg lg:hidden z-50">
+        <div className="fixed inset-x-0 top-[73px] z-50 border-t border-black/5 bg-white shadow-lg lg:hidden">
           <nav className="mx-auto max-w-7xl space-y-1 px-4 py-4">
             {navLinks.map((link) => {
               const isMessagesLink = link.href === "/messages";
@@ -100,7 +100,7 @@ function MobileMenuButton({
                   key={link.href}
                   href={{ pathname: link.href }}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="relative flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm font-medium text-text-muted transition hover:bg-surface hover:text-brand-teal"
+                  className="relative flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm font-medium text-text-muted transition hover:bg-surface hover:text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg"
                   aria-label={linkLabel}
                 >
                   <span>{link.label}</span>
@@ -117,7 +117,7 @@ function MobileMenuButton({
               <Link
                 href={{ pathname: "/listings/new" }}
                 onClick={() => setMobileMenuOpen(false)}
-                className="block rounded-lg px-3 py-2 text-sm font-semibold text-brand-teal transition hover:bg-brand-teal/10"
+                className="block rounded-lg px-3 py-2 text-sm font-semibold text-brand-teal transition hover:bg-brand-teal/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg"
               >
                 Add listing
               </Link>
@@ -125,7 +125,7 @@ function MobileMenuButton({
             <Link
               href={{ pathname: "/browse", query: { filters: "open" } }}
               onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-brand-teal transition hover:bg-brand-teal/10"
+              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-brand-teal transition hover:bg-brand-teal/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg"
             >
               <MagnifyingGlassIcon className="h-4 w-4" />
               <span>Search Filters</span>
@@ -135,7 +135,7 @@ function MobileMenuButton({
                 <Link
                   href={{ pathname: "/profile" }}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="block rounded-lg px-3 py-2 text-sm font-medium text-text-muted transition hover:bg-surface hover:text-brand-teal"
+                  className="block rounded-lg px-3 py-2 text-sm font-medium text-text-muted transition hover:bg-surface hover:text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg"
                 >
                   View profile
                 </Link>
@@ -184,7 +184,7 @@ function ProfileMenuMobile({ profile, user }: { profile: Profile; user: User }) 
       {isTenant && (
         <Link
           href={{ pathname: "/onboarding/landlord" }}
-          className="rounded-full bg-brand-blue px-3 py-2 text-xs font-semibold text-white shadow-sm hover:bg-brand-blue/90"
+          className="rounded-full bg-brand-blue px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-brand-blue/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg"
         >
           Landlord
         </Link>
@@ -192,14 +192,14 @@ function ProfileMenuMobile({ profile, user }: { profile: Profile; user: User }) 
       {isLandlord && (
         <Link
           href={{ pathname: "/listings/new" }}
-          className="rounded-full bg-brand-teal px-3 py-2 text-xs font-semibold text-white shadow-sm hover:bg-brand-teal/90"
+          className="rounded-full bg-brand-teal px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-brand-teal/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg"
         >
           Add listing
         </Link>
       )}
       <Link
         href={{ pathname: "/profile" }}
-        className="relative inline-flex h-10 w-10 items-center justify-center rounded-full bg-brand-teal/10 text-sm font-semibold text-brand-teal"
+        className="relative inline-flex h-10 w-10 items-center justify-center rounded-full bg-brand-teal/10 text-sm font-semibold text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg"
         aria-label="View profile"
       >
         {profile.avatarUrl ? (

@@ -4,6 +4,7 @@
 
 :root {
   color-scheme: light;
+  --header-offset: 5.5rem;
   --color-brand-bg: 210 40% 98%;
   --color-brand-light: 0 0% 100%;
   --color-surface: 0 0% 100%;
@@ -141,6 +142,10 @@
     background-color: hsl(var(--color-brand-bg));
     color: hsl(var(--color-textc));
     scroll-behavior: smooth;
+  }
+
+  :where([id]) {
+    scroll-margin-top: var(--header-offset);
   }
 
   body {

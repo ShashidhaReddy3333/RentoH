@@ -20,7 +20,7 @@ export default async function Header() {
   noStore();
   const hasUnreadMessages = await hasUnreadThreads().catch(() => false);
   return (
-    <header className="sticky top-0 z-40 border-b border-brand-outline/50 bg-brand-bg/80 backdrop-blur">
+    <header className="sticky top-0 z-50 border-b border-brand-outline/60 bg-brand-bg/95 shadow-sm backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4">
         <Brand />
         
@@ -86,8 +86,8 @@ function Brand() {
   return (
     <Link
       href={{ pathname: "/" }}
-      className="flex items-center gap-2 text-lg font-bold uppercase tracking-tight text-brand-dark"
-    >
+      className="flex items-center gap-2 rounded-full px-2 py-1 text-lg font-bold uppercase tracking-tight text-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg"
+      >
       <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-teal text-white shadow-soft">
         R
       </span>

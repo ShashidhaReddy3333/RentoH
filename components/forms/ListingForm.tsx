@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import clsx from "clsx";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, type FieldError, type FieldErrors, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import ListingImageUploader from "@/components/ListingImageUploader";
 import { Button } from "@/components/ui/button";
@@ -87,6 +87,47 @@ const amenitiesOptions = [
   { value: "elevator", label: "Elevator" },
   { value: "wheelchair", label: "Wheelchair access" }
 ] as const;
+
+const LISTING_FIELD_LABELS: Partial<Record<keyof ListingFormFieldValues, string>> = {
+  title: "Listing title",
+  rent: "Monthly rent",
+  street: "Street address",
+  city: "City",
+  postalCode: "Postal code",
+  propertyType: "Property type",
+  beds: "Bedrooms",
+  baths: "Bathrooms",
+  area: "Square footage",
+  amenities: "Amenities",
+  pets: "Pets policy",
+  smoking: "Smoking policy",
+  parking: "Parking availability",
+  availableFrom: "Availability date",
+  rentFrequency: "Rent frequency",
+  description: "Listing description"
+};
+
+function findFirstError(
+  errors: FieldErrors<ListingFormFieldValues>
+): { name: keyof ListingFormFieldValues; message?: string } | null {
+  for (const key of Object.keys(errors) as Array<keyof ListingFormFieldValues>) {
+    const value = errors[key];
+    if (!value) continue;
+
+    if (typeof value === "object" && "message" in value && (value as FieldError).message) {
+      return { name: key, message: (value as FieldError).message as string };
+    }
+
+    if (typeof value === "object") {
+      const nested = findFirstError(value as FieldErrors<ListingFormFieldValues>);
+      if (nested) {
+        return { name: key, message: nested.message };
+      }
+    }
+  }
+
+  return null;
+}
 
 function buildDefaultValues({
   initialValues,
@@ -236,6 +277,7 @@ export default function ListingForm({
     reset,
     setError,
     clearErrors,
+    setFocus,
     watch,
     formState: { errors, isDirty, isValid }
   } = useForm<ListingFormFieldValues>({
@@ -353,8 +395,33 @@ export default function ListingForm({
   );
 
   const handleError = useCallback(() => {
-    setToast({ tone: "error", message: "Please fix the highlighted errors and try again." });
-  }, []);
+    const firstError = findFirstError(errors);
+
+    if (firstError) {
+      const fallbackLabel = firstError.name.toString().replace(/([A-Z])/g, " $1").trim();
+      const normalizedFallback =
+        fallbackLabel.length > 0 ? fallbackLabel.charAt(0).toUpperCase() + fallbackLabel.slice(1) : "This field";
+      const label = LISTING_FIELD_LABELS[firstError.name] ?? normalizedFallback;
+      setToast({
+        tone: "error",
+        message: `${label}: ${firstError.message ?? "Please review this field."}`
+      });
+
+      if (typeof window !== "undefined") {
+        window.requestAnimationFrame(() => {
+          setFocus(firstError.name, { shouldSelect: true });
+          const element = document.querySelector<HTMLElement>(`[name="${firstError.name}"]`);
+          element?.scrollIntoView({ block: "center", behavior: "smooth" });
+        });
+      } else {
+        setFocus(firstError.name, { shouldSelect: true });
+        const element = document.querySelector<HTMLElement>(`[name="${firstError.name}"]`);
+        element?.scrollIntoView({ block: "center", behavior: "smooth" });
+      }
+    } else {
+      setToast({ tone: "error", message: "Please fix the highlighted errors and try again." });
+    }
+  }, [errors, setFocus]);
 
   const submitButtonDisabled = submitting || !isValid;
 
