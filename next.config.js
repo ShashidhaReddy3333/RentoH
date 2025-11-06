@@ -48,6 +48,7 @@ const nextConfig = {
   // Production source maps (disabled for smaller builds)
   productionBrowserSourceMaps: false,
   images: {
+    formats: ["image/avif", "image/webp"],
     remotePatterns: [
       { protocol: 'https', hostname: 'images.unsplash.com' },
       { protocol: 'https', hostname: 'picsum.photos' },

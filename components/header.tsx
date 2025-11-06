@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 import { unstable_noStore as noStore } from "next/cache";
@@ -148,11 +149,13 @@ async function ProfileMenu() {
         </span>
         <span className="relative inline-flex h-10 w-10 items-center justify-center rounded-full bg-brand-teal/10 text-sm font-semibold text-brand-teal">
           {profile?.avatarUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <Image
               src={profile.avatarUrl}
               alt={`${displayName} profile picture`}
-              className="h-10 w-10 rounded-full object-cover"
+              fill
+              sizes="40px"
+              className="rounded-full object-cover"
+              loading="lazy"
             />
           ) : (
             initials || "U"

@@ -12,6 +12,7 @@ type ImageProps = ComponentProps<typeof Image>;
 
 type ImageWithSkeletonProps = ImageProps & {
   wrapperClassName?: string;
+  priority?: ImageProps["priority"];
 };
 
 export function ImageWithSkeleton({
@@ -19,6 +20,8 @@ export function ImageWithSkeleton({
   className,
   onLoadingComplete,
   alt,
+  priority,
+  loading,
   ...props
 }: ImageWithSkeletonProps) {
   const [loaded, setLoaded] = useState(false);
@@ -40,6 +43,8 @@ export function ImageWithSkeleton({
       />
       <Image
         alt={alt}
+        priority={priority}
+        loading={priority ? undefined : loading ?? "lazy"}
         {...props}
         onLoadingComplete={handleLoadingComplete}
         className={clsx(

@@ -2,6 +2,7 @@
 
 import Avatar from "./Avatar";
 import Chip from "./Chip";
+import { ImageWithSkeleton } from "@/components/ui/image-with-skeleton";
 
 type ListingInfo = {
   title?: string;
@@ -70,12 +71,11 @@ function ListingCard({ listing }: { listing?: ListingInfo }) {
       <div className="mt-3">
         <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-brand-light">
           {listing.imageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <ImageWithSkeleton
               src={listing.imageUrl}
               alt={listing.title ?? "Listing photo"}
-              className="h-full w-full object-cover"
-              loading="lazy"
+              fill
+              sizes="(max-width: 768px) 100vw, 320px"
             />
           ) : (
             <div className="flex h-full items-center justify-center text-xs text-slate-500">No photo</div>

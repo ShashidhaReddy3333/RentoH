@@ -1,12 +1,12 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MapPinIcon, ShieldCheckIcon } from "@heroicons/react/24/outline";
 import FavoriteButton from "@/components/ui/FavoriteButton";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ImageWithSkeleton } from "@/components/ui/image-with-skeleton";
 
 import type { Property } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils/format";
@@ -27,10 +27,11 @@ export default function PropertyCard({ property }: PropertyCardProps) {
   const target = property.slug ?? property.id;
   const primaryImage = property.images[0];
   const priceLabel = formatCurrency(property.price);
+  const detailHref = `/property/${target}` as const;
 
   const handleNavigate = (event?: React.MouseEvent | React.KeyboardEvent) => {
     if (event) event.stopPropagation();
-    router.push(`/property/${target}`);
+    router.push(detailHref);
   };
 
   return (
@@ -49,7 +50,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
     >
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-neutral-100">
         {primaryImage ? (
-          <Image
+          <ImageWithSkeleton
             src={primaryImage}
             alt={`Primary photo for ${property.title}`}
             fill
@@ -79,9 +80,11 @@ export default function PropertyCard({ property }: PropertyCardProps) {
             <span className="ml-1 text-sm font-medium text-neutral-500">/month</span>
           </p>
           <Link
-            href={`/property/${target}`}
+            href={detailHref}
             prefetch
             className="line-clamp-2 text-lg font-semibold text-brand-dark transition hover:text-brand-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+            onPointerEnter={() => router.prefetch(detailHref)}
+            onFocusCapture={() => router.prefetch(detailHref)}
           >
             {property.title}
           </Link>

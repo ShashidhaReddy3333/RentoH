@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Route } from "next";
 import { usePathname, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import clsx from "clsx";
 import { AdjustmentsHorizontalIcon, MapIcon, Squares2X2Icon } from "@heroicons/react/24/outline";
+import useSWRInfinite from "swr/infinite";
 import FiltersSheet, {
   FiltersContent,
   MOBILE_FILTERS_PANEL_ID,
@@ -17,9 +18,7 @@ import { hasSupabaseEnv } from "@/lib/env";
 import PropertyGrid from "@/components/PropertyGrid";
 import EmptyState from "@/components/EmptyState";
 import { buttonStyles } from "@/components/ui/button";
-import type { Property, PropertyFilters, PropertySort } from "@/lib/types";
-
-import { fetchMoreProperties } from "./actions";
+import type { PaginatedResult, Property, PropertyFilters, PropertySort } from "@/lib/types";
 
 // Lazy-load MapPane only when user switches to map view
 const MapPane = dynamic(() => import("@/components/MapPane"), {
@@ -68,23 +67,81 @@ export default function BrowseClient({
 }: BrowseClientProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const [properties, setProperties] = useState(initialProperties);
   const [filters, setFilters] = useState<FiltersState>(initialFilters);
   const [currentSort, setCurrentSort] = useState<PropertySort>(sort);
   const [currentView, setCurrentView] = useState<"grid" | "map">(view);
-  const [nextPageState, setNextPageState] = useState<number | undefined>(nextPage);
   const [isSheetOpen, setIsSheetOpen] = useState(filtersOpen);
-  const [isLoadingMore, startTransition] = useTransition();
   const prefetchedIds = useRef<Set<string>>(new Set());
+  const initialPageData = useMemo(
+    () =>
+      [
+        {
+          items: initialProperties,
+          nextPage
+        }
+      ],
+    [initialProperties, nextPage]
+  );
+
+  const getKey = useMemo(
+    () =>
+      (pageIndex: number, previousPageData: PaginatedResult<Property> | null) => {
+        if (pageIndex > 0 && previousPageData && !previousPageData.nextPage) {
+          return null;
+        }
+        const targetPage =
+          pageIndex === 0
+            ? page
+            : previousPageData?.nextPage ?? (pageIndex === 0 ? page : undefined);
+        if (!targetPage) {
+          return null;
+        }
+        const apiSearch = buildApiSearchParams(queryFilters, currentSort, targetPage);
+        return `/api/properties?${apiSearch.toString()}`;
+      },
+    [queryFilters, currentSort, page]
+  );
+
+  const fetcher = (url: string) =>
+    fetch(url)
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`Failed to load properties (${res.status})`);
+        }
+        return res.json() as Promise<PaginatedResult<Property>>;
+      })
+      .catch((error) => {
+        console.error("[BrowseClient] properties fetch failed", error);
+        throw error;
+      });
+
+  const {
+    data,
+    size,
+    setSize,
+    isValidating
+  } = useSWRInfinite<PaginatedResult<Property>>(getKey, fetcher, {
+    fallbackData: initialPageData,
+    revalidateOnFocus: false,
+    revalidateFirstPage: false,
+    revalidateOnReconnect: false
+  });
+
+  const pages = useMemo(
+    () => (data ?? initialPageData).filter(Boolean) as PaginatedResult<Property>[],
+    [data, initialPageData]
+  );
+  const properties = useMemo(() => pages.flatMap((pageData) => pageData.items), [pages]);
+  const lastPage = pages[pages.length - 1];
+  const hasMore = Boolean(lastPage?.nextPage);
+  const isLoadingMore = size > pages.length || (isValidating && size > 1);
 
   useEffect(() => {
     prefetchedIds.current.clear();
-    setProperties(initialProperties);
     setFilters(initialFilters);
     setCurrentSort(sort);
     setCurrentView(view);
-    setNextPageState(nextPage);
-  }, [initialFilters, initialProperties, nextPage, page, sort, view]);
+  }, [initialFilters, sort, view]);
 
   useEffect(() => {
     properties.slice(0, 6).forEach((property) => {
@@ -95,16 +152,14 @@ export default function BrowseClient({
     });
   }, [properties, router]);
 
-  const appliedFilters = useMemo(() => queryFilters, [queryFilters]);
-
   const activeFiltersCount = useMemo(() => {
-    return Object.values(appliedFilters).filter((value) => {
+    return Object.values(queryFilters).filter((value) => {
       if (value === undefined || value === null) return false;
       if (typeof value === "string") return value.trim().length > 0;
       if (Array.isArray(value)) return value.length > 0;
       return value !== false;
     }).length;
-  }, [appliedFilters]);
+  }, [queryFilters]);
 
   const hasFiltersApplied = activeFiltersCount > 0;
 
@@ -132,12 +187,8 @@ export default function BrowseClient({
   };
 
   const handleLoadMore = () => {
-    if (!nextPageState) return;
-    startTransition(async () => {
-      const result = await fetchMoreProperties(appliedFilters, currentSort, nextPageState);
-      setProperties((prev) => [...prev, ...result.items]);
-      setNextPageState(result.nextPage);
-    });
+    if (!hasMore) return;
+    void setSize((prev) => prev + 1);
   };
 
   const totalLoaded = properties.length;
@@ -231,8 +282,8 @@ export default function BrowseClient({
             ) : (
               <PropertyGrid
                 properties={properties}
-                onLoadMore={nextPageState ? handleLoadMore : undefined}
-                hasMore={Boolean(nextPageState)}
+                onLoadMore={hasMore ? handleLoadMore : undefined}
+                hasMore={hasMore}
                 loading={isLoadingMore}
               />
             )}
@@ -257,8 +308,8 @@ export default function BrowseClient({
         ) : (
           <PropertyGrid
             properties={properties}
-            onLoadMore={nextPageState ? handleLoadMore : undefined}
-            hasMore={Boolean(nextPageState)}
+            onLoadMore={hasMore ? handleLoadMore : undefined}
+            hasMore={hasMore}
             loading={isLoadingMore}
           />
         )}
@@ -325,6 +376,31 @@ function buildSearchParams(
   search.set("sort", sort);
   search.set("view", view);
   search.delete("filters");
+
+  return search;
+}
+
+function buildApiSearchParams(filters: PropertyFilters, sort: PropertySort, page: number) {
+  const search = new URLSearchParams();
+
+  if (filters.city) search.set("city", filters.city);
+  if (filters.min != null) search.set("min", String(filters.min));
+  if (filters.max != null) search.set("max", String(filters.max));
+  if (filters.beds != null) search.set("beds", String(filters.beds));
+  if (filters.baths != null) search.set("baths", String(filters.baths));
+  if (filters.type) search.set("type", filters.type);
+  if (filters.pets) search.set("pets", "true");
+  if (filters.furnished) search.set("furnished", "true");
+  if (filters.verified) search.set("verified", "true");
+  if (filters.neighborhood) search.set("neighborhood", filters.neighborhood);
+  if (filters.availableFrom) search.set("availableFrom", filters.availableFrom);
+  if (filters.keywords) search.set("keywords", filters.keywords);
+  if (filters.amenities?.length) {
+    filters.amenities.forEach((amenity) => search.append("amenities", amenity));
+  }
+
+  search.set("sort", sort);
+  search.set("page", String(page));
 
   return search;
 }

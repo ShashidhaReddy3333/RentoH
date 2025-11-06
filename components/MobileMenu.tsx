@@ -8,6 +8,7 @@ import {
   MagnifyingGlassIcon,
   ShieldCheckIcon
 } from "@heroicons/react/24/outline";
+import Image from "next/image";
 
 import { SignOutButton } from "@/components/auth/SignOutButton";
 import { buttonStyles } from "@/components/ui/button";
@@ -203,11 +204,13 @@ function ProfileMenuMobile({ profile, user }: { profile: Profile; user: User }) 
         aria-label="View profile"
       >
         {profile.avatarUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
             src={profile.avatarUrl}
             alt={`${profile.name} profile picture`}
-            className="h-10 w-10 rounded-full object-cover"
+            fill
+            sizes="40px"
+            className="rounded-full object-cover"
+            loading="lazy"
           />
         ) : (
           initials || "U"

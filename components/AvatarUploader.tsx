@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 
 import { buttonStyles } from "@/components/ui/button";
@@ -36,8 +37,15 @@ export default function AvatarUploader({ value, onChange }: AvatarUploaderProps)
     <div className="flex items-center gap-4">
       <div className="relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-brand-teal/10 text-lg font-semibold text-brand-teal">
         {preview ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={preview} alt="Avatar preview" className="absolute inset-0 h-full w-full object-cover" />
+          <Image
+            src={preview}
+            alt="Avatar preview"
+            fill
+            sizes="80px"
+            className="object-cover"
+            priority
+            unoptimized
+          />
         ) : (
           "Upload"
         )}
