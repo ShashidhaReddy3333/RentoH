@@ -74,7 +74,18 @@ export default function FavoriteButton({ propertyId, initialSaved = false }: Fav
       type="button"
       aria-label={saved ? "Remove from favorites" : "Save listing"}
       aria-pressed={saved}
-      onClick={toggle}
+      onClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        void toggle();
+      }}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          event.stopPropagation();
+          void toggle();
+        }
+      }}
       disabled={busy}
       data-testid="property-save"
       className={`absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-brand-teal shadow-soft transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal focus-visible:ring-offset-2 focus-visible:ring-offset-white ${

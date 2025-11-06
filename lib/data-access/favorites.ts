@@ -35,7 +35,10 @@ export async function listFavoriteProperties(limit = 12): Promise<Property[]> {
   return (data as unknown as SupabaseFavoriteRow[])
     .map((row) => row.property)
     .filter((property): property is SupabasePropertyRow => property != null)
-    .map((property) => mapPropertyFromSupabaseRow(property));
+    .map((property) => {
+      const mapped = mapPropertyFromSupabaseRow(property);
+      return { ...mapped, isFavorite: true } satisfies Property;
+    });
 }
 
 export async function addFavorite(propertyId: string): Promise<boolean> {
