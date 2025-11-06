@@ -5,10 +5,15 @@ import { PaperAirplaneIcon, PaperClipIcon } from "@heroicons/react/24/solid";
 import { FaceSmileIcon } from "@heroicons/react/24/outline";
 import clsx from "clsx";
 
+import { buttonStyles } from "@/components/ui/button";
+
 type ComposerProps = {
   disabled?: boolean;
   onSend: (text: string) => Promise<void>;
 };
+
+const iconButtonClasses =
+  "inline-flex h-9 w-9 items-center justify-center rounded-full text-neutral-500 transition hover:bg-brand-light hover:text-brand-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white";
 
 export default function Composer({ disabled = false, onSend }: ComposerProps) {
   const [value, setValue] = useState("");
@@ -46,18 +51,18 @@ export default function Composer({ disabled = false, onSend }: ComposerProps) {
 
   return (
     <form
-      className="border-t border-slate-200 bg-white px-4 py-3"
+      className="border-t border-brand-outline/60 bg-white px-4 py-4"
       onSubmit={(event) => {
         event.preventDefault();
         void handleSend();
       }}
       aria-label="Message composer"
     >
-      <fieldset className="flex flex-col gap-3" disabled={disabled || isSending}>
-        <div className="flex items-end gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
+      <fieldset className="flex flex-col gap-2" disabled={disabled || isSending}>
+        <div className="flex items-end gap-2 rounded-2xl border border-brand-outline/60 bg-white px-3 py-2 shadow-sm focus-within:ring-1 focus-within:ring-brand-primary/30">
           <button
             type="button"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            className={iconButtonClasses}
             aria-label="Attach a file"
             title="Attach a file"
           >
@@ -65,7 +70,7 @@ export default function Composer({ disabled = false, onSend }: ComposerProps) {
           </button>
           <button
             type="button"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            className={iconButtonClasses}
             aria-label="Insert emoji"
             title="Insert emoji"
           >
@@ -77,29 +82,26 @@ export default function Composer({ disabled = false, onSend }: ComposerProps) {
             onChange={(event) => setValue(event.target.value)}
             onKeyDown={handleKeyDown}
             onInput={resetHeight}
-            placeholder="Type a message"
+            placeholder="Type your message..."
             rows={1}
-            className={clsx(
-              "max-h-[240px] w-full resize-none border-none bg-transparent py-1 text-sm text-slate-900 outline-none placeholder:text-slate-400",
-              "focus-visible:outline-none"
-            )}
+            className="max-h-[240px] w-full resize-none border-none bg-transparent py-1 text-sm text-brand-dark placeholder:text-neutral-400 focus-visible:outline-none"
             data-testid="message-input"
             aria-label="Type your message"
           />
           <button
             type="submit"
             className={clsx(
-              "inline-flex h-10 min-w-[44px] items-center justify-center gap-1 rounded-full bg-blue-600 px-4 text-sm font-semibold text-white transition",
-              "hover:bg-blue-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 disabled:cursor-not-allowed disabled:bg-slate-300"
+              buttonStyles({ variant: "primary", size: "md" }),
+              "min-w-[44px] gap-2 rounded-full px-4"
             )}
             disabled={disabled || isSending || !value.trim()}
             data-testid="message-send"
           >
-            <span>{isSending ? "Sending" : "Send"}</span>
+            <span>{isSending ? "Sending..." : "Send"}</span>
             <PaperAirplaneIcon className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
-        <p className="text-xs text-slate-500" role="note">
+        <p className="text-xs text-neutral-500" role="note">
           Press Enter to send | Shift+Enter adds a new line
         </p>
       </fieldset>

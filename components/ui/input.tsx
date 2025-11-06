@@ -2,15 +2,36 @@ import clsx from "clsx";
 import React, { forwardRef, useId } from "react";
 
 const baseInputClasses =
-  "block w-full rounded-lg border border-outline/70 bg-white px-3 py-2 text-sm text-ink placeholder:text-ink-muted shadow-sm transition focus-visible:border-brand-blue focus-visible:ring-2 focus-visible:ring-brand-blue/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-ink-muted";
+  "block w-full rounded-lg border border-brand-outline/70 bg-white px-3 py-2 text-sm text-brand-dark placeholder:text-neutral-500 shadow-sm transition focus-visible:border-brand-primary focus-visible:ring-2 focus-visible:ring-brand-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:bg-neutral-100 disabled:text-neutral-500";
 
-export type InputProps = React.InputHTMLAttributes<HTMLInputElement>;
+export type InputProps = React.InputHTMLAttributes<HTMLInputElement> & {
+  hasFloatingLabel?: boolean;
+  invalid?: boolean;
+};
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
-  { className, type = "text", ...props },
+  { className, type = "text", hasFloatingLabel = false, invalid = false, placeholder, ...props },
   ref
 ) {
-  return <input ref={ref} type={type} className={clsx(baseInputClasses, className)} {...props} />;
+  const resolvedPlaceholder =
+    hasFloatingLabel && (placeholder === undefined || placeholder === null || placeholder === "")
+      ? " "
+      : placeholder;
+
+  return (
+    <input
+      ref={ref}
+      type={type}
+      placeholder={resolvedPlaceholder}
+      className={clsx(
+        hasFloatingLabel ? "floating-input" : baseInputClasses,
+        invalid && "border-danger text-danger placeholder:text-danger focus-visible:ring-danger/40",
+        className
+      )}
+      aria-invalid={invalid || undefined}
+      {...props}
+    />
+  );
 });
 
 type InputFieldProps = InputProps & {
@@ -19,6 +40,7 @@ type InputFieldProps = InputProps & {
   helperText?: string;
   error?: string;
   requiredMarker?: boolean;
+  wrapperClassName?: string;
 };
 
 export const InputField = forwardRef<HTMLInputElement, InputFieldProps>(function InputField(
@@ -28,6 +50,7 @@ export const InputField = forwardRef<HTMLInputElement, InputFieldProps>(function
     helperText,
     error,
     className,
+    wrapperClassName,
     requiredMarker = true,
     required,
     "aria-describedby": ariaDescribedBy,
@@ -42,34 +65,35 @@ export const InputField = forwardRef<HTMLInputElement, InputFieldProps>(function
   const describedBy = [ariaDescribedBy, errorId, helperId].filter(Boolean).join(" ") || undefined;
 
   return (
-    <div className="grid gap-1.5">
-      {label ? (
-        <label htmlFor={inputId} className="text-sm font-medium text-ink">
-          {label}
-          {required && requiredMarker ? <span className="ml-1 text-brand-blue">*</span> : null}
-        </label>
-      ) : null}
-      <Input
-        id={inputId}
-        ref={ref}
-        className={clsx(
-          baseInputClasses,
-          error
-            ? "border-danger text-danger placeholder:text-danger focus-visible:ring-danger/40"
-            : "border-outline/70",
-          className
-        )}
-        aria-invalid={Boolean(error) || undefined}
-        aria-describedby={describedBy}
-        required={required}
-        {...props}
-      />
+    <div className={clsx("space-y-1.5", wrapperClassName)}>
+      <div className="field-wrapper">
+        <Input
+          id={inputId}
+          ref={ref}
+          className={className}
+          hasFloatingLabel={Boolean(label)}
+          invalid={Boolean(error)}
+          aria-describedby={describedBy}
+          required={required}
+          {...props}
+        />
+        {label ? (
+          <label htmlFor={inputId} className="floating-label">
+            {label}
+            {required && requiredMarker ? (
+              <span aria-hidden="true" className="ml-1 text-brand-primary">
+                *
+              </span>
+            ) : null}
+          </label>
+        ) : null}
+      </div>
       {error ? (
-        <p id={errorId} className="text-xs font-medium text-danger">
+        <p id={errorId} className="text-sm font-medium text-danger" role="alert" aria-live="polite">
           {error}
         </p>
       ) : helperText ? (
-        <p id={helperId} className="text-xs text-ink-muted">
+        <p id={helperId} className="text-sm text-neutral-500" aria-live="polite">
           {helperText}
         </p>
       ) : null}

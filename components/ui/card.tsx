@@ -18,7 +18,7 @@ export function Card<T extends ElementType = "div">({
   return (
     <Component
       className={clsx(
-        "group/card rounded-xl border border-outline/60 bg-white shadow-sm transition-shadow duration-300 ease-out hover:shadow-md",
+        "group/card rounded-2xl border border-brand-outline/60 bg-white shadow-sm transition-shadow duration-200 ease-out hover:shadow-md focus-within:shadow-md",
         className
       )}
       {...props}
@@ -35,19 +35,33 @@ type SectionProps = {
 
 export function CardHeader({ className, children }: SectionProps) {
   return (
-    <div className={clsx("flex flex-col gap-1 border-b border-outline/40 px-6 py-4", className)}>
+    <div
+      className={clsx(
+        "flex flex-col gap-1 border-b border-brand-outline/40 px-4 py-4 md:px-6 md:py-5",
+        className
+      )}
+    >
       {children}
     </div>
   );
 }
 
 export function CardContent({ className, children }: SectionProps) {
-  return <div className={clsx("px-6 py-5", className)}>{children}</div>;
+  return (
+    <div className={clsx("px-4 py-4 md:px-6 md:py-6", className)}>
+      {children}
+    </div>
+  );
 }
 
 export function CardFooter({ className, children }: SectionProps) {
   return (
-    <div className={clsx("flex items-center gap-3 border-t border-outline/40 px-6 py-4", className)}>
+    <div
+      className={clsx(
+        "flex items-center gap-3 border-t border-brand-outline/40 px-4 py-4 md:px-6 md:py-5",
+        className
+      )}
+    >
       {children}
     </div>
   );

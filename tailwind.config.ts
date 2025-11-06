@@ -11,7 +11,7 @@ const config: Config = {
       center: true,
       padding: {
         DEFAULT: "1.5rem",
-        sm: "1.5rem",
+        md: "1.5rem",
         lg: "2rem",
         xl: "2.5rem",
         "2xl": "3rem"
@@ -20,64 +20,64 @@ const config: Config = {
     extend: {
       colors: {
         brand: {
-          teal: "#2FB79A",
-          blue: "#1E88E5",
-          green: "#43A047",
-          yellow: "#F9A825",
+          primary: "#1E88E5",
+          primaryStrong: "#1664C0",
+          primaryMuted: "#E3F2FD",
+          success: "#43A047",
+          successMuted: "#E6F4EA",
+          warning: "#F9A825",
+          warningMuted: "#FFF2CC",
           dark: "#212121",
-          bg: "#F5F5F5"
+          light: "#F5F5F5",
+          surface: "#FFFFFF",
+          outline: "#D5D8DC"
         },
-        textc: "#1F2933",
-        text: {
-          DEFAULT: "#1F2933",
-          muted: "#52616B",
-          subtle: "#64748B"
+        neutral: {
+          50: "#F5F5F5",
+          100: "#E0E0E0",
+          200: "#C2C2C2",
+          300: "#A3A3A3",
+          400: "#7C7C7C",
+          500: "#5C5C5C",
+          600: "#424242",
+          700: "#2E2E2E",
+          800: "#1F1F1F",
+          900: "#141414"
         },
-        surface: {
-          DEFAULT: "#FFFFFF",
-          muted: "#F1F5F9"
-        },
-        ink: {
-          DEFAULT: "#1F2933",
-          muted: "#52616B"
-        },
-        outline: "#D9E2EC",
         danger: {
-          DEFAULT: "#D32F2F",
-          subtle: "#FDE8E8"
-        },
-        success: {
-          DEFAULT: "#2E7D32",
-          subtle: "#E6F4EA"
+          DEFAULT: "#C62828",
+          muted: "#FBE9E7"
         }
       },
       borderRadius: {
-        sm: "8px",
-        md: "12px",
-        lg: "16px",
-        xl: "20px",
-        "2xl": "24px"
+        xs: "0.375rem",
+        sm: "0.5rem",
+        md: "0.75rem",
+        lg: "1rem",
+        xl: "1.25rem",
+        "2xl": "1.75rem",
+        "3xl": "2rem"
       },
       boxShadow: {
-        sm: "0 4px 12px rgba(15, 23, 42, 0.06)",
-        md: "0 10px 30px rgba(15, 23, 42, 0.08)",
-        lg: "0 18px 48px rgba(15, 23, 42, 0.12)"
+        sm: "0 6px 18px rgba(17, 24, 39, 0.08)",
+        md: "0 12px 28px rgba(17, 24, 39, 0.12)",
+        lg: "0 18px 40px rgba(17, 24, 39, 0.16)"
       },
       fontFamily: {
-        sans: ["Inter", "var(--font-sans)", "system-ui", "-apple-system", "sans-serif"]
+        sans: ["var(--font-sans)", "Inter", "system-ui", "-apple-system", "sans-serif"]
       },
       fontSize: {
-        h1: ["1.875rem", { lineHeight: "2.25rem", fontWeight: "700" }],
-        h2: ["1.5rem", { lineHeight: "2rem", fontWeight: "600" }],
-        h3: ["1.25rem", { lineHeight: "1.75rem", fontWeight: "600" }],
+        h1: ["1.875rem", { lineHeight: "2.5rem", fontWeight: "700" }],
+        h2: ["1.5rem", { lineHeight: "2.125rem", fontWeight: "600" }],
+        h3: ["1.25rem", { lineHeight: "1.875rem", fontWeight: "600" }],
         body: ["1rem", { lineHeight: "1.7rem", fontWeight: "400" }],
-        small: ["0.875rem", { lineHeight: "1.4rem", fontWeight: "400" }]
+        caption: ["0.875rem", { lineHeight: "1.4rem", fontWeight: "500" }]
       },
       spacing: {
-        section: "3rem"
+        section: "3.5rem"
       },
       transitionTimingFunction: {
-        "ease-out": "cubic-bezier(0.16, 1, 0.3, 1)"
+        smooth: "cubic-bezier(0.16, 1, 0.3, 1)"
       }
     }
   },
@@ -90,11 +90,11 @@ const config: Config = {
       addUtilities({
         ".focus-ring": {
           outline: "none",
-          boxShadow: "0 0 0 4px rgba(30, 136, 229, 0.2)"
+          boxShadow: "0 0 0 4px rgba(30, 136, 229, 0.25)"
         },
         ".focus-ring-inset": {
           outline: "none",
-          boxShadow: "inset 0 0 0 2px rgba(30, 136, 229, 0.3)"
+          boxShadow: "inset 0 0 0 2px rgba(30, 136, 229, 0.35)"
         }
       });
     }

@@ -18,55 +18,132 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
-    background-color: theme("colors.brand.bg");
-    color: theme("colors.ink.DEFAULT");
+    background-color: theme("colors.brand.light");
+    color: theme("colors.brand.dark");
     scroll-behavior: smooth;
   }
 
   body {
-    @apply bg-brand-bg text-ink leading-relaxed;
-    min-height: 100vh;
+    @apply flex min-h-screen flex-col bg-brand-light text-base leading-relaxed text-brand-dark antialiased;
     margin: 0;
   }
 
   h1 {
-    @apply text-h1;
+    @apply text-3xl font-bold tracking-tight text-brand-dark;
   }
 
   h2 {
-    @apply text-h2;
+    @apply text-2xl font-semibold tracking-tight text-brand-dark;
   }
 
   h3 {
-    @apply text-h3;
+    @apply text-xl font-semibold text-brand-dark;
   }
 
   p {
-    @apply text-body text-ink;
+    @apply text-base leading-relaxed text-brand-dark/90;
   }
 
   small {
-    @apply text-small text-ink-muted;
+    @apply text-sm text-neutral-500;
   }
 
   a {
-    @apply text-brand-blue transition-colors duration-150;
+    @apply text-brand-primary transition-colors duration-150 ease-out;
   }
 
-  a:hover {
-    @apply text-brand-dark;
+  a:hover,
+  a:focus-visible {
+    @apply text-brand-primaryStrong;
   }
 
   :where(button, [href], input, select, textarea, [role="button"]) {
-    @apply focus:outline-none;
+    @apply focus-visible:outline-none;
   }
 
   :where(button, [href], input, select, textarea, [role="button"]):focus-visible {
-    @apply ring-2 ring-brand-blue/50 ring-offset-2 ring-offset-white;
+    @apply ring-2 ring-brand-primary/40 ring-offset-2 ring-offset-white;
   }
 
   ::selection {
-    @apply bg-brand-blue/20 text-brand-dark;
+    @apply bg-brand-primary/20 text-brand-dark;
+  }
+}
+
+@layer components {
+  .field-wrapper {
+    @apply relative flex flex-col gap-1;
+  }
+
+  .floating-input {
+    @apply block w-full rounded-lg border border-brand-outline/80 bg-white px-3 pt-4 pb-2 text-sm text-brand-dark placeholder-transparent shadow-sm transition focus-visible:border-brand-primary focus-visible:ring-2 focus-visible:ring-brand-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:bg-neutral-100 disabled:text-neutral-500;
+  }
+
+  .floating-label {
+    @apply pointer-events-none absolute left-3 top-2.5 inline-flex items-center text-sm text-neutral-500 transition-all duration-150 ease-out;
+  }
+
+  .floating-input:not(:placeholder-shown) + .floating-label,
+  .floating-input:focus + .floating-label {
+    @apply top-1 text-xs font-medium text-brand-primary;
+  }
+
+  .range-input {
+    @apply w-full appearance-none rounded-full bg-transparent;
+    height: 0.5rem;
+    cursor: pointer;
+  }
+
+  .range-input:focus-visible {
+    outline: none;
+  }
+
+  .range-input::-webkit-slider-runnable-track {
+    height: 0.5rem;
+    border-radius: 9999px;
+    background-color: #d5d8dc;
+  }
+
+  .range-input::-webkit-slider-thumb {
+    appearance: none;
+    height: 18px;
+    width: 18px;
+    border-radius: 9999px;
+    background-color: #1e88e5;
+    border: 3px solid #ffffff;
+    margin-top: -6px;
+    box-shadow: 0 6px 18px rgba(30, 136, 229, 0.35);
+    transition: transform 0.15s ease;
+  }
+
+  .range-input:hover::-webkit-slider-thumb,
+  .range-input:active::-webkit-slider-thumb {
+    transform: scale(1.05);
+  }
+
+  .range-input::-moz-range-track {
+    height: 0.5rem;
+    border-radius: 9999px;
+    background-color: #d5d8dc;
+  }
+
+  .range-input::-moz-range-thumb {
+    height: 18px;
+    width: 18px;
+    border-radius: 9999px;
+    background-color: #1e88e5;
+    border: 3px solid #ffffff;
+    box-shadow: 0 6px 18px rgba(30, 136, 229, 0.35);
+    transition: transform 0.15s ease;
+  }
+
+  .range-input:hover::-moz-range-thumb,
+  .range-input:active::-moz-range-thumb {
+    transform: scale(1.05);
+  }
+
+  .range-input::-moz-focus-outer {
+    border: 0;
   }
 }
 

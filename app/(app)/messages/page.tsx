@@ -19,7 +19,7 @@ export default async function MessagesPage({
   const messages = activeThreadId ? await getThreadMessages(activeThreadId) : [];
 
   return (
-    <div className="flex h-screen w-full bg-slate-100">
+    <div className="flex h-screen w-full bg-brand-light">
       <MessagesClient
         threads={threads}
         initialMessages={messages}

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import debounce from "lodash/debounce";
@@ -162,7 +162,7 @@ export default function ChatThread({
       data-testid="chat-thread"
     >
       {loading ? (
-        <p className="text-sm text-slate-500">Loading messages...</p>
+        <p className="text-sm text-neutral-500">Loading messages...</p>
       ) : (
         groupedMessages.map((group) => (
           <section key={group.date.toISOString()} aria-label={group.day}>
@@ -198,11 +198,42 @@ export default function ChatThread({
         ))
       )}
       {typingUsers.size > 0 ? (
-        <p className="mt-4 text-xs text-slate-500" aria-live="assertive">
-          {typingUsers.size === 1 ? "Someone is typing..." : "Multiple people are typing..."}
-        </p>
+        <TypingIndicator
+          message={
+            typingUsers.size === 1 ? "Someone is typing..." : "Multiple people are typing..."
+          }
+        />
       ) : null}
       <div ref={endRef} aria-hidden="true" />
     </div>
   );
 }
+
+function TypingIndicator({ message }: { message: string }) {
+  const dots = [0, 1, 2] as const;
+  return (
+    <div
+      className="mt-4 inline-flex items-center gap-3 rounded-full border border-brand-outline/40 bg-brand-primaryMuted/70 px-4 py-2 text-xs font-medium text-brand-primary"
+      role="status"
+      aria-live="assertive"
+    >
+      <span className="inline-flex items-center gap-1">
+        {dots.map((index) => (
+          <span
+            // eslint-disable-next-line react/no-array-index-key
+            key={index}
+            className="h-1.5 w-1.5 animate-pulse rounded-full bg-brand-primary"
+            style={{ animationDelay: `${index * 0.18}s` }}
+          />
+        ))}
+      </span>
+      <span>{message}</span>
+    </div>
+  );
+}
+
+
+
+
+
+

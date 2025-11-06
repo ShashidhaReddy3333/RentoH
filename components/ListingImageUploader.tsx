@@ -19,7 +19,7 @@ type UploadedImage = {
 };
 
 const reorderButtonClass =
-  "flex h-6 w-6 items-center justify-center rounded-full border border-black/10 text-xs text-ink-muted transition hover:bg-brand-teal/10 hover:text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal disabled:opacity-40";
+  "flex h-8 w-8 items-center justify-center rounded-full border border-brand-outline/70 bg-white text-xs text-neutral-600 transition hover:border-brand-primary hover:bg-brand-primary/10 hover:text-brand-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:opacity-40";
 
 function sanitizeFilename(name: string) {
   return name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
@@ -62,17 +62,28 @@ function ensureCover(images: UploadedImage[]): UploadedImage[] {
 }
 
 type ListingImageUploaderProps = {
-  name?: string;
+  value?: Array<{ key: string; url: string; isCover?: boolean }>;
   initialImages?: Array<{ key: string; url: string; isCover?: boolean }>;
+  onChange?: (
+    images: Array<{ key: string; url: string; isCover?: boolean }>,
+    coverKey?: string | null
+  ) => void;
+  maxFiles?: number;
 };
 
-export default function ListingImageUploader({ name = "images", initialImages = [] }: ListingImageUploaderProps) {
+export default function ListingImageUploader({
+  value,
+  initialImages = [],
+  onChange,
+  maxFiles = MAX_FILE_COUNT
+}: ListingImageUploaderProps) {
   const supabase = createSupabaseBrowserClient();
   const bucketName = clientEnv.NEXT_PUBLIC_SUPABASE_BUCKET_LISTINGS ?? "listings";
 
   const normalizedInitialImages = useMemo<UploadedImage[]>(() => {
-    const hasCover = initialImages.some((image) => image.isCover);
-    return initialImages.map((image, index) => ({
+    const source = (value ?? initialImages) ?? [];
+    const hasCover = source.some((image) => image.isCover);
+    return source.map((image, index) => ({
       id: image.key,
       storageKey: image.key,
       url: image.url,
@@ -80,10 +91,15 @@ export default function ListingImageUploader({ name = "images", initialImages = 
       isCover: hasCover ? Boolean(image.isCover) : index === 0,
       uploading: false
     }));
-  }, [initialImages]);
+  }, [initialImages, value]);
 
   const [images, setImages] = useState<UploadedImage[]>(normalizedInitialImages);
   const [error, setError] = useState<string | null>(null);
+
+  const uploadingCount = useMemo(
+    () => images.filter((image) => image.uploading).length,
+    [images]
+  );
 
   useEffect(() => {
     setImages(normalizedInitialImages);
@@ -99,69 +115,106 @@ export default function ListingImageUploader({ name = "images", initialImages = 
     };
   }, [images]);
 
-  const updateImage = useCallback((id: string, updater: (current: UploadedImage) => UploadedImage | null) => {
-    setImages((prev) => {
-      const next: UploadedImage[] = [];
-      for (const image of prev) {
-        if (image.id !== id) {
+  const emitChange = useCallback(
+    (list: UploadedImage[]) => {
+      if (!onChange) return;
+      const payload = list.map((image) => ({
+        key: image.storageKey,
+        url: image.url,
+        isCover: image.isCover
+      }));
+      const coverKey = list.find((image) => image.isCover)?.storageKey ?? null;
+      onChange(payload, coverKey);
+    },
+    [onChange]
+  );
+
+  const setImagesAndEmit = useCallback(
+    (updater: (current: UploadedImage[]) => UploadedImage[]) => {
+      setImages((prev) => {
+        const next = ensureCover(updater(prev));
+        emitChange(next);
+        return next;
+      });
+    },
+    [emitChange]
+  );
+
+  const updateImage = useCallback(
+    (id: string, updater: (current: UploadedImage) => UploadedImage | null) => {
+      setImagesAndEmit((prev) => {
+        const next: UploadedImage[] = [];
+        for (const image of prev) {
+          if (image.id !== id) {
+            next.push(image);
+            continue;
+          }
+          const updated = updater(image);
+          if (!updated) {
+            if (image.previewUrl) {
+              URL.revokeObjectURL(image.previewUrl);
+            }
+            continue;
+          }
+          if (image.previewUrl && image.previewUrl !== updated.previewUrl && !updated.previewUrl) {
+            URL.revokeObjectURL(image.previewUrl);
+          }
+          next.push(updated);
+        }
+        return next;
+      });
+    },
+    [setImagesAndEmit]
+  );
+
+  const removeImage = useCallback(
+    (id: string) => {
+      setImagesAndEmit((prev) => {
+        const next: UploadedImage[] = [];
+        for (const image of prev) {
+          if (image.id === id) {
+            if (image.previewUrl) {
+              URL.revokeObjectURL(image.previewUrl);
+            }
+            continue;
+          }
           next.push(image);
-          continue;
         }
-        const updated = updater(image);
-        if (!updated) {
-          if (image.previewUrl) {
-            URL.revokeObjectURL(image.previewUrl);
-          }
-          continue;
-        }
-        if (image.previewUrl && image.previewUrl !== updated.previewUrl && !updated.previewUrl) {
-          URL.revokeObjectURL(image.previewUrl);
-        }
-        next.push(updated);
-      }
-      return ensureCover(next);
-    });
-  }, []);
+        return next;
+      });
+    },
+    [setImagesAndEmit]
+  );
 
-  const removeImage = useCallback((id: string) => {
-    setImages((prev) => {
-      const next: UploadedImage[] = [];
-      for (const image of prev) {
-        if (image.id === id) {
-          if (image.previewUrl) {
-            URL.revokeObjectURL(image.previewUrl);
-          }
-          continue;
+  const move = useCallback(
+    (from: number, to: number) => {
+      setImagesAndEmit((prev) => {
+        const copy = [...prev];
+        if (from < 0 || from >= copy.length || to < 0 || to >= copy.length) {
+          return prev;
         }
-        next.push(image);
-      }
-      return ensureCover(next);
-    });
-  }, []);
+        const [item] = copy.splice(from, 1);
+        if (!item) {
+          return prev;
+        }
+        copy.splice(to, 0, item);
+        return copy;
+      });
+    },
+    [setImagesAndEmit]
+  );
 
-  const move = useCallback((from: number, to: number) => {
-    setImages((prev) => {
-      const copy = [...prev];
-      if (from < 0 || from >= copy.length || to < 0 || to >= copy.length) {
-        return prev;
-      }
-      const [item] = copy.splice(from, 1);
-      if (!item) {
-        return prev;
-      }
-      copy.splice(to, 0, item);
-      return ensureCover(copy);
-    });
-  }, []);
-
-  const setCover = useCallback((id: string) => {
-    setImages((prev) =>
-      prev.map((image) => ({
-        ...image,
-        isCover: image.id === id
-      }))
-    );
-  }, []);
+  const setCover = useCallback(
+    (id: string) => {
+      setImagesAndEmit((prev) =>
+        prev.map((image) => ({
+          ...image,
+          isCover: image.id === id
+        }))
+      );
+    },
+    [setImagesAndEmit]
+  );
 
   const handleFiles = useCallback(
     async (files: FileList | null) => {
@@ -169,15 +222,15 @@ export default function ListingImageUploader({ name = "images", initialImages = 
 
       setError(null);
 
-      if (images.length >= MAX_FILE_COUNT) {
-        setError(`You can upload up to ${MAX_FILE_COUNT} photos per listing.`);
+      if (images.length >= maxFiles) {
+        setError(`You can upload up to ${maxFiles} photos per listing.`);
         return;
       }
 
-      const availableSlots = MAX_FILE_COUNT - images.length;
+      const availableSlots = maxFiles - images.length;
       const incomingFiles = Array.from(files).slice(0, availableSlots);
       if (incomingFiles.length < files.length) {
-        setError(`Only the first ${availableSlots} images were added (limit ${MAX_FILE_COUNT}).`);
+        setError(`Only the first ${availableSlots} images were added (limit ${maxFiles}).`);
       }
 
       const validateFile = (file: File) => {
@@ -203,20 +256,17 @@ export default function ListingImageUploader({ name = "images", initialImages = 
               const objectUrl = URL.createObjectURL(file);
               const dataUrl = await readFileAsDataUrl(file);
 
-              setImages((prev) => {
-                const next: UploadedImage[] = [
-                  ...prev,
-                  {
-                    id: `local-${uniqueId()}`,
-                    storageKey: dataUrl,
-                    url: objectUrl,
-                    previewUrl: objectUrl,
-                    isCover: false,
-                    uploading: false
-                  }
-                ];
-                return ensureCover(next);
-              });
+              setImagesAndEmit((prev) => [
+                ...prev,
+                {
+                  id: `local-${uniqueId()}`,
+                  storageKey: dataUrl,
+                  url: objectUrl,
+                  previewUrl: objectUrl,
+                  isCover: false,
+                  uploading: false
+                }
+              ]);
             } catch (fallbackError) {
               console.error("[listings] Failed to process image locally", fallbackError);
               setError("We couldn't process one of the images locally. Please try again.");
@@ -237,20 +287,17 @@ export default function ListingImageUploader({ name = "images", initialImages = 
         const id = `${user.id}/${uniqueId()}-${sanitizeFilename(file.name)}`;
         const previewUrl = URL.createObjectURL(file);
 
-        setImages((prev) => {
-          const next: UploadedImage[] = [
-            ...prev,
-            {
-              id,
-              storageKey: id,
-              url: previewUrl,
-              previewUrl,
-              isCover: false,
-              uploading: true
-            }
-          ];
-          return ensureCover(next);
-        });
+        setImagesAndEmit((prev) => [
+          ...prev,
+          {
+            id,
+            storageKey: id,
+            url: previewUrl,
+            previewUrl,
+            isCover: false,
+            uploading: true
+          }
+        ]);
 
         try {
           const { error: uploadError } = await supabase.storage
@@ -276,7 +323,7 @@ export default function ListingImageUploader({ name = "images", initialImages = 
 
       await Promise.all(uploads);
     },
-    [bucketName, images.length, removeImage, supabase, updateImage]
+    [bucketName, images.length, maxFiles, removeImage, setImagesAndEmit, supabase, updateImage]
   );
 
   const onFileChange = useCallback(
@@ -296,15 +343,15 @@ export default function ListingImageUploader({ name = "images", initialImages = 
   );
 
   return (
-    <div>
+    <div className="space-y-4">
       <div
         onDragOver={(event) => event.preventDefault()}
         onDrop={onDrop}
-        className="rounded-lg border border-dashed border-outline/80 p-4 text-center transition hover:border-brand-teal focus-within:border-brand-teal"
+        className="rounded-2xl border border-dashed border-brand-outline/70 bg-white/60 p-5 text-center transition focus-within:border-brand-primary focus-within:ring-2 focus-within:ring-brand-primary/40 focus-within:ring-offset-2 focus-within:ring-offset-white hover:border-brand-primary"
         aria-label="Upload listing images"
       >
-        <p className="text-sm text-text-muted">Drag and drop images here or</p>
-        <label className="mt-2 inline-block cursor-pointer rounded-md bg-brand-teal px-4 py-2 text-sm font-medium text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal">
+        <p className="text-sm text-neutral-600">Drag and drop images here or</p>
+        <label className="mt-2 inline-flex cursor-pointer items-center justify-center rounded-full bg-brand-primary px-5 py-2 text-sm font-medium text-white transition hover:bg-brand-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white">
           <input
             type="file"
             accept="image/*"
@@ -315,59 +362,92 @@ export default function ListingImageUploader({ name = "images", initialImages = 
           />
           Upload images
         </label>
-        <p className="mt-2 text-xs text-text-muted">PNG or JPEG up to 5MB each. Max {MAX_FILE_COUNT} images.</p>
+        <p className="mt-2 text-xs text-neutral-500">
+          PNG or JPEG up to 5MB each. Max {maxFiles} images.
+        </p>
       </div>
 
       {error ? (
-        <p className="mt-3 rounded-md border border-danger-subtle bg-danger-subtle/40 p-2 text-sm text-danger" role="alert">
+        <p
+          className="rounded-2xl border border-danger/40 bg-danger-muted px-4 py-3 text-sm text-danger"
+          role="alert"
+        >
           {error}
         </p>
       ) : null}
 
-      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {images.map((img, index) => (
-          <div key={img.id} className="relative rounded-lg border border-outline/70 p-2 shadow-sm">
-            {img.uploading ? (
-              <div className="flex h-40 items-center justify-center text-sm text-ink-muted" role="status" aria-live="polite">
-                Uploading...
-              </div>
-            ) : (
-              <Image
-                src={img.url}
-                alt={img.isCover ? "Cover photo preview" : `Listing image ${index + 1}`}
-                className="h-40 w-full rounded-md object-cover"
-                width={320}
-                height={240}
-                unoptimized
-              />
-            )}
+      {uploadingCount > 0 ? (
+        <div
+          role="status"
+          aria-live="polite"
+          className="rounded-2xl border border-brand-outline/60 bg-brand-primaryMuted/60 px-4 py-3 text-sm text-brand-primary"
+        >
+          Uploading {uploadingCount} {uploadingCount === 1 ? "image" : "images"}…
+        </div>
+      ) : null}
 
-            <div className="mt-2 flex items-center justify-between gap-2">
-              <div className="flex flex-wrap items-center gap-2 text-xs">
-                <button
-                  type="button"
-                  className="rounded-full border border-outline/60 px-2 py-1 transition hover:border-brand-teal hover:text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal"
-                  onClick={() => setCover(img.id)}
-                  aria-pressed={img.isCover}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {images.map((img, index) => (
+          <div
+            key={img.id}
+            className="group relative overflow-hidden rounded-2xl border border-brand-outline/60 bg-white shadow-sm transition hover:shadow-md focus-within:ring-2 focus-within:ring-brand-primary/30"
+          >
+            <div className="relative aspect-[4/3] w-full bg-neutral-100">
+              {img.uploading ? (
+                <div
+                  className="flex h-full items-center justify-center text-sm font-medium text-neutral-500"
+                  role="status"
+                  aria-live="polite"
                 >
-                  {img.isCover ? "Cover photo" : "Set as cover"}
-                </button>
+                  Uploading…
+                </div>
+              ) : (
+                <Image
+                  src={img.url}
+                  alt={img.isCover ? "Cover photo preview" : `Listing image ${index + 1}`}
+                  className="h-full w-full object-cover"
+                  fill
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                />
+              )}
+
+              {img.isCover ? (
+                <span className="absolute left-3 top-3 inline-flex items-center rounded-full bg-brand-primary px-3 py-1 text-xs font-semibold text-white shadow-sm">
+                  Cover photo
+                </span>
+              ) : null}
+            </div>
+
+            <div className="flex items-center justify-between gap-2 px-3 py-3">
+              <div className="flex flex-wrap items-center gap-2">
+                {!img.isCover ? (
+                  <button
+                    type="button"
+                    onClick={() => setCover(img.id)}
+                    className="inline-flex items-center rounded-full border border-brand-outline/70 px-3 py-1 text-xs font-medium text-brand-dark transition hover:border-brand-primary hover:text-brand-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+                    aria-pressed="false"
+                  >
+                    Set as cover
+                  </button>
+                ) : null}
                 <button
                   type="button"
-                  className="rounded-full border border-outline/60 px-2 py-1 transition hover:border-danger hover:text-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger"
                   onClick={() => removeImage(img.id)}
+                  className="inline-flex items-center rounded-full border border-brand-outline/70 px-3 py-1 text-xs font-medium text-danger transition hover:border-danger hover:bg-danger-muted/60 hover:text-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+                  aria-label={`Remove image ${index + 1}`}
                 >
                   Remove
                 </button>
               </div>
 
-              <div className="flex gap-1">
+              <div className="flex items-center gap-1">
                 <button
                   type="button"
                   disabled={index === 0}
                   onClick={() => move(index, index - 1)}
                   className={reorderButtonClass}
-                  aria-label="Move image earlier"
+                  aria-label={`Move image ${index + 1} earlier`}
+                  title="Move earlier"
                 >
                   <span aria-hidden="true">Up</span>
                 </button>
@@ -376,15 +456,13 @@ export default function ListingImageUploader({ name = "images", initialImages = 
                   disabled={index === images.length - 1}
                   onClick={() => move(index, index + 1)}
                   className={reorderButtonClass}
-                  aria-label="Move image later"
+                  aria-label={`Move image ${index + 1} later`}
+                  title="Move later"
                 >
                   <span aria-hidden="true">Down</span>
                 </button>
               </div>
             </div>
-
-            <input type="hidden" name={`${name}[]`} value={img.storageKey} />
-            {img.isCover ? <input type="hidden" name="cover" value={img.storageKey} /> : null}
           </div>
         ))}
       </div>

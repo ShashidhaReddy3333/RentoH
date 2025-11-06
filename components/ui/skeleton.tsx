@@ -44,8 +44,9 @@ function BaseSkeleton({ className, shimmer, style, ...props }: BaseSkeletonProps
     <div
       aria-hidden="true"
       className={clsx(
-        "relative h-4 overflow-hidden rounded-lg bg-gradient-to-br from-surface-muted/70 via-surface-muted to-surface-muted/90",
-        shimmer && "after:absolute after:inset-0 after:animate-[shine_1.6s_ease-in-out_infinite] after:bg-gradient-to-r after:from-transparent after:via-white/60 after:to-transparent",
+        "relative h-4 overflow-hidden rounded-lg bg-gradient-to-br from-neutral-200/60 via-neutral-200 to-neutral-300/80",
+        shimmer &&
+          "after:absolute after:inset-0 after:animate-[shine_1.6s_ease-in-out_infinite] after:bg-gradient-to-r after:from-transparent after:via-white/50 after:to-transparent",
         className
       )}
       style={style}

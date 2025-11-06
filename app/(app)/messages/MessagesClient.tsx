@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Route } from "next";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { formatDistanceToNowStrict } from "date-fns";
+import { ChatBubbleLeftRightIcon } from "@heroicons/react/24/outline";
 
 import ChatThread from "@/components/ChatThread";
 import ConversationItem from "@/components/messages/ConversationItem";
@@ -48,6 +49,8 @@ export default function MessagesClient({
   const [currentThreadId, setCurrentThreadId] = useState<string | undefined>(activeThreadId);
   const [search, setSearch] = useState("");
   const [statusText, setStatusText] = useState<string | undefined>(undefined);
+  const conversationHeadingId = "messages-conversations-heading";
+  const searchInputId = "messages-conversations-search";
 
   useEffect(() => {
     setMessages(initialMessages);
@@ -122,6 +125,9 @@ export default function MessagesClient({
     <EmptyState
       title="You have no conversations yet"
       description="Browse homes and reach out to landlords to start a conversation."
+      icon={
+        <ChatBubbleLeftRightIcon className="h-12 w-12 text-brand-primary" aria-hidden="true" />
+      }
       action={
         <button
           type="button"
@@ -165,48 +171,70 @@ export default function MessagesClient({
     : undefined;
 
   return (
-    <div className="flex h-full w-full">
-      <aside className="hidden h-full w-[320px] shrink-0 overflow-y-auto border-r border-slate-200 bg-white p-3 md:block">
+    <div className="flex h-full w-full bg-brand-light/40">
+      <aside
+        className="hidden h-full w-[360px] shrink-0 overflow-y-auto border-r border-brand-outline/60 bg-white/90 p-4 backdrop-blur md:block"
+        aria-labelledby={conversationHeadingId}
+        aria-label="Conversations"
+      >
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-sm font-semibold text-slate-900">Conversations</h2>
+          <div>
+            <h2 id={conversationHeadingId} className="text-base font-semibold text-brand-dark">
+              Conversations
+            </h2>
+            <p className="text-xs text-neutral-500">Stay in sync with renters and landlords.</p>
+          </div>
           <Chip>{`${threads.length} total`}</Chip>
         </div>
-        <label className="mt-3 block">
+        <label className="mt-4 block" htmlFor={searchInputId}>
           <span className="sr-only">Search conversations</span>
           <input
+            id={searchInputId}
             type="search"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search"
-            className="w-full rounded-full border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Search by name or message"
+            className="w-full rounded-full border border-brand-outline/60 bg-white px-3 py-2 text-sm text-brand-dark shadow-sm transition focus-visible:border-brand-primary focus-visible:ring-2 focus-visible:ring-brand-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
           />
         </label>
-        <div className="mt-3 space-y-2">
-          {filteredThreads.map((thread) => (
-            <ConversationItem
-              key={thread.id}
-              name={thread.otherPartyName}
-              lastMessage={thread.lastMessage ?? "No messages yet"}
-              tags={
-                [thread.subject, thread.propertyTitle].filter(
-                  (value): value is string => Boolean(value && value.trim())
-                )
-              }
-              updatedText={formatDistanceToNowStrict(new Date(thread.updatedAt), { addSuffix: true })}
-              unreadCount={thread.unreadCount}
-              active={thread.id === currentThreadId}
-              onClick={() => handleSelectThread(thread.id)}
-            />
-          ))}
-        </div>
+        <ul className="mt-4 space-y-2" role="list">
+          {filteredThreads.length === 0 ? (
+            <li>
+              <p
+                className="rounded-2xl border border-brand-outline/50 bg-brand-light p-4 text-sm text-neutral-500"
+                role="status"
+              >
+                No conversations found. Try a different search.
+              </p>
+            </li>
+          ) : (
+            filteredThreads.map((thread) => (
+              <li key={thread.id} className="list-none">
+                <ConversationItem
+                  name={thread.otherPartyName}
+                  lastMessage={thread.lastMessage ?? "No messages yet"}
+                  tags={
+                    [thread.subject, thread.propertyTitle].filter(
+                      (value): value is string => Boolean(value && value.trim())
+                    )
+                  }
+                  updatedText={formatDistanceToNowStrict(new Date(thread.updatedAt), { addSuffix: true })}
+                  unreadCount={thread.unreadCount}
+                  active={thread.id === currentThreadId}
+                  onClick={() => handleSelectThread(thread.id)}
+                />
+              </li>
+            ))
+          )}
+        </ul>
       </aside>
 
       <main className="flex min-w-0 flex-1 flex-col">
-        <div className="border-b border-slate-200 bg-white px-4 py-2 md:hidden">
-          <label className="block text-xs font-medium text-slate-500">
+        <div className="border-b border-brand-outline/60 bg-white px-4 py-3 md:hidden">
+          <label className="block text-xs font-medium text-neutral-500">
             Conversation
             <select
-              className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="mt-1 w-full rounded-lg border border-brand-outline/60 bg-white px-3 py-2 text-sm text-brand-dark shadow-sm focus-visible:border-brand-primary focus-visible:ring-2 focus-visible:ring-brand-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
               value={currentThreadId}
               onChange={(event) => handleSelectThread(event.target.value)}
             >
@@ -236,7 +264,11 @@ export default function MessagesClient({
             <Composer onSend={handleSend} disabled={!currentThreadId} />
           </>
         ) : (
-          <div className="flex flex-1 flex-col items-center justify-center gap-3 bg-white text-center text-sm text-slate-500">
+          <div
+            className="flex flex-1 flex-col items-center justify-center gap-3 bg-white text-center text-sm text-neutral-500"
+            role="status"
+            aria-live="polite"
+          >
             <p>Select a conversation to get started.</p>
           </div>
         )}

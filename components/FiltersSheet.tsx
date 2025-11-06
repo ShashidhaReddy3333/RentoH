@@ -1,11 +1,15 @@
 "use client";
 
 import { useEffect, type ChangeEvent } from "react";
-import type { Property } from "@/lib/types";
+import clsx from "clsx";
 
+import type { Property } from "@/lib/types";
 import { buttonStyles } from "@/components/ui/button";
+import { formatCurrency } from "@/lib/utils/format";
 
 const SHEET_ID_PREFIX = "filters-sheet";
+export const MOBILE_FILTERS_PANEL_ID = `${SHEET_ID_PREFIX}-panel`;
+export const MOBILE_FILTERS_TITLE_ID = `${SHEET_ID_PREFIX}-title`;
 const DESKTOP_ID_PREFIX = "filters-desktop";
 
 export type FiltersState = {
@@ -32,6 +36,11 @@ type FiltersSheetProps = {
 
 const priceRange = { min: 500, max: 6000, step: 100 };
 
+const inputClasses =
+  "w-full rounded-lg border border-brand-outline/70 bg-white px-3 py-2 text-sm text-brand-dark shadow-sm transition focus-visible:border-brand-primary focus-visible:ring-2 focus-visible:ring-brand-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white";
+
+const labelClasses = "text-xs font-semibold uppercase tracking-wide text-neutral-600";
+
 export default function FiltersSheet({
   open,
   onOpenChange,
@@ -42,6 +51,8 @@ export default function FiltersSheet({
   renderStatic = false
 }: FiltersSheetProps) {
   const sheetCityInputId = `${SHEET_ID_PREFIX}-city`;
+  const sheetPanelId = MOBILE_FILTERS_PANEL_ID;
+  const sheetTitleId = MOBILE_FILTERS_TITLE_ID;
 
   useEffect(() => {
     if (!open) return;
@@ -73,7 +84,7 @@ export default function FiltersSheet({
   return (
     <>
       {renderStatic && (
-        <div className="hidden md:block">
+        <div className="hidden lg:block">
           <FiltersContent
             values={values}
             onChange={onChange}
@@ -84,15 +95,22 @@ export default function FiltersSheet({
         </div>
       )}
 
-      {open && (
-        <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/40 backdrop-blur-sm md:hidden">
-          <div className="rounded-t-3xl bg-white shadow-soft">
-            <header className="flex items-center justify-between border-b border-black/5 px-4 py-3">
-              <h2 className="text-base font-semibold text-textc">Filters</h2>
+      {open ? (
+        <div
+          className="fixed inset-0 z-50 flex flex-col justify-end bg-black/50 backdrop-blur-sm md:hidden"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={sheetTitleId}
+        >
+          <div id={sheetPanelId} className="rounded-t-3xl bg-white shadow-lg">
+            <header className="flex items-center justify-between border-b border-brand-outline/60 px-4 py-3">
+              <h2 id={sheetTitleId} className="text-base font-semibold text-brand-dark">
+                Filters
+              </h2>
               <button
                 type="button"
                 onClick={() => onOpenChange(false)}
-                className="rounded-full px-3 py-1 text-sm font-medium text-text-muted transition hover:text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+                className="rounded-full px-3 py-1 text-sm font-medium text-neutral-500 transition hover:text-brand-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
                 data-testid="filters-close"
               >
                 Close
@@ -110,7 +128,7 @@ export default function FiltersSheet({
             />
           </div>
         </div>
-      )}
+      ) : null}
     </>
   );
 }
@@ -130,134 +148,234 @@ export function FiltersContent({
   onClear,
   idPrefix = "filters"
 }: ContentProps) {
-  const cityInputId = `${idPrefix}-city`;
-  const toggleId = (suffix: string) => `${idPrefix}-${suffix}`;
+  const sectionHeadingId = `${idPrefix}-filters-heading`;
+  const budgetSummaryId = `${idPrefix}-budget-summary`;
+  const minRangeId = `${idPrefix}-budget-min-range`;
+  const maxRangeId = `${idPrefix}-budget-max-range`;
 
-  const handleNumber =
-    (field: keyof FiltersState) =>
-    (event: ChangeEvent<HTMLInputElement>) => {
-      const value = event.target.value;
-      onChange({ ...values, [field]: value ? Number(value) : null });
+  const handleInput =
+    (key: keyof FiltersState) =>
+    (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+      const target = event.target;
+      const value =
+        target.type === "checkbox"
+          ? (target as HTMLInputElement).checked
+          : target.value;
+
+      if (key === "city" || key === "type") {
+        onChange({ ...values, [key]: value });
+        return;
+      }
+
+      if (key === "min" || key === "max" || key === "beds" || key === "baths") {
+        const rawNumeric = value === "" ? null : Number(value);
+        const numeric = rawNumeric !== null && Number.isFinite(rawNumeric) ? Number(rawNumeric) : null;
+
+        if (key === "min") {
+          const bounded =
+            numeric === null ? null : Math.min(Math.max(priceRange.min, numeric), priceRange.max);
+          const currentMax = values.max ?? priceRange.max;
+          if (bounded !== null && bounded > currentMax) {
+            onChange({ ...values, min: bounded, max: bounded });
+          } else {
+            onChange({ ...values, min: bounded });
+          }
+          return;
+        }
+
+        if (key === "max") {
+          const bounded =
+            numeric === null ? null : Math.min(Math.max(priceRange.min, numeric), priceRange.max);
+          const currentMin = values.min ?? priceRange.min;
+          if (bounded !== null && bounded < currentMin) {
+            onChange({ ...values, min: bounded, max: bounded });
+          } else {
+            onChange({ ...values, max: bounded });
+          }
+          return;
+        }
+
+        onChange({ ...values, [key]: numeric });
+        return;
+      }
+
+      onChange({ ...values, [key]: value });
     };
 
-  const handleCheckbox =
-    (field: keyof FiltersState) =>
-    (event: ChangeEvent<HTMLInputElement>) => {
-      onChange({ ...values, [field]: event.target.checked });
-    };
+  const selectedMin = values.min ?? priceRange.min;
+  const selectedMax = values.max ?? priceRange.max;
+
+  const numberFormatter = (amount: number) => formatCurrency(amount, "CAD");
 
   return (
-    <div className="flex flex-col gap-6 px-4 py-6 text-sm text-text-muted">
-      <div className="grid gap-4">
-        <label className="grid gap-2" htmlFor={cityInputId}>
-          <span className="text-xs font-semibold uppercase tracking-wide">City</span>
+    <section
+      className="space-y-6 rounded-3xl border border-brand-outline/60 bg-white p-4 shadow-sm md:p-6"
+      aria-labelledby={sectionHeadingId}
+    >
+      <h3 id={sectionHeadingId} className="sr-only">
+        Filter listings
+      </h3>
+      <div className="space-y-4">
+        <label htmlFor={`${idPrefix}-city`} className="block space-y-2">
+          <span className={labelClasses}>City</span>
           <input
-            id={cityInputId}
+            id={`${idPrefix}-city`}
             value={values.city}
-            onChange={(event) => onChange({ ...values, city: event.target.value })}
-            placeholder="Neighbourhood or city"
-            className="input"
+            onChange={handleInput("city")}
+            placeholder="Search by city"
+            className={inputClasses}
           />
         </label>
 
-        <div className="grid gap-2">
-          <span className="text-xs font-semibold uppercase tracking-wide">Budget</span>
-          <div className="grid gap-3 rounded-2xl border border-black/5 bg-surface px-3 py-4">
-            <div className="flex items-center justify-between text-xs font-medium">
-              <span>${values.min ?? priceRange.min}</span>
-              <span>${values.max ?? priceRange.max}</span>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <span className={labelClasses}>Budget</span>
+              <p className="text-xs text-neutral-500">Set your monthly rent range</p>
             </div>
-            <div className="flex items-center gap-3">
+            <div
+              id={budgetSummaryId}
+              className="flex items-center gap-2 text-xs font-medium text-brand-dark"
+              aria-live="polite"
+              aria-atomic="true"
+            >
+              <span className="rounded-full bg-brand-primaryMuted px-2 py-1">
+                {numberFormatter(selectedMin)}
+              </span>
+              <span aria-hidden="true">-</span>
+              <span className="rounded-full bg-brand-primaryMuted px-2 py-1">
+                {numberFormatter(selectedMax)}
+              </span>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <label className="space-y-1.5">
+                <span className="text-xs font-medium text-neutral-600">Min rent</span>
+                <input
+                  type="number"
+                  min={priceRange.min}
+                  max={priceRange.max}
+                  step={priceRange.step}
+                  value={values.min ?? ""}
+                  onChange={handleInput("min")}
+                  className={inputClasses}
+                  inputMode="numeric"
+                />
+              </label>
+              <label className="space-y-1.5">
+                <span className="text-xs font-medium text-neutral-600">Max rent</span>
+                <input
+                  type="number"
+                  min={priceRange.min}
+                  max={priceRange.max}
+                  step={priceRange.step}
+                  value={values.max ?? ""}
+                  onChange={handleInput("max")}
+                  className={inputClasses}
+                  inputMode="numeric"
+                />
+              </label>
+            </div>
+            <div className="space-y-2">
               <input
+                id={minRangeId}
                 type="range"
                 min={priceRange.min}
                 max={priceRange.max}
                 step={priceRange.step}
-                value={values.min ?? priceRange.min}
-                onChange={handleNumber("min")}
+                value={selectedMin}
+                onChange={handleInput("min")}
                 aria-label="Minimum price"
-                className="w-full accent-brand-teal"
+                aria-valuetext={numberFormatter(selectedMin)}
+                aria-describedby={budgetSummaryId}
+                className="range-input focus-visible:ring-2 focus-visible:ring-brand-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
               />
               <input
+                id={maxRangeId}
                 type="range"
                 min={priceRange.min}
                 max={priceRange.max}
                 step={priceRange.step}
-                value={values.max ?? priceRange.max}
-                onChange={handleNumber("max")}
+                value={selectedMax}
+                onChange={handleInput("max")}
                 aria-label="Maximum price"
-                className="w-full accent-brand-teal"
+                aria-valuetext={numberFormatter(selectedMax)}
+                aria-describedby={budgetSummaryId}
+                className="range-input focus-visible:ring-2 focus-visible:ring-brand-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
               />
             </div>
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <label className="grid gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wide">Beds</span>
+          <label className="space-y-1.5">
+            <span className={labelClasses}>Beds</span>
             <input
               type="number"
               min={0}
               value={values.beds ?? ""}
-              onChange={handleNumber("beds")}
-              className="input"
+              onChange={handleInput("beds")}
+              className={inputClasses}
+              inputMode="numeric"
             />
           </label>
-          <label className="grid gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wide">Baths</span>
+          <label className="space-y-1.5">
+            <span className={labelClasses}>Baths</span>
             <input
               type="number"
               min={0}
               value={values.baths ?? ""}
-              onChange={handleNumber("baths")}
-              className="input"
+              onChange={handleInput("baths")}
+              className={inputClasses}
+              inputMode="numeric"
             />
           </label>
         </div>
 
-        <label className="grid gap-2">
-          <span className="text-xs font-semibold uppercase tracking-wide">Type</span>
+        <label className="space-y-1.5">
+          <span className={labelClasses}>Type</span>
           <select
             value={values.type}
-            onChange={(event) =>
-              onChange({ ...values, type: event.target.value as FiltersState["type"] })
-            }
-            className="input"
+            onChange={handleInput("type")}
+            className={clsx(inputClasses, "capitalize")}
           >
             <option value="any">Any</option>
             <option value="apartment">Apartment</option>
             <option value="house">House</option>
             <option value="condo">Condo</option>
+            <option value="townhouse">Townhouse</option>
           </select>
         </label>
       </div>
 
       <div className="grid gap-3">
         <Toggle
-          id={toggleId("pets")}
+          id={`${idPrefix}-pets`}
           label="Pet-friendly"
           checked={values.pets}
-          onChange={handleCheckbox("pets")}
+          onChange={handleInput("pets")}
         />
         <Toggle
-          id={toggleId("furnished")}
+          id={`${idPrefix}-furnished`}
           label="Furnished"
           checked={values.furnished}
-          onChange={handleCheckbox("furnished")}
+          onChange={handleInput("furnished")}
         />
         <Toggle
-          id={toggleId("verified")}
+          id={`${idPrefix}-verified`}
           label="Verified listings only"
           checked={values.verified}
-          onChange={handleCheckbox("verified")}
+          onChange={handleInput("verified")}
         />
       </div>
 
-      <div className="flex items-center justify-between gap-4 border-t border-black/5 pt-4">
+      <div className="flex flex-col gap-3 border-t border-brand-outline/60 pt-4 sm:flex-row sm:items-center sm:justify-between">
         <button
           type="button"
           onClick={onClear}
-          className="text-sm font-medium text-brand-blue transition hover:text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+          className="inline-flex items-center justify-center rounded-full border border-brand-outline/70 px-4 py-2 text-sm font-medium text-brand-dark transition hover:border-brand-primary hover:text-brand-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
           data-testid="filters-clear"
         >
           Clear all
@@ -271,7 +389,7 @@ export function FiltersContent({
           Apply filters
         </button>
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -289,20 +407,23 @@ function Toggle({
   return (
     <label
       htmlFor={id}
-      className="flex items-center justify-between gap-4 rounded-2xl border border-black/5 bg-surface px-4 py-3"
+      className="flex items-center justify-between gap-4 rounded-2xl border border-brand-outline/50 bg-brand-light px-4 py-3 transition hover:border-brand-primary hover:bg-brand-primaryMuted/40"
     >
-      <span className="text-sm font-medium text-textc">{label}</span>
-      <input
-        id={id}
-        type="checkbox"
-        checked={checked}
-        onChange={onChange}
-        className="h-5 w-10 cursor-pointer appearance-none rounded-full border border-brand-teal/40 bg-brand-teal/10 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal focus-visible:ring-offset-2 focus-visible:ring-offset-white checked:bg-brand-teal"
-        role="switch"
-        aria-checked={checked}
-      />
+      <span className="text-sm font-medium text-brand-dark">{label}</span>
+      <span className="relative inline-flex h-6 w-12 items-center">
+        <input
+          id={id}
+          type="checkbox"
+          checked={checked}
+          onChange={onChange}
+          className="peer sr-only"
+          role="switch"
+          aria-checked={checked}
+        />
+        <span className="absolute inset-0 rounded-full bg-brand-outline/70 transition peer-checked:bg-brand-primary"></span>
+        <span className="absolute left-1 h-4 w-4 rounded-full bg-white shadow-md transition peer-checked:translate-x-6 peer-checked:bg-white peer-checked:shadow-brand-primary/60" />
+      </span>
     </label>
   );
 }
-
 

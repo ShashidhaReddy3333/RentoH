@@ -1,8 +1,8 @@
 "use client";
 
-import { Fragment } from "react";
-import { CheckIcon } from "@heroicons/react/24/solid";
 import clsx from "clsx";
+import { CheckIcon } from "@heroicons/react/24/solid";
+import { Fragment } from "react";
 
 type BubbleStatus = "sent" | "delivered" | "read";
 
@@ -14,11 +14,17 @@ type BubbleProps = {
   status?: BubbleStatus;
 };
 
+const statusLabels: Record<BubbleStatus, string> = {
+  sent: "Message sent",
+  delivered: "Message delivered",
+  read: "Message read"
+};
+
 export default function Bubble({ me = false, text, time, timeLabel, status }: BubbleProps) {
   const alignment = me ? "items-end" : "items-start";
   const bubbleClasses = me
-    ? "bg-blue-600 text-white"
-    : "bg-white text-slate-900 ring-1 ring-slate-200";
+    ? "bg-brand-primary text-white"
+    : "bg-brand-light text-brand-dark ring-1 ring-brand-outline/60";
 
   return (
     <div className={clsx("flex flex-col gap-1 text-sm", alignment)} role="group" aria-label={text}>
@@ -26,21 +32,19 @@ export default function Bubble({ me = false, text, time, timeLabel, status }: Bu
         {text}
       </p>
       {(time || (me && status)) && (
-        <span className="flex items-center gap-1 text-[11px] text-slate-500">
+        <span className="flex items-center gap-1 text-[11px] uppercase tracking-wide text-neutral-500">
           {time ? (
-            <time dateTime={timeLabel ?? time} className="uppercase tracking-wide">
-              {timeLabel ?? time}
-            </time>
+            <time dateTime={timeLabel ?? time}>{timeLabel ?? time}</time>
           ) : null}
           {me && status ? (
-            <span className="flex items-center gap-[2px]" aria-label={`Message ${status}`}>
+            <span className="flex items-center gap-[2px]" aria-label={statusLabels[status]}>
               {status === "read" ? (
                 <Fragment>
-                  <CheckIcon className="h-3 w-3 text-blue-200" aria-hidden="true" />
-                  <CheckIcon className="h-3 w-3 text-blue-200" aria-hidden="true" />
+                  <CheckIcon className="h-3 w-3 text-brand-primaryMuted" aria-hidden="true" />
+                  <CheckIcon className="h-3 w-3 text-brand-primaryMuted" aria-hidden="true" />
                 </Fragment>
               ) : (
-                <CheckIcon className="h-3 w-3 text-blue-200" aria-hidden="true" />
+                <CheckIcon className="h-3 w-3 text-brand-primaryMuted" aria-hidden="true" />
               )}
             </span>
           ) : null}

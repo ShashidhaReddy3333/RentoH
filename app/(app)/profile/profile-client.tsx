@@ -1,8 +1,10 @@
 "use client";
 
 import Image from "next/image";
+import clsx from "clsx";
 import { useEffect, useMemo, useState } from "react";
 
+import { buttonStyles } from "@/components/ui/button";
 import { clientEnv } from "@/lib/env";
 import { profileUpdateSchema } from "@/lib/schemas/profile";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -53,6 +55,11 @@ const EMPTY_FORM: FormState = {
   avatar_url: null
 };
 
+const inputClasses =
+  "w-full rounded-lg border border-brand-outline/60 bg-white px-3 py-2 text-sm text-brand-dark shadow-sm transition focus-visible:border-brand-primary focus-visible:ring-2 focus-visible:ring-brand-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:bg-neutral-100 disabled:text-neutral-400";
+
+const cardClasses = "rounded-3xl border border-brand-outline/60 bg-white shadow-sm";
+
 function isPlainRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -102,6 +109,10 @@ export default function ProfilePageClient({ initialProfile, initialPrefs, email 
   const [isEditing, setIsEditing] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return document.documentElement.classList.contains("dark");
+  });
 
   const hasExistingProfile = Boolean(initialProfile);
 
@@ -126,6 +137,15 @@ export default function ProfilePageClient({ initialProfile, initialPrefs, email 
     }
   }, [avatarFile, form.avatar_url]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const stored = window.localStorage.getItem("theme");
+    const shouldUseDark =
+      stored === "dark" || (!stored && document.documentElement.classList.contains("dark"));
+    setIsDarkMode(shouldUseDark);
+    document.documentElement.classList.toggle("dark", shouldUseDark);
+  }, []);
+
   const handleInputChange = <K extends keyof FormState>(field: K, value: FormState[K]) => {
     if (!isEditing) setIsEditing(true);
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -133,6 +153,17 @@ export default function ProfilePageClient({ initialProfile, initialPrefs, email 
 
   const handleContactChange = (method: ContactMethod) => {
     handleInputChange("contact_method", method);
+  };
+
+  const handleThemeToggle = () => {
+    setIsDarkMode((prev) => {
+      const next = !prev;
+      if (typeof window !== "undefined") {
+        document.documentElement.classList.toggle("dark", next);
+        window.localStorage.setItem("theme", next ? "dark" : "light");
+      }
+      return next;
+    });
   };
 
   async function handleSave() {
@@ -254,207 +285,239 @@ export default function ProfilePageClient({ initialProfile, initialPrefs, email 
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-4 py-12 text-slate-50">
-      <div className="mx-auto grid w-full max-w-6xl gap-8 lg:grid-cols-[320px_1fr]">
-        <aside className="rounded-2xl bg-white/5 p-6 shadow-[0_30px_80px_-30px_rgba(15,23,42,0.8)] backdrop-blur-xl">
-          <div className="flex flex-col items-center text-center">
-            <div className="relative">
-              <div className="h-36 w-36 overflow-hidden rounded-full border border-white/10 bg-slate-900/60 shadow-inner">
-                {avatarPreview ? (
-                  <Image
-                    src={avatarPreview}
-                    alt={form.full_name || "Profile avatar"}
-                    width={144}
-                    height={144}
-                    className="h-full w-full object-cover"
-                    unoptimized
-                  />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center text-4xl font-semibold text-slate-500">
-                    {(form.full_name || email).slice(0, 2).toUpperCase()}
-                  </div>
-                )}
-              </div>
-
-              <label
-                htmlFor="avatar-upload"
-                className="absolute -bottom-2 -right-2 inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-gradient-to-r from-teal-400 to-blue-500 text-white shadow-xl transition hover:scale-105 hover:shadow-2xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-300"
-              >
-                <input
-                  id="avatar-upload"
-                  name="avatar"
-                  type="file"
-                  accept="image/*"
-                  className="sr-only"
-                  onChange={(event) => {
-                    const file = event.target.files?.[0] ?? null;
-                    if (!file) return;
-                    setAvatarFile(file);
-                    setIsEditing(true);
-                    event.target.value = "";
-                  }}
-                />
-                <span className="sr-only">Upload profile photo</span>
-                <svg
-                  className="h-4 w-4"
-                  viewBox="0 0 20 20"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                  aria-hidden="true"
-                >
-                  <path
-                    d="M12.586 3.414a2 2 0 0 1 2.828 2.828l-8.95 8.95a2 2 0 0 1-.878.512l-2.83.78.78-2.83a2 2 0 0 1 .512-.878l8.95-8.95Z"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="m11 4 3 3"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </label>
-            </div>
-
-            <h1 className="mt-6 text-2xl font-semibold tracking-tight text-white">{form.full_name || "Your Name"}</h1>
-            <p className="mt-2 rounded-full bg-white/10 px-4 py-1 text-xs uppercase tracking-[0.25em] text-slate-200">
-              {roleLabel(form.role)}
-            </p>
-
-            <button
-              type="button"
-              onClick={() => {
-                setIsEditing((prev) => !prev);
-                setFeedback(null);
-              }}
-              className="mt-6 inline-flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-teal-400 via-teal-500 to-blue-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition duration-150 hover:shadow-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-300"
-            >
-              {isEditing ? "Stop editing" : "Edit profile"}
-            </button>
-
-            <dl className="mt-8 w-full space-y-4 text-left text-sm text-slate-300">
-              <SummaryItem label="Email" value={email} />
-              <SummaryItem label="Phone" value={form.phone} />
-              <SummaryItem label="City" value={form.city} />
-            </dl>
-          </div>
-        </aside>
-
-        <section className="rounded-2xl bg-white/5 p-6 shadow-[0_30px_80px_-30px_rgba(15,23,42,0.8)] backdrop-blur-xl">
-          <header className="mb-8 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h2 className="text-xl font-semibold text-white">Account details</h2>
-              <p className="text-sm text-slate-300">Keep your contact information up to date so landlords and tenants can reach you.</p>
-            </div>
-            {feedback && (
-              <span
-                className={`inline-flex items-center rounded-full px-4 py-1 text-xs font-semibold tracking-wide ${
-                  feedback.kind === "success"
-                    ? "bg-teal-400/10 text-teal-300"
-                    : "bg-rose-400/10 text-rose-300"
-                }`}
-              >
-                {feedback.message}
-              </span>
-            )}
-          </header>
-
-          <form
-            className="space-y-6"
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (!isEditing) return;
-              void handleSave();
-            }}
+    <div className="space-y-8 px-4 py-8 sm:px-6 lg:px-8">
+      <section className={clsx(cardClasses, "overflow-hidden")}>
+        <div className="relative h-36 w-full overflow-hidden bg-gradient-to-r from-brand-primary to-brand-primaryStrong">
+          <button
+            type="button"
+            onClick={handleThemeToggle}
+            className="absolute right-6 top-6 inline-flex items-center gap-2 rounded-full border border-white/80 bg-white/90 px-3 py-1.5 text-xs font-medium text-brand-dark shadow-sm transition hover:border-brand-primary hover:text-brand-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+            aria-pressed={isDarkMode}
+            aria-label="Toggle dark mode"
+            title="Toggle dark mode"
           >
-            <div className="grid gap-6 md:grid-cols-2">
-              <Field
-                label="Full name"
-                id="full_name"
-                value={form.full_name}
-                onChange={(event) => handleInputChange("full_name", event.currentTarget.value)}
-                disabled={!isEditing}
-              />
-              <Field label="Email" id="email" value={email} disabled />
-              <Field
-                label="Phone"
-                id="phone"
-                value={form.phone}
-                onChange={(event) => handleInputChange("phone", event.currentTarget.value)}
-                disabled={!isEditing}
-              />
-              <Field
-                label="Address"
-                id="address"
-                value={form.address}
-                onChange={(event) => handleInputChange("address", event.currentTarget.value)}
-                disabled={!isEditing}
-              />
-              <Field
-                label="City"
-                id="city"
-                value={form.city}
-                onChange={(event) => handleInputChange("city", event.currentTarget.value)}
-                disabled={!isEditing}
-              />
-              <Field
-                label="Date of birth"
-                id="dob"
-                type="date"
-                value={form.dob}
-                onChange={(event) => handleInputChange("dob", event.currentTarget.value)}
-                disabled={!isEditing}
-              />
-            </div>
-
-            <fieldset className="space-y-3">
-              <legend className="text-sm font-medium text-slate-200">Preferred contact</legend>
-              <div className="flex flex-wrap gap-3">
-                {CONTACT_OPTIONS.map((method) => {
-                  const isActive = form.contact_method === method;
-                  return (
-                    <button
-                      key={method}
-                      type="button"
-                      onClick={() => (isEditing ? handleContactChange(method) : undefined)}
-                      className={`rounded-xl px-4 py-2 text-sm font-medium capitalize transition duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-300 ${
-                        isActive
-                          ? "bg-gradient-to-r from-teal-400 to-blue-500 text-white shadow-lg"
-                          : "border border-white/10 bg-white/5 text-slate-200 hover:border-white/30"
-                      } ${isEditing ? "" : "cursor-not-allowed opacity-60"}`}
-                      disabled={!isEditing}
-                    >
-                      {method}
-                    </button>
-                  );
-                })}
+            {isDarkMode ? "Dark mode on" : "Dark mode off"}
+          </button>
+        </div>
+        <div className="px-6 pb-6">
+          <div className="-mt-16 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+            <div className="flex items-end gap-4">
+              <div className="relative h-24 w-24">
+                <div className="absolute inset-0 overflow-hidden rounded-full border-4 border-white bg-brand-light shadow-lg">
+                  {avatarPreview ? (
+                    <Image
+                      src={avatarPreview}
+                      alt={form.full_name || "Profile avatar"}
+                      fill
+                      className="object-cover"
+                      sizes="96px"
+                      unoptimized
+                    />
+                  ) : (
+                    <span className="flex h-full w-full items-center justify-center text-2xl font-semibold text-brand-primary">
+                      {(form.full_name || email).slice(0, 2).toUpperCase()}
+                    </span>
+                  )}
+                </div>
+                <label
+                  htmlFor="avatar-upload"
+                  className="absolute bottom-0 right-0 inline-flex cursor-pointer items-center gap-1 rounded-full border border-brand-outline/60 bg-white px-3 py-1 text-xs font-medium text-brand-dark shadow-sm transition hover:border-brand-primary hover:text-brand-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+                >
+                  <input
+                    id="avatar-upload"
+                    name="avatar"
+                    type="file"
+                    accept="image/*"
+                    className="sr-only"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0] ?? null;
+                      if (!file) return;
+                      setAvatarFile(file);
+                      setIsEditing(true);
+                      event.target.value = "";
+                    }}
+                  />
+                  Upload avatar
+                </label>
               </div>
-            </fieldset>
-
-            <div className="flex flex-wrap items-center gap-4">
-              <button
-                type="submit"
-                disabled={!isEditing || isSaving}
-                className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-teal-400 via-teal-500 to-blue-500 px-6 py-2.5 text-sm font-semibold text-white shadow-lg transition hover:shadow-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-300 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {isSaving ? "Saving..." : "Save changes"}
-              </button>
+              <div className="space-y-2">
+                <h1 className="text-2xl font-semibold text-brand-dark">
+                  {form.full_name?.trim() || "Complete your profile"}
+                </h1>
+                <p className="text-sm text-neutral-500">{email}</p>
+                <span className="inline-flex items-center rounded-full bg-brand-primaryMuted px-3 py-1 text-xs font-medium text-brand-primary">
+                  {roleLabel(form.role)}
+                </span>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
               <button
                 type="button"
-                disabled={!isEditing || isSaving}
-                onClick={handleCancel}
-                className="inline-flex items-center justify-center rounded-xl border border-white/10 px-6 py-2.5 text-sm font-semibold text-slate-200 transition hover:border-white/30 hover:bg-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
+                onClick={() => {
+                  setIsEditing((prev) => !prev);
+                  setFeedback(null);
+                }}
+                className={clsx(buttonStyles({ variant: "secondary", size: "sm" }), "gap-2")}
               >
-                Cancel
+                {isEditing ? "Stop editing" : "Edit profile"}
               </button>
             </div>
-          </form>
-        </section>
-      </div>
+          </div>
+        </div>
+      </section>
+
+      {feedback ? (
+        <div
+          role={feedback.kind === "error" ? "alert" : "status"}
+          aria-live={feedback.kind === "error" ? "assertive" : "polite"}
+          className={clsx(
+            "rounded-3xl border px-4 py-3 text-sm font-medium",
+            feedback.kind === "success"
+              ? "border-brand-success bg-brand-successMuted text-brand-success"
+              : "border-danger bg-danger-muted text-danger"
+          )}
+        >
+          {feedback.message}
+        </div>
+      ) : null}
+
+      <section className={cardClasses}>
+        <header className="border-b border-brand-outline/40 px-6 py-4">
+          <h2 className="text-lg font-semibold text-brand-dark">Profile summary</h2>
+          <p className="text-sm text-neutral-500">
+            Quick snapshot of your public information.
+          </p>
+        </header>
+        <dl className="grid gap-4 px-6 py-4 sm:grid-cols-2">
+          <SummaryItem label="Email" value={email} />
+          <SummaryItem label="Phone" value={form.phone} />
+          <SummaryItem label="City" value={form.city} />
+          <SummaryItem
+            label="Preferred contact"
+            value={
+              form.contact_method
+                ? form.contact_method.charAt(0).toUpperCase() + form.contact_method.slice(1)
+                : "Email"
+            }
+          />
+        </dl>
+      </section>
+
+      <section className={cardClasses}>
+        <header className="border-b border-brand-outline/40 px-6 py-4">
+          <h2 className="text-lg font-semibold text-brand-dark">Contact preferences</h2>
+          <p id="profile-contact-help" className="text-sm text-neutral-500">
+            Choose how you prefer to communicate with other Rento members.
+          </p>
+        </header>
+        <div
+          className="flex flex-wrap gap-3 px-6 py-4"
+          role="radiogroup"
+          aria-label="Preferred contact method"
+          aria-describedby="profile-contact-help"
+        >
+          {CONTACT_OPTIONS.map((method) => {
+            const isActive = form.contact_method === method;
+            const methodLabel = method.charAt(0).toUpperCase() + method.slice(1);
+            return (
+              <button
+                key={method}
+                type="button"
+                onClick={() => (isEditing ? handleContactChange(method) : undefined)}
+                className={clsx(
+                  "rounded-full px-4 py-2 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white",
+                  isActive
+                    ? "bg-brand-primary text-white shadow-sm"
+                    : "border border-brand-outline/60 bg-white text-brand-dark hover:border-brand-primary hover:text-brand-primary",
+                  !isEditing && "cursor-not-allowed opacity-60"
+                )}
+                disabled={!isEditing}
+                role="radio"
+                aria-checked={isActive}
+                aria-label={methodLabel}
+                tabIndex={isEditing ? 0 : -1}
+              >
+                {methodLabel}
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className={cardClasses}>
+        <header className="border-b border-brand-outline/40 px-6 py-4">
+          <h2 className="text-lg font-semibold text-brand-dark">Personal details</h2>
+          <p className="text-sm text-neutral-500">
+            These details help us personalize your experience across Rento.
+          </p>
+        </header>
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (!isEditing) return;
+            void handleSave();
+          }}
+          className="space-y-6 px-6 py-6"
+        >
+          <div className="grid gap-6 md:grid-cols-2">
+            <Field
+              label="Full name"
+              id="full_name"
+              value={form.full_name}
+              onChange={(event) => handleInputChange("full_name", event.currentTarget.value)}
+              disabled={!isEditing}
+            />
+            <Field label="Email" id="email" value={email} disabled />
+            <Field
+              label="Phone"
+              id="phone"
+              value={form.phone}
+              onChange={(event) => handleInputChange("phone", event.currentTarget.value)}
+              disabled={!isEditing}
+            />
+            <Field
+              label="Address"
+              id="address"
+              value={form.address}
+              onChange={(event) => handleInputChange("address", event.currentTarget.value)}
+              disabled={!isEditing}
+            />
+            <Field
+              label="City"
+              id="city"
+              value={form.city}
+              onChange={(event) => handleInputChange("city", event.currentTarget.value)}
+              disabled={!isEditing}
+            />
+            <Field
+              label="Date of birth"
+              id="dob"
+              type="date"
+              value={form.dob}
+              onChange={(event) => handleInputChange("dob", event.currentTarget.value)}
+              disabled={!isEditing}
+            />
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="submit"
+              disabled={!isEditing || isSaving}
+              className={clsx(buttonStyles({ variant: "primary", size: "md" }), "gap-2")}
+            >
+              {isSaving ? "Saving..." : "Save changes"}
+            </button>
+            <button
+              type="button"
+              disabled={!isEditing || isSaving}
+              onClick={handleCancel}
+              className={clsx(buttonStyles({ variant: "secondary", size: "md" }), "gap-2")}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </section>
     </div>
   );
 }
@@ -470,7 +533,7 @@ type FieldProps = {
 
 function Field({ label, id, value, onChange, disabled, type = "text" }: FieldProps) {
   return (
-    <label className="flex flex-col gap-2 text-sm font-medium text-slate-200" htmlFor={id}>
+    <label className="flex flex-col gap-2 text-sm font-medium text-brand-dark" htmlFor={id}>
       {label}
       <input
         id={id}
@@ -479,7 +542,7 @@ function Field({ label, id, value, onChange, disabled, type = "text" }: FieldPro
         value={value}
         onChange={onChange}
         disabled={disabled}
-        className="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-medium text-white placeholder:text-slate-400 focus:border-teal-400 focus:outline-none focus:ring-2 focus:ring-teal-400/60 disabled:cursor-not-allowed disabled:opacity-60"
+        className={inputClasses}
       />
     </label>
   );
@@ -493,8 +556,8 @@ type SummaryItemProps = {
 function SummaryItem({ label, value }: SummaryItemProps) {
   return (
     <div>
-      <dt className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">{label}</dt>
-      <dd className="mt-1 text-sm text-slate-200">{value?.trim() ? value : "Not provided"}</dd>
+      <dt className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500">{label}</dt>
+      <dd className="mt-1 text-sm text-brand-dark">{value?.trim() ? value : "Not provided"}</dd>
     </div>
   );
 }

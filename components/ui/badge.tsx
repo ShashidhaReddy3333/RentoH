@@ -8,8 +8,7 @@ export const badgeVariants = cva(
     "items-center",
     "gap-1.5",
     "rounded-full",
-    "border",
-    "border-transparent",
+    "border border-transparent",
     "px-3",
     "py-1",
     "text-xs",
@@ -20,11 +19,11 @@ export const badgeVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-brand-blue/10 text-brand-blue",
-        success: "bg-success.subtle text-success border-success/40",
-        warning: "bg-brand-yellow/15 text-brand-dark border-brand-yellow/40",
-        muted: "bg-surface-muted text-ink-muted border-outline/60",
-        outline: "bg-white text-brand-dark border-outline/70"
+        default: "bg-brand-primaryMuted text-brand-primary",
+        success: "bg-brand-successMuted text-brand-success",
+        warning: "bg-brand-warningMuted text-brand-dark",
+        muted: "bg-neutral-100 text-neutral-600 border-neutral-200",
+        outline: "bg-white text-brand-dark border-brand-outline/70"
       },
       tone: {
         solid: "font-semibold",

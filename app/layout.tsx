@@ -80,7 +80,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteLd) }} 
         />
       </head>
-      <body className={`${inter.className} bg-brand-bg font-sans text-textc`}>
+      <body className={`${inter.className} flex min-h-screen flex-col bg-brand-light font-sans text-brand-dark`}>
         <RootProviders>
           <a
             href="#main"
@@ -89,8 +89,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             Skip to content
           </a>
           <Header />
-          <main id="main" className="flex-1 min-h-screen">
-            <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 sm:gap-8 sm:py-10">
+          <main id="main" className="flex-1">
+            <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8 sm:gap-8 sm:px-6 sm:py-10">
               <SupabaseConfigBanner />
               {children}
             </div>

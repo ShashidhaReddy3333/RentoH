@@ -34,14 +34,14 @@ type DealPanelProps = {
 
 const actionStyles = {
   primary:
-    "inline-flex items-center justify-center rounded-full bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500",
+    "inline-flex items-center justify-center rounded-full bg-brand-primary px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-brand-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white",
   secondary:
-    "inline-flex items-center justify-center rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-blue-300 hover:text-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+    "inline-flex items-center justify-center rounded-full border border-brand-outline/60 px-3 py-1.5 text-xs font-semibold text-neutral-600 transition hover:border-brand-primary hover:text-brand-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
 } satisfies Record<Required<ApplicantAction>["variant"], string>;
 
 export default function DealPanel({ listing, applicant, labels, notes }: DealPanelProps) {
   return (
-    <aside className="hidden xl:block xl:w-[340px] xl:shrink-0 xl:border-l xl:border-slate-200 xl:bg-white xl:p-4">
+    <aside className="hidden xl:block xl:w-[340px] xl:shrink-0 xl:border-l xl:border-brand-outline/60 xl:bg-brand-light/60 xl:p-4">
       <div className="flex flex-col gap-4">
         <ListingCard listing={listing} />
         <ApplicantCard applicant={applicant} />
@@ -55,20 +55,20 @@ export default function DealPanel({ listing, applicant, labels, notes }: DealPan
 function ListingCard({ listing }: { listing?: ListingInfo }) {
   if (!listing) {
     return (
-      <section className="rounded-2xl border border-slate-200 p-4">
-        <h3 className="text-sm font-semibold text-slate-900">Listing</h3>
-        <p className="mt-2 text-sm text-slate-500">No listing details available for this conversation.</p>
+      <section className="rounded-2xl border border-brand-outline/60 bg-white p-4">
+        <h3 className="text-sm font-semibold text-brand-dark">Listing</h3>
+        <p className="mt-2 text-sm text-neutral-500">No listing details available for this conversation.</p>
       </section>
     );
   }
 
   return (
-    <section className="rounded-2xl border border-slate-200 p-4" aria-labelledby="deal-panel-listing">
-      <h3 id="deal-panel-listing" className="text-sm font-semibold text-slate-900">
+    <section className="rounded-2xl border border-brand-outline/60 bg-white p-4" aria-labelledby="deal-panel-listing">
+      <h3 id="deal-panel-listing" className="text-sm font-semibold text-brand-dark">
         Listing
       </h3>
       <div className="mt-3">
-        <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-slate-100">
+        <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-brand-light">
           {listing.imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -81,16 +81,16 @@ function ListingCard({ listing }: { listing?: ListingInfo }) {
             <div className="flex h-full items-center justify-center text-xs text-slate-500">No photo</div>
           )}
         </div>
-        <div className="mt-3 space-y-2 text-sm text-slate-600">
-          {listing.title ? <p className="text-base font-semibold text-slate-900">{listing.title}</p> : null}
+        <div className="mt-3 space-y-2 text-sm text-neutral-600">
+          {listing.title ? <p className="text-base font-semibold text-brand-dark">{listing.title}</p> : null}
           {listing.price ? (
             <p>
-              <span className="font-semibold text-slate-900">Price:</span> {listing.price}
+              <span className="font-semibold text-brand-dark">Price:</span> {listing.price}
             </p>
           ) : null}
           {listing.availableFrom ? (
             <p>
-              <span className="font-semibold text-slate-900">Available:</span> {listing.availableFrom}
+              <span className="font-semibold text-brand-dark">Available:</span> {listing.availableFrom}
             </p>
           ) : null}
           {listing.tags && listing.tags.length > 0 ? (
@@ -124,15 +124,15 @@ function ListingCard({ listing }: { listing?: ListingInfo }) {
 
 function ApplicantCard({ applicant }: { applicant?: ApplicantInfo }) {
   return (
-    <section className="rounded-2xl border border-slate-200 p-4" aria-labelledby="deal-panel-applicant">
-      <h3 id="deal-panel-applicant" className="text-sm font-semibold text-slate-900">
+    <section className="rounded-2xl border border-brand-outline/60 bg-white p-4" aria-labelledby="deal-panel-applicant">
+      <h3 id="deal-panel-applicant" className="text-sm font-semibold text-brand-dark">
         Applicant
       </h3>
       <div className="mt-3 flex items-start gap-3">
         <Avatar initials={applicant?.initials ?? applicant?.name ?? "?"} />
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-slate-900">{applicant?.name ?? "Unknown applicant"}</p>
-          <p className="text-xs text-slate-500">
+          <p className="text-sm font-semibold text-brand-dark">{applicant?.name ?? "Unknown applicant"}</p>
+          <p className="text-xs text-neutral-500">
             {applicant?.memberSince ? `Conversation since ${applicant.memberSince}` : "New conversation"}
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
@@ -161,8 +161,8 @@ const defaultApplicantActions: ApplicantAction[] = [
 
 function LabelsCard({ labels }: { labels?: string[] }) {
   return (
-    <section className="rounded-2xl border border-slate-200 p-4" aria-labelledby="deal-panel-labels">
-      <h3 id="deal-panel-labels" className="text-sm font-semibold text-slate-900">
+    <section className="rounded-2xl border border-brand-outline/60 bg-white p-4" aria-labelledby="deal-panel-labels">
+      <h3 id="deal-panel-labels" className="text-sm font-semibold text-brand-dark">
         Labels
       </h3>
       {labels && labels.length > 0 ? (
@@ -172,7 +172,7 @@ function LabelsCard({ labels }: { labels?: string[] }) {
           ))}
         </div>
       ) : (
-        <p className="mt-3 text-sm text-slate-500">Add labels to keep this deal organized.</p>
+        <p className="mt-3 text-sm text-neutral-500">Add labels to keep this deal organized.</p>
       )}
     </section>
   );
@@ -180,11 +180,11 @@ function LabelsCard({ labels }: { labels?: string[] }) {
 
 function NotesCard({ notes }: { notes?: string }) {
   return (
-    <section className="rounded-2xl border border-slate-200 p-4" aria-labelledby="deal-panel-notes">
-      <h3 id="deal-panel-notes" className="text-sm font-semibold text-slate-900">
+    <section className="rounded-2xl border border-brand-outline/60 bg-white p-4" aria-labelledby="deal-panel-notes">
+      <h3 id="deal-panel-notes" className="text-sm font-semibold text-brand-dark">
         Internal notes
       </h3>
-      <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600">
+      <div className="mt-3 rounded-xl border border-brand-outline/50 bg-brand-light p-3 text-sm text-neutral-600">
         {notes ? <p>{notes}</p> : <p>No notes yet. Summarize key details or next steps here.</p>}
       </div>
     </section>

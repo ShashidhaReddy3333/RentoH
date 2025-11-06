@@ -7,14 +7,19 @@ const buttonVariants = cva(
     "inline-flex",
     "items-center",
     "justify-center",
-    "whitespace-nowrap",
     "gap-2",
+    "whitespace-nowrap",
     "rounded-lg",
-    "font-semibold",
-    "transition-colors",
+    "border",
+    "border-transparent",
+    "font-medium",
+    "text-sm",
+    "transition",
+    "duration-150",
+    "ease-out",
     "focus-visible:outline-none",
     "focus-visible:ring-2",
-    "focus-visible:ring-brand-blue/50",
+    "focus-visible:ring-brand-primary/40",
     "focus-visible:ring-offset-2",
     "focus-visible:ring-offset-white",
     "disabled:cursor-not-allowed",
@@ -23,16 +28,18 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        primary: "bg-brand-blue text-white shadow-sm hover:bg-brand-blue/90",
+        primary:
+          "bg-brand-primary text-white shadow-sm hover:bg-brand-primary/90 focus-visible:ring-brand-primary/40",
         secondary:
-          "border border-outline bg-white text-brand-dark shadow-sm hover:border-brand-blue hover:text-brand-blue",
-        ghost: "text-brand-blue hover:bg-brand-blue/10",
-        danger: "bg-danger text-white shadow-sm hover:bg-danger/90 focus-visible:ring-danger/50"
+          "border-brand-outline/70 bg-white text-brand-dark shadow-sm hover:border-brand-primary hover:text-brand-primary",
+        ghost: "border-transparent bg-transparent text-brand-primary hover:bg-brand-primaryMuted",
+        danger:
+          "border-transparent bg-danger text-white shadow-sm hover:bg-danger/90 focus-visible:ring-danger/40"
       },
       size: {
-        sm: "h-9 px-3 text-sm",
-        md: "h-11 px-4 text-sm",
-        lg: "h-12 px-6 text-base"
+        sm: "h-9 rounded-md px-3 text-sm",
+        md: "h-11 rounded-lg px-4 text-sm",
+        lg: "h-12 rounded-xl px-6 text-base"
       },
       align: {
         start: "justify-start",
@@ -99,7 +106,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref
   ) => {
-    const isDisabled = disabled || isLoading;
+    const isDisabled = Boolean(disabled ?? false) || isLoading;
 
     return (
       <button

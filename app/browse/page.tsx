@@ -143,18 +143,18 @@ async function BrowseResults({
 // Loading fallback with skeleton UI
 function BrowseLoadingFallback({ view }: { filtersState: FiltersState; view: "grid" | "map" }) {
   return (
-    <div className="grid gap-6 lg:grid-cols-[320px_1fr] lg:gap-10">
+    <div className="grid gap-6 lg:grid-cols-[360px_1fr] lg:gap-10">
       <div className="hidden lg:block">
-        <div className="h-96 animate-pulse rounded-3xl bg-surface" />
+        <div className="h-96 animate-pulse rounded-3xl bg-brand-light" />
       </div>
       <div className="space-y-6">
-        <div className="h-16 animate-pulse rounded-3xl bg-surface" />
+        <div className="h-16 animate-pulse rounded-3xl bg-brand-light" />
         {view === "map" ? (
-          <div className="h-[420px] animate-pulse rounded-3xl bg-surface" />
+          <div className="h-[420px] animate-pulse rounded-3xl bg-brand-light" />
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="h-80 animate-pulse rounded-3xl bg-surface" />
+              <div key={i} className="h-80 animate-pulse rounded-3xl bg-brand-light" />
             ))}
           </div>
         )}

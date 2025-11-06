@@ -4,9 +4,11 @@ import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import type { Route } from "next";
 import { usePathname, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
+import clsx from "clsx";
 import { AdjustmentsHorizontalIcon, MapIcon, Squares2X2Icon } from "@heroicons/react/24/outline";
 import FiltersSheet, {
   FiltersContent,
+  MOBILE_FILTERS_PANEL_ID,
   type FiltersState
 } from "@/components/FiltersSheet";
 import SortMenu from "@/components/SortMenu";
@@ -23,7 +25,11 @@ import { fetchMoreProperties } from "./actions";
 const MapPane = dynamic(() => import("@/components/MapPane"), {
   ssr: false,
   loading: () => (
-    <div className="h-[420px] animate-pulse rounded-3xl bg-surface" role="status" aria-label="Loading map" />
+    <div
+      className="h-[420px] animate-pulse rounded-3xl bg-brand-light shadow-sm"
+      role="status"
+      aria-label="Loading map"
+    />
   )
 });
 
@@ -91,9 +97,16 @@ export default function BrowseClient({
 
   const appliedFilters = useMemo(() => queryFilters, [queryFilters]);
 
-  const hasFiltersApplied = useMemo(() => {
-    return Object.values(appliedFilters).some((value) => value !== undefined);
+  const activeFiltersCount = useMemo(() => {
+    return Object.values(appliedFilters).filter((value) => {
+      if (value === undefined || value === null) return false;
+      if (typeof value === "string") return value.trim().length > 0;
+      if (Array.isArray(value)) return value.length > 0;
+      return value !== false;
+    }).length;
   }, [appliedFilters]);
+
+  const hasFiltersApplied = activeFiltersCount > 0;
 
   const handleApplyFilters = () => {
     const search = buildSearchParams(filters, currentSort, currentView);
@@ -130,7 +143,7 @@ export default function BrowseClient({
   const totalLoaded = properties.length;
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[320px_1fr] lg:gap-10">
+    <div className="grid gap-6 lg:grid-cols-[360px_1fr] lg:gap-10">
       <div className="hidden lg:block">
         <FiltersContent
           idPrefix="filters-desktop"
@@ -141,26 +154,42 @@ export default function BrowseClient({
         />
       </div>
       <div className="space-y-6">
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-black/5 bg-white px-4 py-3 shadow-soft">
-          <div className="flex items-center gap-2 text-sm text-text-muted">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-brand-outline/60 bg-white px-4 py-4 shadow-sm sm:px-6">
+          <div className="flex items-center gap-3 text-sm text-neutral-600">
             <button
               type="button"
               onClick={() => setIsSheetOpen(true)}
-              className="inline-flex items-center gap-2 rounded-full border border-brand-teal/30 px-3 py-2 text-sm font-semibold text-brand-teal transition hover:border-brand-teal hover:bg-brand-teal/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal md:hidden"
+              aria-controls={MOBILE_FILTERS_PANEL_ID}
+              aria-expanded={isSheetOpen}
+              aria-haspopup="dialog"
+              className={clsx(
+                "inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white md:hidden",
+                hasFiltersApplied
+                  ? "border-brand-primary bg-brand-primary text-white hover:bg-brand-primary/90"
+                  : "border-brand-outline/70 bg-white text-brand-dark hover:border-brand-primary hover:text-brand-primary"
+              )}
               data-testid="filters-toggle"
             >
               <AdjustmentsHorizontalIcon className="h-4 w-4" aria-hidden="true" />
               Filters
+              {hasFiltersApplied ? (
+                <span className="inline-flex min-w-[1.5rem] justify-center rounded-full bg-white/20 px-1 text-xs font-semibold text-white">
+                  {activeFiltersCount}
+                </span>
+              ) : null}
             </button>
-            {hasFiltersApplied ? (
-              <span>{totalLoaded} results</span>
-            ) : (
-              <span>Showing {totalLoaded} homes</span>
-            )}
+            <span
+              className="text-sm font-medium text-brand-dark"
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+            >
+              {hasFiltersApplied ? `${totalLoaded} results` : `Showing ${totalLoaded} homes`}
+            </span>
           </div>
           <div className="flex items-center gap-2">
             <SortMenu value={currentSort} onChange={handleSortChange} />
-            <div className="inline-flex items-center rounded-full border border-black/5 bg-surface p-1 text-sm text-text-muted">
+            <div className="inline-flex items-center rounded-full border border-brand-outline/60 bg-brand-light p-1 text-sm text-neutral-500">
               <ToggleButton
                 icon={Squares2X2Icon}
                 label="Grid"
@@ -181,9 +210,11 @@ export default function BrowseClient({
           <div>
             <SupabaseConfigBanner />
             {properties.length === 0 ? (
-              <div className="rounded-md border border-black/5 bg-white p-6 text-sm text-text-muted">
-                <p className="font-semibold">Showing safe placeholder data</p>
-                <p className="mt-2">Supabase is not configured so you may be viewing mocked listings.</p>
+              <div className="rounded-2xl border border-brand-outline/60 bg-white p-6 text-sm text-neutral-600">
+                <p className="font-semibold text-brand-dark">Showing safe placeholder data</p>
+                <p className="mt-2">
+                  Supabase is not configured so you may be viewing mocked listings.
+                </p>
                 <div className="mt-4">
                   <button
                     type="button"
@@ -260,9 +291,12 @@ function ToggleButton({
     <button
       type="button"
       onClick={onClick}
-      className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal ${
-        active ? "bg-brand-teal text-white shadow-soft" : "text-text-muted"
-      }`}
+      className={clsx(
+        "flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white",
+        active
+          ? "bg-brand-primary text-white shadow-sm"
+          : "text-neutral-600 hover:text-brand-primary"
+      )}
       aria-pressed={active}
     >
       <Icon className="h-4 w-4" aria-hidden="true" />

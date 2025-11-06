@@ -12,7 +12,7 @@ export default function Chip({ children, className }: ChipProps) {
   return (
     <span
       className={clsx(
-        "inline-flex items-center rounded-full border border-slate-300 px-2 py-0.5 text-xs text-slate-600",
+        "inline-flex items-center rounded-full border border-brand-outline/60 bg-brand-light px-2.5 py-0.5 text-xs font-medium text-brand-dark",
         className
       )}
     >
