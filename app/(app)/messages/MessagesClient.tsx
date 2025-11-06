@@ -142,10 +142,6 @@ export default function MessagesClient({
     />
   );
 
-  if (threads.length === 0) {
-    return renderEmptyState();
-  }
-
   const listingTags = activeThread
     ? [activeThread.subject, activeThread.propertyTitle].filter(
         (value): value is string => Boolean(value && value.trim())
@@ -188,6 +184,10 @@ export default function MessagesClient({
           : undefined
       }
     : undefined;
+
+  if (threads.length === 0) {
+    return renderEmptyState();
+  }
 
   return (
     <div className="flex h-full w-full bg-brand-light/40">

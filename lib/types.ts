@@ -19,6 +19,7 @@ export type Property = {
   furnished: boolean;
   createdAt: string;
   isFavorite?: boolean;
+  landlordId?: string;
   address?: string;
   postalCode?: string;
   description?: string;
@@ -116,6 +117,9 @@ export type Tour = {
   scheduledAt: string;
   city?: string;
   status: TourStatus;
+  landlordId?: string;
+  tenantId?: string;
+  notes?: string;
 };
 
 export type ApplicationStatus =
