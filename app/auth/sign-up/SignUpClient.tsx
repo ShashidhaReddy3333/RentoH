@@ -13,6 +13,8 @@ const FIELD_LABELS = {
   role: "Account type"
 } as const;
 
+type FieldName = keyof typeof FIELD_LABELS;
+
 function PasswordMeter({ value }: { value: string }) {
   const score = useMemo(() => {
     let s = 0;
@@ -37,9 +39,9 @@ export default function SignUpClient() {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<FieldName, string>>>({});
 
-  const fieldRefs = {
+  const fieldRefs: Record<FieldName, React.MutableRefObject<HTMLInputElement | null>> = {
     full_name: useRef<HTMLInputElement | null>(null),
     email: useRef<HTMLInputElement | null>(null),
     password: useRef<HTMLInputElement | null>(null),
@@ -47,7 +49,7 @@ export default function SignUpClient() {
     role: useRef<HTMLInputElement | null>(null)
   };
 
-  const clearFieldError = (field: keyof typeof fieldRefs) => {
+  const clearFieldError = (field: FieldName) => {
     setFieldErrors((prev) => {
       if (!prev[field]) return prev;
       const next = { ...prev };
@@ -71,11 +73,11 @@ export default function SignUpClient() {
     const form = new FormData(formElement);
     const result = signUpSchema.safeParse(Object.fromEntries(form.entries()));
     if (!result.success) {
-      const nextFieldErrors: Record<string, string> = {};
+      const nextFieldErrors: Partial<Record<FieldName, string>> = {};
       for (const issue of result.error.issues) {
         const fieldKey = issue.path[0];
-        if (typeof fieldKey === "string" && !nextFieldErrors[fieldKey]) {
-          nextFieldErrors[fieldKey] = issue.message;
+        if (typeof fieldKey === "string" && fieldKey in FIELD_LABELS && !nextFieldErrors[fieldKey as FieldName]) {
+          nextFieldErrors[fieldKey as FieldName] = issue.message;
         }
       }
       setFieldErrors(nextFieldErrors);
@@ -219,13 +221,13 @@ export default function SignUpClient() {
             className="mt-1 w-full rounded-lg border border-black/10 px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal"
             placeholder="Jordan Lee"
             autoComplete="name"
-            aria-invalid={Boolean(fieldErrors.full_name) || undefined}
-            aria-describedby={fieldErrors.full_name ? "full_name-error" : undefined}
+            aria-invalid={Boolean(fieldErrors["full_name"]) || undefined}
+            aria-describedby={fieldErrors["full_name"] ? "full_name-error" : undefined}
             onChange={() => clearFieldError("full_name")}
           />
-          {fieldErrors.full_name ? (
+          {fieldErrors["full_name"] ? (
             <p id="full_name-error" className="mt-1 text-xs text-danger" role="alert" aria-live="polite">
-              {fieldErrors.full_name}
+              {fieldErrors["full_name"]}
             </p>
           ) : null}
         </div>
@@ -243,13 +245,13 @@ export default function SignUpClient() {
             className="mt-1 w-full rounded-lg border border-black/10 px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal"
             placeholder="you@example.com"
             autoComplete="email"
-            aria-invalid={Boolean(fieldErrors.email) || undefined}
-            aria-describedby={fieldErrors.email ? "email-error" : undefined}
+            aria-invalid={Boolean(fieldErrors["email"]) || undefined}
+            aria-describedby={fieldErrors["email"] ? "email-error" : undefined}
             onChange={() => clearFieldError("email")}
           />
-          {fieldErrors.email ? (
+          {fieldErrors["email"] ? (
             <p id="email-error" className="mt-1 text-xs text-danger" role="alert" aria-live="polite">
-              {fieldErrors.email}
+              {fieldErrors["email"]}
             </p>
           ) : null}
         </div>
@@ -268,16 +270,16 @@ export default function SignUpClient() {
             className="mt-1 w-full rounded-lg border border-black/10 px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal"
             placeholder="At least 8 characters"
             autoComplete="new-password"
-            aria-invalid={Boolean(fieldErrors.password) || undefined}
-            aria-describedby={fieldErrors.password ? "password-error" : undefined}
+            aria-invalid={Boolean(fieldErrors["password"]) || undefined}
+            aria-describedby={fieldErrors["password"] ? "password-error" : undefined}
             onChange={(event) => {
               setPassword(event.target.value);
               clearFieldError("password");
             }}
           />
-          {fieldErrors.password ? (
+          {fieldErrors["password"] ? (
             <p id="password-error" className="mt-1 text-xs text-danger" role="alert" aria-live="polite">
-              {fieldErrors.password}
+              {fieldErrors["password"]}
             </p>
           ) : null}
           <PasswordMeter value={password} />
@@ -297,26 +299,26 @@ export default function SignUpClient() {
             className="mt-1 w-full rounded-lg border border-black/10 px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal"
             placeholder="Retype your password"
             autoComplete="new-password"
-            aria-invalid={Boolean(fieldErrors.confirm_password) || undefined}
-            aria-describedby={fieldErrors.confirm_password ? "confirm_password-error" : undefined}
+            aria-invalid={Boolean(fieldErrors["confirm_password"]) || undefined}
+            aria-describedby={fieldErrors["confirm_password"] ? "confirm_password-error" : undefined}
             onChange={() => clearFieldError("confirm_password")}
           />
-          {fieldErrors.confirm_password ? (
+          {fieldErrors["confirm_password"] ? (
             <p
               id="confirm_password-error"
               className="mt-1 text-xs text-danger"
               role="alert"
               aria-live="polite"
             >
-              {fieldErrors.confirm_password}
+              {fieldErrors["confirm_password"]}
             </p>
           ) : null}
         </div>
 
         <fieldset
           className="rounded-lg border border-black/10 px-3 py-2"
-          aria-describedby={`role-hint${fieldErrors.role ? " role-error" : ""}`}
-          aria-invalid={Boolean(fieldErrors.role) || undefined}
+          aria-describedby={`role-hint${fieldErrors["role"] ? " role-error" : ""}`}
+          aria-invalid={Boolean(fieldErrors["role"]) || undefined}
         >
           <legend className="px-1 text-sm font-medium text-brand-dark">Account type</legend>
           <p id="role-hint" className="mb-3 mt-1 text-xs text-text-muted">
@@ -352,9 +354,9 @@ export default function SignUpClient() {
                 </span>
               </label>
           </div>
-          {fieldErrors.role ? (
+          {fieldErrors["role"] ? (
             <p id="role-error" className="mt-2 text-xs text-danger" role="alert" aria-live="polite">
-              {fieldErrors.role}
+              {fieldErrors["role"]}
             </p>
           ) : null}
         </fieldset>
