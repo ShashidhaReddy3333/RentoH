@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Route } from "next";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+
 import { formatDistanceToNowStrict } from "date-fns";
 import { ChatBubbleLeftRightIcon } from "@heroicons/react/24/outline";
 
@@ -162,11 +163,29 @@ export default function MessagesClient({
       }
     : undefined;
 
+  const propertyApplicationRoute = activeThread?.propertyId
+    ? (`/property/${activeThread.propertyId}/apply` as Route)
+    : undefined;
+
+  const handleStartApplication = useCallback(() => {
+    if (!propertyApplicationRoute) return;
+    router.push(propertyApplicationRoute);
+  }, [propertyApplicationRoute, router]);
+
   const dealPanelApplicant = activeThread
     ? {
         name: activeThread.otherPartyName,
         initials: computeInitials(activeThread.otherPartyName),
-        memberSince: formatDistanceToNowStrict(new Date(activeThread.updatedAt), { addSuffix: true })
+        memberSince: formatDistanceToNowStrict(new Date(activeThread.updatedAt), { addSuffix: true }),
+        actions: propertyApplicationRoute
+          ? [
+              {
+                label: "Start application",
+                variant: "primary" as const,
+                onClick: handleStartApplication
+              }
+            ]
+          : undefined
       }
     : undefined;
 

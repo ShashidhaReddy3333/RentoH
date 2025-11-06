@@ -1,8 +1,10 @@
 'use client';
 
+import Link from "next/link";
+import type { Route } from "next";
 import { EnvelopeIcon, PhoneIcon } from "@heroicons/react/24/outline";
 import clsx from "clsx";
-import { useTransition, useState } from 'react';
+import { useTransition, useState } from "react";
 
 import { buttonStyles } from "@/components/ui/button";
 import { createThreadForProperty } from "@/app/(app)/messages/create-thread-action";
@@ -22,6 +24,8 @@ export function PropertyContactCard({
 }: PropertyContactCardProps) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const applyTarget = propertySlug ?? propertyId;
+  const applyHref = `/property/${applyTarget}/apply` as Route;
 
   const handleMessageClick = () => {
     if (!isAuthenticated) {
@@ -82,6 +86,26 @@ export function PropertyContactCard({
           <PhoneIcon className="h-5 w-5" aria-hidden="true" />
           Call support
         </a>
+        {applyTarget ? (
+          isAuthenticated ? (
+            <Link
+              href={applyHref}
+              className={clsx(buttonStyles({ variant: "primary", size: "md" }), "w-full justify-center")}
+            >
+              Apply now
+            </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                window.location.href = `/auth/sign-in?next=${applyHref}`;
+              }}
+              className={clsx(buttonStyles({ variant: "primary", size: "md" }), "w-full justify-center")}
+            >
+              Sign in to apply
+            </button>
+          )
+        ) : null}
       </div>
       <p className="text-xs text-text-muted">
         Reference <span className="font-semibold text-textc">{propertyTitle}</span> when you reach out so our team can
