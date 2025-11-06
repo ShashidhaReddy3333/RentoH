@@ -216,7 +216,8 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)']
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  runtime: 'nodejs'
 };
 
 function compilePattern(pattern: string): RegExp {
@@ -259,6 +260,5 @@ function generateCsrfToken(): string {
 
   return Array.from({ length: 32 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
 }
-
 
 
