@@ -15,8 +15,15 @@ export default async function ToursPage() {
   const { data: tours } = await supabase
     .from('tours')
     .select(`
-      *,
+      id,
+      status,
+      scheduled_at,
+      notes,
+      property_id,
+      landlord_id,
+      tenant_id,
       property:properties(
+        id,
         title,
         address,
         images
@@ -35,9 +42,72 @@ export default async function ToursPage() {
     .or(`tenant_id.eq.${session.user.id},landlord_id.eq.${session.user.id}`)
     .order('scheduled_at', { ascending: true });
 
+  type ToursClientProps = React.ComponentProps<typeof ToursClient>;
+  type RawProfile = {
+    full_name: string | null;
+    email: string | null;
+    avatar_url: string | null;
+  };
+
+  type RawProperty = {
+    id: string | null;
+    title: string | null;
+    address: string | null;
+    images: (string | null)[] | null;
+  };
+
+  type RawTourRow = {
+    id: string;
+    status: string | null;
+    scheduled_at: string | null;
+    notes: string | null;
+    property: RawProperty | RawProperty[] | null;
+    landlord: RawProfile | RawProfile[] | null;
+    tenant: RawProfile | RawProfile[] | null;
+  };
+
+  function firstOrNull<T>(value: T | T[] | null | undefined): T | null {
+    if (Array.isArray(value)) {
+      return value.length > 0 ? value[0] ?? null : null;
+    }
+    return value ?? null;
+  }
+
+  const normalizedTours: ToursClientProps['tours'] = (tours ?? []).map((tourRow: unknown) => {
+    const tour = tourRow as RawTourRow;
+    const propertyRecord = firstOrNull(tour.property);
+    const landlordRecord = firstOrNull(tour.landlord);
+    const tenantRecord = firstOrNull(tour.tenant);
+
+    const propertyImages = propertyRecord?.images?.filter((image): image is string => typeof image === 'string') ?? [];
+
+    return {
+      id: tour.id,
+      status: tour.status ?? 'requested',
+      scheduled_at: tour.scheduled_at ?? new Date().toISOString(),
+      notes: tour.notes ?? '',
+      property: {
+        id: propertyRecord?.id ?? '',
+        title: propertyRecord?.title ?? 'Property',
+        address: propertyRecord?.address ?? '',
+        images: propertyImages.length > 0 ? propertyImages : ['']
+      },
+      landlord: {
+        full_name: landlordRecord?.full_name ?? '',
+        email: landlordRecord?.email ?? '',
+        avatar_url: landlordRecord?.avatar_url ?? ''
+      },
+      tenant: {
+        full_name: tenantRecord?.full_name ?? '',
+        email: tenantRecord?.email ?? '',
+        avatar_url: tenantRecord?.avatar_url ?? ''
+      }
+    };
+  });
+
   return (
     <div className="container mx-auto px-4 py-8">
-      <ToursClient tours={tours || []} userRole={session.user.role || 'tenant'} userId={session.user.id} />
+      <ToursClient tours={normalizedTours} userRole={session.user.role || 'tenant'} userId={session.user.id} />
     </div>
   );
 }

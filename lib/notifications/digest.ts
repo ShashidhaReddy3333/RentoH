@@ -4,7 +4,7 @@ import { getUserPreferencesForUserId, DEFAULT_PREFERENCES } from "@/lib/data-acc
 type DigestOpts = { trigger?: string };
 
 type MessageRow = { id: string; thread_id: string; sender_id: string; body: string; created_at: string };
-type ApplicationRow = { id: string; property_id: string; applicant_id: string; message: string; submitted_at: string; status: string };
+type ApplicationRow = { id: string; property_id: string; tenant_id: string; message: string; submitted_at: string; status: string };
 
 export async function generateDigestForUser(userId: string, opts: DigestOpts = {}) {
   const supabase = createSupabaseServerClient();
@@ -58,7 +58,7 @@ export async function generateDigestForUser(userId: string, opts: DigestOpts = {
   if (prefs.emailNotifications.applications) {
     const { data: apps } = await supabase
       .from("applications")
-      .select("id, property_id, applicant_id, message, submitted_at, status")
+      .select("id, property_id, tenant_id, message, submitted_at, status")
       .eq("landlord_id", userId)
       .gt("submitted_at", since)
       .order("submitted_at", { ascending: false })

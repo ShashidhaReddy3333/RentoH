@@ -51,7 +51,7 @@ export default async function ApplyPage({ params }: { params: { slug: string } }
     .from("applications")
     .select("id, status")
     .eq("property_id", propertyId)
-    .eq("applicant_id", session.user.id)
+    .eq("tenant_id", session.user.id)
     .maybeSingle();
 
   type Landlord = { id: string; full_name?: string | null; email?: string | null };

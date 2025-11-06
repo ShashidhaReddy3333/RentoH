@@ -5,7 +5,7 @@ import type { ApplicationStatus, ApplicationSummary, UserRole } from "@/lib/type
 type SupabaseApplicationRow = {
   id: string;
   property_id: string;
-  applicant_id: string;
+  tenant_id: string;
   landlord_id: string;
   status: ApplicationStatus | null;
   submitted_at: string | null;
@@ -30,21 +30,21 @@ async function listApplications(role: Exclude<UserRole, "guest">, limit: number)
     return [];
   }
 
-  const column = role === "tenant" ? "applicant_id" : "landlord_id";
+  const column = role === "tenant" ? "tenant_id" : "landlord_id";
   const { data, error } = await supabase
     .from("applications")
     .select(
       `
         id,
         property_id,
-        applicant_id,
+        tenant_id,
         landlord_id,
         status,
         submitted_at,
         property:properties (
           ${PROPERTY_COLUMNS}
         ),
-        applicant:profiles (
+        applicant:profiles!applications_tenant_id_fkey (
           full_name,
           email
         )
@@ -67,11 +67,11 @@ function mapApplicationFromSupabase(row: SupabaseApplicationRow): ApplicationSum
   return {
     id: row.id,
     propertyId: row.property_id,
-    applicantId: row.applicant_id,
+    applicantId: row.tenant_id,
     applicantName:
       row.applicant?.full_name ??
       row.applicant?.email ??
-      (row.applicant_id ? `Applicant ${row.applicant_id.slice(0, 4)}` : "Applicant"),
+      (row.tenant_id ? `Applicant ${row.tenant_id.slice(0, 4)}` : "Applicant"),
     propertyTitle: property?.title ?? "Property",
     status: row.status ?? "submitted",
     submittedAt: row.submitted_at ?? new Date().toISOString()

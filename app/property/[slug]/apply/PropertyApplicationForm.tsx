@@ -33,10 +33,11 @@ export function PropertyApplicationForm({ propertyId, landlordId, propertyTitle,
       const { error } = await supabase.from("applications").insert({
         property_id: propertyId,
         landlord_id: landlordId,
-        applicant_id: userId,
+        tenant_id: userId,
         monthly_income: Number.parseInt(formData.monthlyIncome, 10),
         message: formData.message,
-        status: "submitted"
+        status: "submitted",
+        submitted_at: new Date().toISOString()
       });
 
       if (error) {
