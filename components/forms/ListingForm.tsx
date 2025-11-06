@@ -378,7 +378,7 @@ export default function ListingForm({
 
   return (
     <form
-      className="space-y-6 rounded-3xl border border-brand-outline/60 bg-white p-4 shadow-sm transition md:p-6 lg:p-8"
+      className="space-y-6 rounded-3xl border border-brand-outline/60 bg-surface p-4 shadow-sm transition md:p-6 lg:p-8"
       noValidate
       onSubmit={handleSubmit(handleValidSubmit, handleError)}
       aria-describedby="listing-form-description"
@@ -473,7 +473,7 @@ export default function ListingForm({
               id="propertyType"
               {...register("propertyType")}
               className={clsx(
-                "block w-full rounded-lg border border-brand-outline/70 bg-white px-3 py-2 text-sm text-brand-dark shadow-sm transition focus-visible:border-brand-primary focus-visible:ring-2 focus-visible:ring-brand-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white",
+                "block w-full rounded-lg border border-brand-outline/70 bg-surface px-3 py-2 text-sm text-textc shadow-sm transition focus-visible:border-brand-primary focus-visible:ring-2 focus-visible:ring-brand-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-surface",
                 errors.propertyType && "border-danger text-danger focus-visible:ring-danger/40"
               )}
               aria-invalid={errors.propertyType ? "true" : undefined}
@@ -524,7 +524,7 @@ export default function ListingForm({
             <select
               id="rentFrequency"
               {...register("rentFrequency")}
-              className="block w-full rounded-lg border border-brand-outline/70 bg-white px-3 py-2 text-sm text-brand-dark shadow-sm transition focus-visible:border-brand-primary focus-visible:ring-2 focus-visible:ring-brand-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+              className="block w-full rounded-lg border border-brand-outline/70 bg-surface px-3 py-2 text-sm text-textc shadow-sm transition focus-visible:border-brand-primary focus-visible:ring-2 focus-visible:ring-brand-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
             >
               <option value="monthly">Monthly</option>
               <option value="weekly">Weekly</option>
@@ -599,7 +599,7 @@ export default function ListingForm({
             <select
               id="pets"
               {...register("pets")}
-              className="block w-full rounded-lg border border-brand-outline/70 bg-white px-3 py-2 text-sm text-brand-dark shadow-sm transition focus-visible:border-brand-primary focus-visible:ring-2 focus-visible:ring-brand-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+              className="block w-full rounded-lg border border-brand-outline/70 bg-surface px-3 py-2 text-sm text-textc shadow-sm transition focus-visible:border-brand-primary focus-visible:ring-2 focus-visible:ring-brand-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
             >
               <option value="">Select</option>
               <option value="true">Yes</option>
@@ -618,7 +618,7 @@ export default function ListingForm({
             <select
               id="smoking"
               {...register("smoking")}
-              className="block w-full rounded-lg border border-brand-outline/70 bg-white px-3 py-2 text-sm text-brand-dark shadow-sm transition focus-visible:border-brand-primary focus-visible:ring-2 focus-visible:ring-brand-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+              className="block w-full rounded-lg border border-brand-outline/70 bg-surface px-3 py-2 text-sm text-textc shadow-sm transition focus-visible:border-brand-primary focus-visible:ring-2 focus-visible:ring-brand-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
             >
               <option value="">Select</option>
               <option value="true">Yes</option>
@@ -644,7 +644,7 @@ export default function ListingForm({
                 id="description"
                 rows={5}
                 className={clsx(
-                  "min-h-[140px] rounded-lg border border-brand-outline/70 bg-white px-3 py-2 text-sm text-brand-dark shadow-sm transition focus-visible:border-brand-primary focus-visible:ring-2 focus-visible:ring-brand-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white",
+                  "min-h-[140px] rounded-lg border border-brand-outline/70 bg-surface px-3 py-2 text-sm text-textc shadow-sm transition focus-visible:border-brand-primary focus-visible:ring-2 focus-visible:ring-brand-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-surface",
                   errors.description && "border-danger text-danger focus-visible:ring-danger/40"
                 )}
                 placeholder="Mention standout amenities, nearby transit, and application requirements."

@@ -4,6 +4,126 @@
 
 :root {
   color-scheme: light;
+  --color-brand-bg: 210 40% 98%;
+  --color-brand-light: 0 0% 100%;
+  --color-surface: 0 0% 100%;
+  --color-surface-muted: 214 32% 94%;
+  --color-brand-dark: 219 43% 14%;
+  --color-textc: 219 43% 14%;
+  --color-text-muted: 219 17% 46%;
+  --color-ink: 222 47% 12%;
+  --color-ink-muted: 218 18% 48%;
+  --color-brand-outline: 220 16% 80%;
+  --color-brand-primary: 217 91% 60%;
+  --color-brand-primary-strong: 221 83% 45%;
+  --color-brand-primary-muted: 217 100% 92%;
+  --color-brand-success: 152 61% 40%;
+  --color-brand-success-muted: 150 55% 88%;
+  --color-brand-warning: 36 88% 52%;
+  --color-brand-warning-muted: 45 96% 88%;
+  --color-danger: 0 72% 50%;
+  --color-danger-muted: 6 93% 92%;
+  --color-brand-teal: 174 72% 44%;
+  --color-brand-blue: 217 91% 60%;
+  --color-brand-green: 142 72% 36%;
+  --color-neutral-50: 214 45% 97%;
+  --color-neutral-100: 213 37% 92%;
+  --color-neutral-200: 216 28% 83%;
+  --color-neutral-300: 218 22% 70%;
+  --color-neutral-400: 220 17% 53%;
+  --color-neutral-500: 221 21% 39%;
+  --color-neutral-600: 224 32% 28%;
+  --color-neutral-700: 226 43% 20%;
+  --color-neutral-800: 228 49% 15%;
+  --color-neutral-900: 230 57% 10%;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --color-brand-bg: 217 54% 10%;
+  --color-brand-light: 219 36% 18%;
+  --color-surface: 220 35% 18%;
+  --color-surface-muted: 220 30% 24%;
+  --color-brand-dark: 220 33% 92%;
+  --color-textc: 220 33% 92%;
+  --color-text-muted: 220 20% 70%;
+  --color-ink: 220 33% 92%;
+  --color-ink-muted: 220 20% 70%;
+  --color-brand-outline: 220 25% 32%;
+  --color-brand-primary: 217 92% 70%;
+  --color-brand-primary-strong: 220 100% 80%;
+  --color-brand-primary-muted: 220 60% 28%;
+  --color-brand-success: 152 61% 62%;
+  --color-brand-success-muted: 153 51% 18%;
+  --color-brand-warning: 40 96% 62%;
+  --color-brand-warning-muted: 32 70% 18%;
+  --color-danger: 0 85% 65%;
+  --color-danger-muted: 0 72% 16%;
+  --color-brand-teal: 174 70% 65%;
+  --color-brand-blue: 217 90% 70%;
+  --color-brand-green: 142 65% 55%;
+  --color-neutral-50: 220 45% 14%;
+  --color-neutral-100: 220 40% 18%;
+  --color-neutral-200: 220 35% 23%;
+  --color-neutral-300: 220 30% 30%;
+  --color-neutral-400: 220 28% 40%;
+  --color-neutral-500: 220 24% 60%;
+  --color-neutral-600: 220 26% 70%;
+  --color-neutral-700: 220 30% 78%;
+  --color-neutral-800: 220 36% 86%;
+  --color-neutral-900: 220 40% 92%;
+
+  .bg-white {
+    background-color: hsl(var(--color-surface)) !important;
+  }
+
+  .bg-white\/20 {
+    background-color: hsl(var(--color-surface) / 0.2) !important;
+  }
+
+  .bg-white\/30 {
+    background-color: hsl(var(--color-surface) / 0.3) !important;
+  }
+
+  .bg-white\/50 {
+    background-color: hsl(var(--color-surface) / 0.5) !important;
+  }
+
+  .bg-white\/60 {
+    background-color: hsl(var(--color-surface) / 0.6) !important;
+  }
+
+  .bg-white\/70 {
+    background-color: hsl(var(--color-surface) / 0.7) !important;
+  }
+
+  .bg-white\/80 {
+    background-color: hsl(var(--color-surface) / 0.8) !important;
+  }
+
+  .bg-white\/90 {
+    background-color: hsl(var(--color-surface) / 0.9) !important;
+  }
+
+  .bg-white\/95 {
+    background-color: hsl(var(--color-surface) / 0.95) !important;
+  }
+
+  .border-white {
+    border-color: hsl(var(--color-surface)) !important;
+  }
+
+  .border-white\/60 {
+    border-color: hsl(var(--color-surface) / 0.6) !important;
+  }
+
+  .border-white\/80 {
+    border-color: hsl(var(--color-surface) / 0.8) !important;
+  }
+
+  .ring-offset-white {
+    --tw-ring-offset-color: hsl(var(--color-brand-bg));
+  }
 }
 
 @layer base {
@@ -18,13 +138,13 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
-    background-color: theme("colors.brand.light");
-    color: theme("colors.brand.dark");
+    background-color: hsl(var(--color-brand-bg));
+    color: hsl(var(--color-textc));
     scroll-behavior: smooth;
   }
 
   body {
-    @apply flex min-h-screen flex-col bg-brand-light text-base leading-relaxed text-brand-dark antialiased;
+    @apply flex min-h-screen flex-col bg-brand-bg text-base leading-relaxed text-textc antialiased;
     margin: 0;
   }
 
@@ -41,7 +161,7 @@
   }
 
   p {
-    @apply text-base leading-relaxed text-brand-dark/90;
+    @apply text-base leading-relaxed text-textc/90;
   }
 
   small {
@@ -62,11 +182,11 @@
   }
 
   :where(button, [href], input, select, textarea, [role="button"]):focus-visible {
-    @apply ring-2 ring-brand-primary/40 ring-offset-2 ring-offset-white;
+    @apply ring-2 ring-brand-primary/40 ring-offset-2 ring-offset-brand-bg;
   }
 
   ::selection {
-    @apply bg-brand-primary/20 text-brand-dark;
+    @apply bg-brand-primary/20 text-textc;
   }
 }
 
@@ -76,7 +196,7 @@
   }
 
   .floating-input {
-    @apply block w-full rounded-lg border border-brand-outline/80 bg-white px-3 pt-4 pb-2 text-sm text-brand-dark placeholder-transparent shadow-sm transition focus-visible:border-brand-primary focus-visible:ring-2 focus-visible:ring-brand-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:bg-neutral-100 disabled:text-neutral-500;
+    @apply block w-full rounded-lg border border-brand-outline/80 bg-surface px-3 pt-4 pb-2 text-sm text-textc placeholder-transparent shadow-sm transition focus-visible:border-brand-primary focus-visible:ring-2 focus-visible:ring-brand-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:cursor-not-allowed disabled:bg-neutral-100 disabled:text-neutral-500;
   }
 
   .floating-label {

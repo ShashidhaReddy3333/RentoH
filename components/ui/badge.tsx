@@ -21,9 +21,9 @@ export const badgeVariants = cva(
       variant: {
         default: "bg-brand-primaryMuted text-brand-primary",
         success: "bg-brand-successMuted text-brand-success",
-        warning: "bg-brand-warningMuted text-brand-dark",
+        warning: "bg-brand-warningMuted text-brand-warning",
         muted: "bg-neutral-100 text-neutral-600 border-neutral-200",
-        outline: "bg-white text-brand-dark border-brand-outline/70"
+        outline: "bg-surface text-textc border-brand-outline/70"
       },
       tone: {
         solid: "font-semibold",

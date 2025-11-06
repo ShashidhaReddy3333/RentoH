@@ -20,7 +20,7 @@ export default async function Header() {
   noStore();
   const hasUnreadMessages = await hasUnreadThreads().catch(() => false);
   return (
-    <header className="sticky top-0 z-40 border-b border-black/5 bg-brand-bg/80 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-brand-outline/50 bg-brand-bg/80 backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4">
         <Brand />
         

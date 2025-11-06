@@ -45,7 +45,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
           handleNavigate(event);
         }
       }}
-      className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-brand-outline/60 bg-white shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+      className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-brand-outline/60 bg-surface shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
     >
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-neutral-100">
         {primaryImage ? (
@@ -63,7 +63,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
         )}
         <div className="absolute left-4 right-4 top-4 flex items-center justify-between">
           {property.verified ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-brand-success shadow-sm">
+            <span className="inline-flex items-center gap-1 rounded-full bg-surface/90 px-3 py-1 text-xs font-semibold text-brand-success shadow-sm">
               <ShieldCheckIcon className="h-4 w-4" aria-hidden="true" />
               Verified
             </span>
@@ -81,7 +81,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
           <Link
             href={`/property/${target}`}
             prefetch
-            className="line-clamp-2 text-lg font-semibold text-brand-dark transition hover:text-brand-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+            className="line-clamp-2 text-lg font-semibold text-brand-dark transition hover:text-brand-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
           >
             {property.title}
           </Link>
@@ -121,7 +121,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
 
 export function PropertyCardSkeleton() {
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-brand-outline/60 bg-white p-4 md:p-6">
+    <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-brand-outline/60 bg-surface p-4 md:p-6">
       <Skeleton className="aspect-[4/3] w-full rounded-xl" />
       <div className="mt-4 space-y-3">
         <Skeleton className="h-5 w-1/2" />

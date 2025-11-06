@@ -2,7 +2,7 @@ import clsx from "clsx";
 import React, { forwardRef, useId } from "react";
 
 const baseInputClasses =
-  "block w-full rounded-lg border border-brand-outline/70 bg-white px-3 py-2 text-sm text-brand-dark placeholder:text-neutral-500 shadow-sm transition focus-visible:border-brand-primary focus-visible:ring-2 focus-visible:ring-brand-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:bg-neutral-100 disabled:text-neutral-500";
+  "block w-full rounded-lg border border-brand-outline/70 bg-surface px-3 py-2 text-sm text-textc placeholder:text-neutral-500 shadow-sm transition focus-visible:border-brand-primary focus-visible:ring-2 focus-visible:ring-brand-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:cursor-not-allowed disabled:bg-neutral-100 disabled:text-neutral-500";
 
 export type InputProps = React.InputHTMLAttributes<HTMLInputElement> & {
   hasFloatingLabel?: boolean;

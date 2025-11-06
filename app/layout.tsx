@@ -80,7 +80,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteLd) }} 
         />
       </head>
-      <body className={`${inter.className} flex min-h-screen flex-col bg-brand-light font-sans text-brand-dark`}>
+      <body className={`${inter.className} flex min-h-screen flex-col bg-brand-bg font-sans text-textc`}>
         <RootProviders>
           <a
             href="#main"

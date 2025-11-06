@@ -21,7 +21,7 @@ const buttonVariants = cva(
     "focus-visible:ring-2",
     "focus-visible:ring-brand-primary/40",
     "focus-visible:ring-offset-2",
-    "focus-visible:ring-offset-white",
+    "focus-visible:ring-offset-brand-bg",
     "disabled:cursor-not-allowed",
     "disabled:opacity-60"
   ].join(" "),
@@ -31,7 +31,7 @@ const buttonVariants = cva(
         primary:
           "bg-brand-primary text-white shadow-sm hover:bg-brand-primary/90 focus-visible:ring-brand-primary/40",
         secondary:
-          "border-brand-outline/70 bg-white text-brand-dark shadow-sm hover:border-brand-primary hover:text-brand-primary",
+          "border-brand-outline/70 bg-surface text-textc shadow-sm hover:border-brand-primary hover:text-brand-primary",
         ghost: "border-transparent bg-transparent text-brand-primary hover:bg-brand-primaryMuted",
         danger:
           "border-transparent bg-danger text-white shadow-sm hover:bg-danger/90 focus-visible:ring-danger/40"

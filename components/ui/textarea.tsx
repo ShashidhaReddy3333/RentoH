@@ -2,7 +2,7 @@ import clsx from "clsx";
 import React, { forwardRef, useId } from "react";
 
 const baseTextareaClasses =
-  "block w-full rounded-lg border border-outline/70 bg-white px-3 py-2 text-sm text-ink placeholder:text-ink-muted shadow-sm transition focus-visible:border-brand-blue focus-visible:ring-2 focus-visible:ring-brand-blue/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-ink-muted";
+  "block w-full rounded-lg border border-outline/70 bg-surface px-3 py-2 text-sm text-ink placeholder:text-ink-muted shadow-sm transition focus-visible:border-brand-blue focus-visible:ring-2 focus-visible:ring-brand-blue/40 focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-ink-muted";
 
 export type TextareaProps = React.TextareaHTMLAttributes<HTMLTextAreaElement>;
 

@@ -27,7 +27,7 @@ export function ThemeToggle({ className, showLabel = true }: ThemeToggleProps) {
       type="button"
       onClick={toggleTheme}
       className={clsx(
-        "inline-flex items-center gap-2 rounded-full border border-black/10 bg-surface px-3 py-2 text-sm font-medium text-text-muted shadow-sm transition hover:border-brand-teal/40 hover:bg-brand-teal/10 hover:text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg dark:border-white/15 dark:bg-surface",
+        "inline-flex items-center gap-2 rounded-full border border-brand-outline/60 bg-surface px-3 py-2 text-sm font-medium text-text-muted shadow-sm transition hover:border-brand-teal/40 hover:bg-brand-teal/10 hover:text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg",
         className
       )}
       aria-label={nextModeLabel}

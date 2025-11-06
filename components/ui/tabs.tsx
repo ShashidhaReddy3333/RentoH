@@ -115,8 +115,8 @@ export function TabsTrigger({ value, children, className, icon }: TabsTriggerPro
       className={clsx(
         "inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue/40 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-muted",
         isActive
-          ? "bg-white text-brand-blue shadow-sm"
-          : "text-ink-muted hover:text-brand-blue hover:bg-white/60",
+          ? "bg-surface text-brand-blue shadow-sm"
+          : "text-ink-muted hover:text-brand-blue hover:bg-surface/60",
         className
       )}
     >

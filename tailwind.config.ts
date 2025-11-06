@@ -1,5 +1,7 @@
 import type { Config } from "tailwindcss";
 
+const withOpacity = (variable: string) => `hsl(var(${variable}) / <alpha-value>)`;
+
 const config: Config = {
   content: [
     "./app/**/*.{ts,tsx,js,jsx,mdx}",
@@ -20,34 +22,48 @@ const config: Config = {
     extend: {
       colors: {
         brand: {
-          primary: "#1E88E5",
-          primaryStrong: "#1664C0",
-          primaryMuted: "#E3F2FD",
-          success: "#43A047",
-          successMuted: "#E6F4EA",
-          warning: "#F9A825",
-          warningMuted: "#FFF2CC",
-          dark: "#212121",
-          light: "#F5F5F5",
-          surface: "#FFFFFF",
-          outline: "#D5D8DC"
+          bg: withOpacity("--color-brand-bg"),
+          light: withOpacity("--color-brand-light"),
+          dark: withOpacity("--color-brand-dark"),
+          primary: withOpacity("--color-brand-primary"),
+          primaryStrong: withOpacity("--color-brand-primary-strong"),
+          primaryMuted: withOpacity("--color-brand-primary-muted"),
+          success: withOpacity("--color-brand-success"),
+          successMuted: withOpacity("--color-brand-success-muted"),
+          warning: withOpacity("--color-brand-warning"),
+          warningMuted: withOpacity("--color-brand-warning-muted"),
+          teal: withOpacity("--color-brand-teal"),
+          blue: withOpacity("--color-brand-blue"),
+          green: withOpacity("--color-brand-green"),
+          outline: withOpacity("--color-brand-outline")
+        },
+        surface: withOpacity("--color-surface"),
+        "surface-muted": withOpacity("--color-surface-muted"),
+        textc: withOpacity("--color-textc"),
+        text: {
+          muted: withOpacity("--color-text-muted")
+        },
+        ink: {
+          DEFAULT: withOpacity("--color-ink"),
+          muted: withOpacity("--color-ink-muted")
         },
         neutral: {
-          50: "#F5F5F5",
-          100: "#E0E0E0",
-          200: "#C2C2C2",
-          300: "#A3A3A3",
-          400: "#7C7C7C",
-          500: "#5C5C5C",
-          600: "#424242",
-          700: "#2E2E2E",
-          800: "#1F1F1F",
-          900: "#141414"
+          50: withOpacity("--color-neutral-50"),
+          100: withOpacity("--color-neutral-100"),
+          200: withOpacity("--color-neutral-200"),
+          300: withOpacity("--color-neutral-300"),
+          400: withOpacity("--color-neutral-400"),
+          500: withOpacity("--color-neutral-500"),
+          600: withOpacity("--color-neutral-600"),
+          700: withOpacity("--color-neutral-700"),
+          800: withOpacity("--color-neutral-800"),
+          900: withOpacity("--color-neutral-900")
         },
         danger: {
-          DEFAULT: "#C62828",
-          muted: "#FBE9E7"
-        }
+          DEFAULT: withOpacity("--color-danger"),
+          muted: withOpacity("--color-danger-muted")
+        },
+        outline: withOpacity("--color-brand-outline")
       },
       borderRadius: {
         xs: "0.375rem",

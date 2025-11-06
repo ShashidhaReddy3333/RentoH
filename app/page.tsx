@@ -9,6 +9,7 @@ import {
   ShieldCheckIcon
 } from "@heroicons/react/24/outline";
 
+import ForceLightTheme from "@/components/ForceLightTheme";
 import PropertyCard from "@/components/PropertyCard";
 import { buttonStyles } from "@/components/ui/button";
 import { env } from "@/lib/env";
@@ -98,6 +99,7 @@ export default async function HomePage() {
 
   return (
     <div className="space-y-16">
+      <ForceLightTheme />
       <section className="grid gap-10 rounded-3xl bg-gradient-to-br from-brand-blue/10 via-brand-teal/10 to-brand-green/10 px-6 py-12 shadow-soft sm:px-10">
         <div className="space-y-6 text-center sm:text-left">
           <span className="inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 text-sm font-semibold text-brand-teal shadow-soft">
