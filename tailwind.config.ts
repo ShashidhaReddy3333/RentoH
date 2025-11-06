@@ -1,5 +1,7 @@
 import type { Config } from "tailwindcss";
 
+import { radii, shadows, spacing, typography } from "./design-system/tokens";
+
 const withOpacity = (variable: string) => `hsl(var(${variable}) / <alpha-value>)`;
 
 const config: Config = {
@@ -12,11 +14,11 @@ const config: Config = {
     container: {
       center: true,
       padding: {
-        DEFAULT: "1.5rem",
-        md: "1.5rem",
+        DEFAULT: spacing.md,
+        md: spacing.md,
         lg: "2rem",
         xl: "2.5rem",
-        "2xl": "3rem"
+        "2xl": spacing.section
       }
     },
     extend: {
@@ -66,31 +68,31 @@ const config: Config = {
         outline: withOpacity("--color-brand-outline")
       },
       borderRadius: {
-        xs: "0.375rem",
-        sm: "0.5rem",
-        md: "0.75rem",
-        lg: "1rem",
-        xl: "1.25rem",
-        "2xl": "1.75rem",
-        "3xl": "2rem"
+        xs: radii.xs,
+        sm: radii.sm,
+        md: radii.md,
+        lg: radii.lg,
+        xl: radii.xl,
+        "2xl": radii.xxl,
+        "3xl": radii.threeXl
       },
       boxShadow: {
-        sm: "0 6px 18px rgba(17, 24, 39, 0.08)",
-        md: "0 12px 28px rgba(17, 24, 39, 0.12)",
-        lg: "0 18px 40px rgba(17, 24, 39, 0.16)"
+        sm: shadows.sm,
+        md: shadows.md,
+        lg: shadows.lg
       },
       fontFamily: {
-        sans: ["var(--font-sans)", "Inter", "system-ui", "-apple-system", "sans-serif"]
+        sans: [typography.fontFamily.sans]
       },
       fontSize: {
-        h1: ["1.875rem", { lineHeight: "2.5rem", fontWeight: "700" }],
-        h2: ["1.5rem", { lineHeight: "2.125rem", fontWeight: "600" }],
-        h3: ["1.25rem", { lineHeight: "1.875rem", fontWeight: "600" }],
-        body: ["1rem", { lineHeight: "1.7rem", fontWeight: "400" }],
-        caption: ["0.875rem", { lineHeight: "1.4rem", fontWeight: "500" }]
+        h1: [typography.fontSize.h1.size, { lineHeight: typography.fontSize.h1.lineHeight, fontWeight: typography.fontSize.h1.weight }],
+        h2: [typography.fontSize.h2.size, { lineHeight: typography.fontSize.h2.lineHeight, fontWeight: typography.fontSize.h2.weight }],
+        h3: [typography.fontSize.h3.size, { lineHeight: typography.fontSize.h3.lineHeight, fontWeight: typography.fontSize.h3.weight }],
+        body: [typography.fontSize.body.size, { lineHeight: typography.fontSize.body.lineHeight, fontWeight: typography.fontSize.body.weight }],
+        caption: [typography.fontSize.caption.size, { lineHeight: typography.fontSize.caption.lineHeight, fontWeight: typography.fontSize.caption.weight }]
       },
       spacing: {
-        section: "3.5rem"
+        section: spacing.section
       },
       transitionTimingFunction: {
         smooth: "cubic-bezier(0.16, 1, 0.3, 1)"

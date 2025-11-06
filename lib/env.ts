@@ -6,7 +6,9 @@ const serverSchema = z.object({
   SUPABASE_JWT_SECRET: z.string().min(1).optional(),
   SUPABASE_STORAGE_BUCKET_LISTINGS: z.string().min(1).default("listings"),
   HEALTH_CHECK_TOKEN: z.string().min(1).optional(),
-  BYPASS_SUPABASE_AUTH: z.enum(["0", "1"]).optional()
+  BYPASS_SUPABASE_AUTH: z.enum(["0", "1"]).optional(),
+  CAPTCHA_PROVIDER: z.string().min(1).optional(),
+  CAPTCHA_SECRET: z.string().min(1).optional()
 });
 
 const clientSchema = z.object({
@@ -24,7 +26,9 @@ const rawServerEnv = {
   SUPABASE_JWT_SECRET: process.env["SUPABASE_JWT_SECRET"],
   SUPABASE_STORAGE_BUCKET_LISTINGS: process.env["SUPABASE_STORAGE_BUCKET_LISTINGS"],
   HEALTH_CHECK_TOKEN: process.env["HEALTH_CHECK_TOKEN"],
-  BYPASS_SUPABASE_AUTH: process.env["BYPASS_SUPABASE_AUTH"]
+  BYPASS_SUPABASE_AUTH: process.env["BYPASS_SUPABASE_AUTH"],
+  CAPTCHA_PROVIDER: process.env["CAPTCHA_PROVIDER"],
+  CAPTCHA_SECRET: process.env["CAPTCHA_SECRET"]
 };
 
 const rawClientEnv = {

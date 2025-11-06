@@ -9,6 +9,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { validateCsrfToken } from "@/lib/http/csrf";
 import { rateLimit } from "@/lib/server/rate-limit";
 import { logWarn } from "@/lib/server/logger";
+import { verifyCaptchaToken } from "@/lib/server/captcha";
 
 // Hardened message payload validator with strict UUID and string validation
 const MessagePayload = z.object({
@@ -38,12 +39,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const ip = request.headers.get("x-forwarded-for") ?? "anon";
+    const ip = request.headers.get("x-forwarded-for") ?? request.ip ?? "anon";
     if (!rateLimit(`POST:/api/messages:${ip}`)) {
       logWarn("rate_limited", { ip });
       return NextResponse.json(
         { error: "Too Many Requests", code: "RATE_LIMIT" },
         { status: 429 }
+      );
+    }
+
+    const captchaToken = (requestBody as Record<string, unknown>)?.["captcha"] as string | undefined;
+    const captchaResult = await verifyCaptchaToken(captchaToken, { ip, action: "message_post" });
+    if (!captchaResult.success) {
+      const status = captchaResult.required ? 403 : 400;
+      return NextResponse.json(
+        { error: "Captcha verification failed", code: captchaResult.message ?? "CAPTCHA_FAILED" },
+        { status }
       );
     }
 
