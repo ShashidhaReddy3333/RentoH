@@ -53,6 +53,7 @@ export const InputField = forwardRef<HTMLInputElement, InputFieldProps>(function
     wrapperClassName,
     requiredMarker = true,
     required,
+    type = "text",
     "aria-describedby": ariaDescribedBy,
     ...props
   },
@@ -63,21 +64,35 @@ export const InputField = forwardRef<HTMLInputElement, InputFieldProps>(function
   const helperId = helperText ? `${inputId}-helper` : undefined;
   const errorId = error ? `${inputId}-error` : undefined;
   const describedBy = [ariaDescribedBy, errorId, helperId].filter(Boolean).join(" ") || undefined;
+  const normalizedType = typeof type === "string" ? type : "text";
+  const floatingLabelIncompatibleTypes = new Set(["date", "time", "datetime-local", "month", "week"]);
+  const useFloatingLabel = Boolean(label) && !floatingLabelIncompatibleTypes.has(normalizedType);
 
   return (
     <div className={clsx("space-y-1.5", wrapperClassName)}>
+      {label && !useFloatingLabel ? (
+        <label htmlFor={inputId} className="text-sm font-medium text-brand-dark">
+          {label}
+          {required && requiredMarker ? (
+            <span aria-hidden="true" className="ml-1 text-brand-primary">
+              *
+            </span>
+          ) : null}
+        </label>
+      ) : null}
       <div className="field-wrapper">
         <Input
           id={inputId}
           ref={ref}
           className={className}
-          hasFloatingLabel={Boolean(label)}
+          hasFloatingLabel={useFloatingLabel}
           invalid={Boolean(error)}
           aria-describedby={describedBy}
           required={required}
+          type={type}
           {...props}
         />
-        {label ? (
+        {label && useFloatingLabel ? (
           <label htmlFor={inputId} className="floating-label">
             {label}
             {required && requiredMarker ? (
