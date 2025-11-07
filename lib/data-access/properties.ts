@@ -23,6 +23,7 @@ export type SupabasePropertyRow = {
   baths: number;
   type: Property["type"];
   city: string;
+  landlord_id?: string | null;
   verified?: boolean | null;
   pets?: boolean | null;
   furnished?: boolean | null;
@@ -55,6 +56,7 @@ export const PROPERTY_COLUMNS = `
   baths,
   type,
   city,
+  landlord_id,
   verified,
   pets,
   furnished,
@@ -256,6 +258,7 @@ export function mapPropertyFromSupabaseRow(record: SupabasePropertyRow): Propert
     rentFrequency: resolveRentFrequency(record.rent_frequency),
     parking: record.parking ?? undefined,
     neighborhood: record.neighborhood ?? undefined,
+    landlordId: record.landlord_id ?? undefined,
     coordinates:
       typeof record.latitude === "number" && typeof record.longitude === "number"
         ? { lat: record.latitude, lng: record.longitude }

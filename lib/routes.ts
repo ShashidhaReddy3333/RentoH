@@ -1,12 +1,15 @@
 export const routes = {
-  home: '/',
-  applications: '/app/applications',
-  tours: '/app/tours',
-  browse: '/browse',
+  home: "/",
+  applications: "/applications",
+  tours: "/tours",
+  browse: "/browse",
   auth: {
-    signIn: '/auth/sign-in',
-    signUp: '/auth/sign-up',
-  },
+    signIn: "/auth/sign-in",
+    signUp: "/auth/sign-up"
+  }
 } as const;
 
-export type AppRoute = typeof routes[keyof typeof routes] | `${typeof routes['browse']}/${string}` | `${typeof routes['home']}${string}`;
+export type AppRoute =
+  | (typeof routes)[keyof typeof routes]
+  | `${(typeof routes)["browse"]}/${string}`
+  | `${(typeof routes)["home"]}${string}`;

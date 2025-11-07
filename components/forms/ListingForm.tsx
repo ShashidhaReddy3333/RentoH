@@ -111,6 +111,28 @@ const LISTING_FIELD_LABELS: Partial<Record<keyof ListingFormFieldValues, string>
   description: "Listing description"
 };
 
+function normalizeDateValue(value: unknown): string {
+  if (value instanceof Date) {
+    return value.toISOString().split("T")[0] ?? "";
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return "";
+    }
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+      return trimmed;
+    }
+    const parsed = new Date(trimmed);
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed.toISOString().split("T")[0] ?? "";
+    }
+  }
+
+  return "";
+}
+
 function findFirstError(
   errors: FieldErrors<ListingFormFieldValues>
 ): { name: keyof ListingFormFieldValues; message?: string } | null {
@@ -164,10 +186,7 @@ function buildDefaultValues({
           ? "false"
           : "",
     parking: initialValues?.parking ?? "",
-    availableFrom:
-      initialValues?.availableFrom?.includes("T")
-        ? initialValues.availableFrom.split("T")[0]
-        : initialValues?.availableFrom ?? "",
+    availableFrom: normalizeDateValue(initialValues?.availableFrom ?? ""),
     rentFrequency: initialValues?.rentFrequency ?? "monthly",
     description: initialValues?.description ?? "",
     images:
@@ -210,7 +229,10 @@ function applyDraftValues(
   assignNumeric("baths");
   assignNumeric("area");
   assignString("parking");
-  assignString("availableFrom");
+  const draftAvailable = draft["availableFrom"];
+  if (draftAvailable !== undefined) {
+    nextMutable["availableFrom"] = normalizeDateValue(draftAvailable);
+  }
   assignString("rentFrequency");
   assignString("description");
 

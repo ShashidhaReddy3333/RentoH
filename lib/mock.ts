@@ -250,6 +250,12 @@ export const mockProperties: Property[] = [
   }
 ];
 
+mockProperties.forEach((property, index) => {
+  if (!property.landlordId) {
+    property.landlordId = `mock-landlord-${index + 1}`;
+  }
+});
+
 export let mockThreads: MessageThread[] = [
   {
     id: "thread_leo",

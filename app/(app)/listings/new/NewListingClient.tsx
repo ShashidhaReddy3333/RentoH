@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 
 import ListingForm, {
@@ -87,16 +87,19 @@ export default function NewListingClient({
 }: ListingFormProps) {
   const router = useRouter();
   const isCreateMode = mode === "create";
+  const draftListingIdRef = useRef<string | undefined>(listingId);
 
   const handleSubmit = useCallback(
     async (values: ListingFormValues) => {
-      const formData = valuesToFormData(values, listingId);
+      const targetListingId = listingId ?? draftListingIdRef.current;
+      const formData = valuesToFormData(values, targetListingId);
       const result =
         mode === "create"
           ? await createListingAction(initialListingFormState, formData)
           : await updateListingAction(initialListingFormState, formData);
       if (result.status === "success") {
         if (mode === "create") {
+          draftListingIdRef.current = undefined;
           router.push("/dashboard?toast=listing-created");
         } else {
           router.refresh();
@@ -110,18 +113,30 @@ export default function NewListingClient({
   const handleAutoSave = useCallback(
     async (values: ListingFormValues) => {
       if (!isCreateMode) return { status: "idle" } as ListingFormState;
-      const result = await saveDraftAction(valuesToFormData(values, listingId));
+      const targetListingId = listingId ?? draftListingIdRef.current;
+      const result = await saveDraftAction(valuesToFormData(values, targetListingId));
+      if (result.listingId) {
+        draftListingIdRef.current = result.listingId;
+      }
       return result;
     },
     [isCreateMode, listingId]
   );
+
+  const loadDraft = useCallback(async () => {
+    const result = await fetchDraftAction();
+    if (result.listingId) {
+      draftListingIdRef.current = result.listingId;
+    }
+    return result;
+  }, []);
 
   return (
     <ListingForm
       mode={mode}
       initialValues={initialValues}
       initialImages={initialImages}
-      loadDraft={isCreateMode ? fetchDraftAction : undefined}
+      loadDraft={isCreateMode ? loadDraft : undefined}
       onSubmit={handleSubmit}
       onAutoSave={isCreateMode ? handleAutoSave : undefined}
     />

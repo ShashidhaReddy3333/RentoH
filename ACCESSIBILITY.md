@@ -158,6 +158,122 @@ All colors meet WCAG AA standards (4.5:1 for normal text, 3:1 for large text).
 ## 📋 Form Accessibility Checklist
 
 ### Required for All Forms
+- ✅ Explicit `<label>` associated using `htmlFor` / `id`
+- ✅ Descriptive placeholder text (never the sole label)
+- ✅ Clear error messaging tied to `aria-describedby`
+- ✅ `aria-invalid="true"` automatically applied on invalid fields
+- ✅ Keyboard-friendly controls (no pointer-only widgets)
+
+### Error Messaging Pattern
+- Show inline errors immediately after the field
+- Keep language concise: describe the problem + how to fix it
+- Use polite tone, avoid blaming the user (e.g., “Enter a postal code in A1A 1A1 format”)
+- Pair text color (`#D32F2F`) with icon-only cues for colorblind users
+
+### Live Validation
+- Run validation on blur/change, but wait for submit to show first error summary
+- Use toast/`role="status"` messages sparingly to avoid duplicating inline errors
+- Auto-focus the first invalid field and scroll it into view using `scrollIntoView({ block: "center" })`
+
+### Multi-Step Forms
+- Provide breadcrumb or stepper with `aria-current="step"`
+- Announce step changes via visually hidden `<h2>` updates
+- Persist data between steps to avoid re-entry
+
+### Keyboard-Accessible Custom Inputs
+- Custom selects use [Headless UI Combobox/Listbox](https://headlessui.com/) with arrow-key navigation
+- Toggles/segmented controls behave as radio groups (`role="radiogroup"`, `role="radio"`)
+- Sliders expose current value via `aria-valuenow`, `aria-valuemin`, `aria-valuemax`
+
+---
+
+## 🧭 Navigation & Layout
+
+### Landmark Regions
+- `header`, `nav`, `main`, `aside`, and `footer` are present on every layout
+- `main` has `tabIndex="-1"` so skip links can shift focus
+- Sidebars use `aria-label` (e.g., `"Filters"` or `"Conversation list"`)
+
+### Breadcrumbs
+- Implemented with `<nav aria-label="Breadcrumb">`
+- Current page uses `aria-current="page"`
+
+### Mobile Menus
+- Trigger buttons include `aria-expanded` and `aria-controls`
+- Off-canvas panels are focus-trapped via Radix Dialog primitives
+
+---
+
+## 🎛️ Interactive Components
+
+| Component | Accessibility Features |
+|-----------|------------------------|
+| Buttons | 44x44px minimum target, visible focus ring, disabled state announced via `aria-disabled="true"` |
+| Icon buttons | Include `aria-label` or visible text; example: Favorite heart, Close modal |
+| Tabs | Roving `tabIndex`, `aria-selected`, `aria-controls` |
+| Accordions | Implemented with Radix Accordion: `aria-expanded`, `aria-controls`, keyboard support |
+| Tooltips | Use `aria-describedby`; only appear on hover/focus, not for critical info |
+
+---
+
+## 🖼️ Media & Imagery
+
+- All decorative images use `alt=""` to be skipped by screen readers
+- Listing photos include contextual alt text: “Living room of Cozy 2BR Near Downtown”
+- Videos auto-captioned; transcripts linked where available
+- Map components provide fallback text (“Map preview unavailable”) and keyboard skip buttons
+
+### Animations & Motion
+- Motion duration ≤ 200 ms and eased
+- Prefers-reduced-motion respected via CSS media queries
+- No parallax or auto-scrolling without user consent
+
+---
+
+## 🔔 Notifications & Toasts
+
+- Success/error toasts use `role="status"` so they announce without stealing focus
+- Critical alerts (e.g., payment failure) use `role="alert"`
+- Toast colors meet 4.5:1 contrast and include icon + text
+- Auto-dismiss timers pause when hovered/focused
+
+---
+
+## 🧩 Data Visualization & Tables
+
+- Tables include `<caption>` describing context (e.g., “Upcoming tours this month”)
+- `scope="col"` / `scope="row"` for headers
+- Responsive tables provide horizontal scroll with `aria-label="Scrollable table"`
+- Charts (future roadmap) require text-based summaries and data download links
+
+---
+
+## 🧪 Testing & Tooling
+
+| Tool | Purpose | Frequency |
+|------|---------|-----------|
+| **axe DevTools** | Automated WCAG checks in Storybook & Playwright | Every PR |
+| **Keyboard sweeps** | Tab through every interactive element | Weekly regression |
+| **Screen reader smoke test** | VoiceOver (macOS) + NVDA (Windows) | Before releases |
+| **Lighthouse** | Accessibility score target ≥ 95 | CI nightly |
+
+### Manual Testing Scenarios
+1. Complete a listing form using keyboard only
+2. Navigate messaging threads via screen reader
+3. Trigger all toast types and confirm announcements
+4. Resize to 320 px mobile viewport and ensure no horizontal scroll
+5. Switch to high-contrast mode (Windows) and verify focus outlines remain visible
+
+---
+
+## 📣 Ongoing Improvements
+
+- Add captions/transcripts for walkthrough videos (tracked in `docs/accessibility-roadmap.md`)
+- Expand color token contrast matrix for dark mode exploration
+- Integrate axe-core directly in unit tests for critical components
+- Provide “Reduce motion” toggle inside profile settings (planned)
+
+Questions or suggestions? Reach out in `#a11y` Slack channel or file an issue with the `accessibility` label.
 - [ ] All inputs have associated `<label>` elements
 - [ ] Error messages linked via `aria-describedby`
 - [ ] Helper text linked via `aria-describedby`

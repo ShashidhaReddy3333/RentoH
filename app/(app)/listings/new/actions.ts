@@ -10,12 +10,21 @@ import { createSlug } from "@/lib/utils/slug";
 import type { Property } from "@/lib/types";
 import { ListingSchema } from "./schema";
 
+type ListingStateMetadata = {
+  listingId?: string;
+};
+
 export type ListingFormState =
-  | { status: "idle" }
-  | { status: "success" }
-  | { status: "error"; message: string }
-  | { status: "auto-saved"; timestamp: number }
-  | { status: "validation-error"; message: string; fieldErrors: Record<string, string[]>; formErrors?: string[] };
+  | ({ status: "idle" } & ListingStateMetadata)
+  | ({ status: "success" } & ListingStateMetadata)
+  | ({ status: "error"; message: string } & ListingStateMetadata)
+  | ({ status: "auto-saved"; timestamp: number } & ListingStateMetadata)
+  | ({
+      status: "validation-error";
+      message: string;
+      fieldErrors: Record<string, string[]>;
+      formErrors?: string[];
+    } & ListingStateMetadata);
 
 const DRAFT_STORAGE_KEY = "__rento_listing_draft__";
 
@@ -77,6 +86,18 @@ function formDataToObject(formData: FormData): Record<string, unknown> {
   return raw;
 }
 
+function extractListingId(raw: Record<string, unknown>): string | undefined {
+  const value = raw["listingId"];
+  if (typeof value === "string" && value.trim().length > 0) {
+    delete raw["listingId"];
+    return value.trim();
+  }
+  if (value !== undefined) {
+    delete raw["listingId"];
+  }
+  return undefined;
+}
+
 function buildOrderedImages(images: string[] | undefined, cover?: string): string[] {
   const sanitizedCover = typeof cover === "string" ? cover.trim() : "";
   const filtered = (images ?? []).map((image) => image.trim()).filter((image) => image.length > 0);
@@ -108,21 +129,27 @@ function toMockProperty(values: ListingValues, slug: string, orderedImages: stri
     amenities: values.amenities && values.amenities.length > 0 ? values.amenities : undefined,
     area: typeof values.area === "number" ? values.area : undefined,
     availableFrom: values.availableFrom,
-    status: "draft"
+    status: "active"
   };
 }
 
 export async function saveDraftAction(formData: FormData): Promise<ListingFormState> {
   const raw = formDataToObject(formData);
+  const listingId = extractListingId(raw);
   const coverValue = raw["cover"];
   const coverKey = typeof coverValue === "string" ? coverValue : undefined;
 
   if (!hasSupabaseEnv) {
     if (env.NODE_ENV === "production") {
-      return { status: "error", message: "Missing Supabase configuration. Please set up your environment variables." };
+      return {
+        status: "error",
+        message: "Missing Supabase configuration. Please set up your environment variables."
+      };
     }
+    const draftId = listingId ?? randomUUID();
+    raw["listingId"] = draftId;
     persistDraft(raw);
-    return { status: "auto-saved", timestamp: Date.now() };
+    return { status: "auto-saved", timestamp: Date.now(), listingId: draftId };
   }
 
   const supabase = createSupabaseServerClient();
@@ -162,20 +189,38 @@ export async function saveDraftAction(formData: FormData): Promise<ListingFormSt
   const orderedImages = buildOrderedImages(values.images, coverKey);
   const now = new Date().toISOString();
 
-  const { data: existingDraft, error: draftLookupError } = await supabase
-    .from("properties")
-    .select("id, slug")
-    .eq("landlord_id", user.id)
-    .eq("status", "draft")
-    .order("updated_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (draftLookupError) {
-    console.error("[listings] Failed to look up existing draft", draftLookupError);
+  let existingDraft: { id: string; slug: string | null } | null = null;
+  if (listingId) {
+    const { data, error } = await supabase
+      .from("properties")
+      .select("id, slug")
+      .eq("id", listingId)
+      .maybeSingle();
+    if (error) {
+      console.error("[listings] Failed to load draft by id", error);
+    } else {
+      existingDraft = data;
+    }
   }
 
-  const draftId = existingDraft?.id ?? randomUUID();
+  if (!existingDraft) {
+    const { data, error } = await supabase
+      .from("properties")
+      .select("id, slug")
+      .eq("landlord_id", user.id)
+      .eq("status", "draft")
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      console.error("[listings] Failed to look up existing draft", error);
+    } else {
+      existingDraft = data;
+    }
+  }
+
+  const draftId = listingId ?? existingDraft?.id ?? randomUUID();
   const landlordSuffix = user.id?.slice(0, 8) ?? randomUUID().split("-")[0];
   const draftSlug = existingDraft?.slug ?? `${createSlug(values.title)}-${landlordSuffix}-draft`;
 
@@ -216,9 +261,10 @@ export async function saveDraftAction(formData: FormData): Promise<ListingFormSt
     return { status: "error", message: error.message };
   }
 
+  raw["listingId"] = draftId;
   persistDraft(raw);
 
-  return { status: "auto-saved", timestamp: Date.now() };
+  return { status: "auto-saved", timestamp: Date.now(), listingId: draftId };
 }
 
 export async function createListingAction(
@@ -227,6 +273,7 @@ export async function createListingAction(
 ): Promise<ListingFormState> {
   try {
     const raw = formDataToObject(formData);
+    const listingId = extractListingId(raw);
     const coverValue = raw["cover"];
     const coverKey = typeof coverValue === "string" ? coverValue : undefined;
 
@@ -250,7 +297,32 @@ export async function createListingAction(
         return { status: "error", message: "Missing Supabase configuration. Please set up your environment variables." };
       }
 
-      addMockProperty(toMockProperty(values, slug, orderedImages));
+      if (listingId) {
+        updateMockProperty(listingId, (property) => ({
+          ...property,
+          slug,
+          title: values.title,
+          price: values.rent,
+          beds: values.beds,
+          baths: values.baths,
+          type: values.propertyType,
+          city: values.city,
+          address: values.street,
+          description: values.description,
+          amenities: values.amenities ?? [],
+          area: values.area ?? undefined,
+          pets: values.pets ?? false,
+          smoking: values.smoking ?? undefined,
+          availableFrom: values.availableFrom ?? undefined,
+          rentFrequency: values.rentFrequency ?? undefined,
+          parking: values.parking ?? undefined,
+          images: orderedImages,
+          imageStoragePaths: orderedImages,
+          status: "active"
+        }));
+      } else {
+        addMockProperty(toMockProperty(values, slug, orderedImages));
+      }
       clearPersistedDraft();
       return { status: "success" };
     }
@@ -278,34 +350,96 @@ export async function createListingAction(
       return { status: "error", message: "Only landlord accounts can create listings." };
     }
 
-    const { error } = await supabase.from("properties").insert({
-      landlord_id: user.id,
-      title: values.title,
-      slug,
-      price: values.rent,
-      address: values.street,
-      postal_code: values.postalCode,
-      city: values.city,
-      type: values.propertyType,
-      beds: values.beds,
-      baths: values.baths,
-      area: values.area,
-      amenities: values.amenities ?? [],
-      images: orderedImages,
-      pets: values.pets ?? false,
-      smoking: values.smoking ?? false,
-      parking: values.parking,
-      available_from: values.availableFrom,
-      rent_frequency: values.rentFrequency,
-      description: values.description,
-      status: "active",
-      verified: false,
-      furnished: false
-    });
+    if (listingId) {
+      const {
+        data: existing,
+        error: loadError
+      } = await supabase
+        .from("properties")
+        .select("id, landlord_id, slug, status, verified")
+        .eq("id", listingId)
+        .maybeSingle();
 
-    if (error) {
-      console.error("[listings] Failed to create listing", error);
-      return { status: "error", message: error.message };
+      if (loadError || !existing) {
+        return { status: "error", message: "Draft listing could not be found." };
+      }
+
+      if (existing.landlord_id !== user.id && role !== "admin") {
+        return { status: "error", message: "You do not have permission to publish this draft." };
+      }
+
+      const resolvedSlug = existing.slug ?? slug;
+      const { error: updateError } = await supabase
+        .from("properties")
+        .update({
+          landlord_id: user.id,
+          title: values.title,
+          slug: resolvedSlug,
+          price: values.rent,
+          address: values.street,
+          postal_code: values.postalCode,
+          city: values.city,
+          type: values.propertyType,
+          beds: values.beds,
+          baths: values.baths,
+          area: values.area,
+          amenities: values.amenities ?? [],
+          images: orderedImages,
+          pets: values.pets ?? false,
+          smoking: values.smoking ?? false,
+          parking: values.parking,
+          available_from: values.availableFrom,
+          rent_frequency: values.rentFrequency,
+          description: values.description,
+          status: "active",
+          verified: existing.verified ?? false,
+          furnished: false
+        })
+        .eq("id", listingId);
+
+      if (updateError) {
+        console.error("[listings] Failed to publish draft listing", updateError);
+        return { status: "error", message: updateError.message };
+      }
+
+      clearPersistedDraft();
+
+      revalidatePath("/dashboard");
+      revalidatePath("/browse");
+      revalidatePath(`/property/${resolvedSlug}`);
+      revalidatePath(`/property/${listingId}`);
+
+      return { status: "success" };
+    } else {
+      const { error } = await supabase.from("properties").insert({
+        landlord_id: user.id,
+        title: values.title,
+        slug,
+        price: values.rent,
+        address: values.street,
+        postal_code: values.postalCode,
+        city: values.city,
+        type: values.propertyType,
+        beds: values.beds,
+        baths: values.baths,
+        area: values.area,
+        amenities: values.amenities ?? [],
+        images: orderedImages,
+        pets: values.pets ?? false,
+        smoking: values.smoking ?? false,
+        parking: values.parking,
+        available_from: values.availableFrom,
+        rent_frequency: values.rentFrequency,
+        description: values.description,
+        status: "active",
+        verified: false,
+        furnished: false
+      });
+
+      if (error) {
+        console.error("[listings] Failed to create listing", error);
+        return { status: "error", message: error.message };
+      }
     }
 
     clearPersistedDraft();
@@ -328,12 +462,10 @@ export async function updateListingAction(
 ): Promise<ListingFormState> {
   try {
     const raw = formDataToObject(formData);
-    const listingIdRaw = raw["listingId"];
-    const listingId = typeof listingIdRaw === "string" ? listingIdRaw : "";
+    const listingId = extractListingId(raw) ?? "";
     if (!listingId) {
       return { status: "error", message: "Listing not found." };
     }
-    delete raw["listingId"];
 
     const coverValue = raw["cover"];
     const coverKey = typeof coverValue === "string" ? coverValue : undefined;
@@ -497,7 +629,9 @@ export async function fetchDraftAction(): Promise<ListingFormState & { data?: Re
     if (!draft) {
       return { status: "idle" };
     }
-    return { status: "success", data: draft };
+    const clone = { ...draft };
+    const draftId = extractListingId(clone);
+    return { status: "success", data: clone, listingId: draftId };
   }
 
   const supabase = createSupabaseServerClient();
@@ -552,8 +686,9 @@ export async function fetchDraftAction(): Promise<ListingFormState & { data?: Re
     description: data.description
   };
 
-  persistDraft(formData);
+  const persisted = { ...formData, listingId: data.id };
+  persistDraft(persisted);
 
-  return { status: "success", data: formData };
+  return { status: "success", data: formData, listingId: typeof data.id === "string" ? data.id : undefined };
 }
 

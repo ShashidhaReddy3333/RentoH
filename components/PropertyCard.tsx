@@ -69,7 +69,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
               Verified
             </span>
           ) : null}
-          <FavoriteButton propertyId={property.id} />
+          <FavoriteButton propertyId={property.id} initialSaved={Boolean(property.isFavorite)} />
         </div>
       </div>
 
