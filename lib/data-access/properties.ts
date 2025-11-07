@@ -148,32 +148,29 @@ async function fetchManyFromSupabase(
     query = query.eq("verified", filters.verified);
   }
 
-  // Extended search filters (using type assertion for now, ideally PropertyFilters would be extended)
-  if ((filters as PropertyFilters & { neighborhood?: string }).neighborhood) {
-    query = query.ilike("neighborhood", `%${(filters as PropertyFilters & { neighborhood?: string }).neighborhood}%`);
+  // Extended search filters
+  if (filters.neighborhood) {
+    query = query.ilike("neighborhood", `%${filters.neighborhood}%`);
   }
 
-  if ((filters as PropertyFilters & { availableFrom?: string }).availableFrom) {
+  if (filters.availableFrom) {
     // select properties available on or after the requested date
-    query = query.gte("available_from", (filters as PropertyFilters & { availableFrom?: string }).availableFrom);
+    query = query.gte("available_from", filters.availableFrom);
   }
 
   // amenities: expect array of strings; match any of them
-  const amenitiesRaw = (filters as PropertyFilters & { amenities?: string[] }).amenities;
-  if (Array.isArray(amenitiesRaw)) {
-    const amenities: string[] = amenitiesRaw;
-    amenities.forEach((amenity) => {
+  if (filters.amenities && Array.isArray(filters.amenities)) {
+    filters.amenities.forEach((amenity) => {
       query = query.ilike("amenities", `%${amenity}%`);
     });
   }
 
   // keywords: search title or description
-  if ((filters as PropertyFilters & { keywords?: string }).keywords) {
-    const kw = (filters as PropertyFilters & { keywords?: string }).keywords;
+  if (filters.keywords) {
     // supabase .or uses a comma-separated conditions string
     try {
-      query = query.or(`title.ilike.%${kw}%,description.ilike.%${kw}%`);
-    } catch (e: unknown) { // Catching as unknown and handling
+      query = query.or(`title.ilike.%${filters.keywords}%,description.ilike.%${filters.keywords}%`);
+    } catch (e: unknown) {
       // fallback: ignore if .or fails for any reason
       console.warn("Supabase .or query failed, ignoring keywords filter:", e);
     }
@@ -413,10 +410,12 @@ async function mapRowToPropertyWithAssets(record: SupabasePropertyRow): Promise<
       try {
         const { data: signed, error: signErr } = await service.storage.from(bucket).createSignedUrl(img, 60 * 60);
         if (signErr || !signed) {
+          console.warn("[properties] Failed to create signed URL, using public URL fallback", { img, error: signErr });
           return buildPublicStorageUrl(img) ?? img;
         }
         return signed.signedUrl;
-      } catch {
+      } catch (error) {
+        console.warn("[properties] Unexpected error creating signed URL, using public URL fallback", { img, error });
         return buildPublicStorageUrl(img) ?? img;
       }
     });

@@ -1,5 +1,6 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getUserPreferencesForUserId, DEFAULT_PREFERENCES } from "@/lib/data-access/userPreferences";
+import { logInfo } from "@/lib/server/logger";
 
 type DigestOpts = { trigger?: string };
 
@@ -20,12 +21,12 @@ export async function generateDigestForUser(userId: string, opts: DigestOpts = {
   const trigger = opts.trigger ?? "manual";
 
   if (trigger === "message" && !prefs.emailNotifications.newMessages) {
-    console.log(`[digest] user=${userId} has disabled email newMessages - skipping`);
+    logInfo("Digest skipped - user disabled newMessages notifications", { userId, trigger });
     return null;
   }
 
   if (trigger === "application" && !prefs.emailNotifications.applications) {
-    console.log(`[digest] user=${userId} has disabled email applications - skipping`);
+    logInfo("Digest skipped - user disabled applications notifications", { userId, trigger });
     return null;
   }
 
@@ -76,9 +77,26 @@ export async function generateDigestForUser(userId: string, opts: DigestOpts = {
     applications: recentApplications
   };
 
-  // Stubbed integration: log digest. In production, send an email/SMS honoring prefs.
-  console.log("[digest] Generated digest for user:", JSON.stringify(digest, null, 2));
-
-  // TODO: enqueue/send via email provider if desired.
+  // TODO: Production Implementation Required
+  // Currently logging digest for development. Before production deployment:
+  // 1. Integrate email provider (SendGrid, AWS SES, Postmark, etc.)
+  // 2. Integrate SMS provider if SMS notifications enabled (Twilio, SNS, etc.)
+  // 3. Create email templates for digest notifications
+  // 4. Implement queue system for async delivery (Bull, BullMQ, or similar)
+  // 5. Add retry logic and delivery status tracking
+  // 6. Respect user preferences (prefs.emailNotifications, prefs.smsNotifications)
+  // 7. Add unsubscribe links and preference management
+  
+  logInfo("Digest generated", {
+    userId,
+    trigger,
+    messagesCount: digest.messagesCount,
+    applicationsCount: digest.applicationsCount
+  });
+  
+  // Placeholder: In production, replace with actual email/SMS delivery
+  // await sendEmailDigest(userId, digest, prefs);
+  // if (prefs.smsNotifications.enabled) await sendSMSDigest(userId, digest);
+  
   return digest;
 }
