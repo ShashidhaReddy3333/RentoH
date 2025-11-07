@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { getBySlugOrId } from "@/lib/data-access/properties";
 import { getCurrentUser } from "@/lib/data-access/profile";
+import { isFavorited } from "@/lib/data-access/favorites";
 import { env } from "@/lib/env";
 import { PropertyGallery } from "@/components/property/PropertyGallery";
 import { PropertyHeadline } from "@/components/property/PropertyHeadline";
@@ -78,11 +79,12 @@ export default async function PropertyPage({ params }: PageParams) {
   const isAuthenticated = Boolean(user);
   const mapboxToken = env.NEXT_PUBLIC_MAPBOX_TOKEN ?? null;
   const amenities = property.amenities ?? [];
+  const isFavorite = await isFavorited(property.id).catch(() => false);
 
   return (
     <main className="mx-auto max-w-6xl space-y-8 px-4 py-8 lg:space-y-10 lg:py-12">
       <PropertyGallery images={property.images} title={property.title} />
-      <PropertyHeadline property={property} />
+      <PropertyHeadline property={property} isFavorite={isFavorite} />
       <PropertyHighlights property={property} />
 
       <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">

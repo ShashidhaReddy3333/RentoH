@@ -6,6 +6,7 @@ import { HeartIcon } from "@heroicons/react/24/solid";
 type FavoriteButtonProps = {
   propertyId: string;
   initialSaved?: boolean;
+  className?: string;
 };
 
 function showToast(message: string, opts: { success?: boolean } = {}) {
@@ -35,7 +36,7 @@ function extractMessage(err: unknown): string | undefined {
   return undefined;
 }
 
-export default function FavoriteButton({ propertyId, initialSaved = false }: FavoriteButtonProps) {
+export default function FavoriteButton({ propertyId, initialSaved = false, className }: FavoriteButtonProps) {
   const [saved, setSaved] = useState<boolean>(initialSaved);
   const [busy, setBusy] = useState(false);
 
@@ -92,9 +93,9 @@ export default function FavoriteButton({ propertyId, initialSaved = false }: Fav
       }}
       disabled={busy}
       data-testid="property-save"
-      className={`absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-brand-teal shadow-soft transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal focus-visible:ring-offset-2 focus-visible:ring-offset-white z-10 ${
+      className={`inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-brand-teal shadow-soft transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal focus-visible:ring-offset-2 focus-visible:ring-offset-white ${
         saved ? "text-red-500" : ""
-      }`}
+      } ${className ?? ""}`}
     >
       <HeartIcon className="h-5 w-5" aria-hidden="true" />
     </button>

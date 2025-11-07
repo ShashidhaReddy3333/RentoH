@@ -450,7 +450,7 @@ export default function ListingForm({
     }
   }, [errors, setFocus]);
 
-  const submitButtonDisabled = submitting || !isValid;
+  const submitButtonDisabled = submitting;
 
   const autoSaveMessage =
     autoSaveState.status === "auto-saved"

@@ -78,3 +78,24 @@ export async function removeFavorite(propertyId: string): Promise<boolean> {
 
   return true;
 }
+
+export async function isFavorited(propertyId: string): Promise<boolean> {
+  const { supabase, user } = await getSupabaseClientWithUser();
+  if (!supabase || !user) {
+    return false;
+  }
+
+  const { data, error } = await supabase
+    .from("favorites")
+    .select("property_id")
+    .eq("user_id", user.id)
+    .eq("property_id", propertyId)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[favorites] Failed to check favorite status", error);
+    return false;
+  }
+
+  return data != null;
+}

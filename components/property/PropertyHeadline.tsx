@@ -2,12 +2,14 @@ import { MapPinIcon } from "@heroicons/react/24/solid";
 
 import type { Property } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils/format";
+import FavoriteButton from "@/components/ui/FavoriteButton";
 
 type PropertyHeadlineProps = {
   property: Property;
+  isFavorite?: boolean;
 };
 
-export function PropertyHeadline({ property }: PropertyHeadlineProps) {
+export function PropertyHeadline({ property, isFavorite = false }: PropertyHeadlineProps) {
   const monthlyRent = formatCurrency(property.price);
 
   return (
@@ -25,9 +27,14 @@ export function PropertyHeadline({ property }: PropertyHeadlineProps) {
             </p>
           ) : null}
         </div>
-        <div className="text-right">
-          <p className="text-2xl font-bold text-brand-dark">{monthlyRent}</p>
-          <p className="text-sm font-medium text-text-muted">per month</p>
+        <div className="flex items-center gap-3">
+          <div className="text-right">
+            <p className="text-2xl font-bold text-brand-dark">{monthlyRent}</p>
+            <p className="text-sm font-medium text-text-muted">per month</p>
+          </div>
+          <div className="relative">
+            <FavoriteButton propertyId={property.id} initialSaved={isFavorite} />
+          </div>
         </div>
       </div>
       <dl className="flex flex-wrap items-center gap-4 text-sm text-text-muted">
