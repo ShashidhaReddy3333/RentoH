@@ -121,6 +121,7 @@ create table if not exists public.tours (
   landlord_id uuid not null references public.profiles(id) on delete cascade,
   scheduled_at timestamptz not null,
   status text not null default 'requested' check (status in ('requested','confirmed','completed','cancelled')),
+  notes text,
   created_at timestamptz not null default now()
 );
 

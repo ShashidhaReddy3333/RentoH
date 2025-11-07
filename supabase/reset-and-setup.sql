@@ -205,6 +205,7 @@ CREATE TABLE public.tours (
   landlord_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   scheduled_at timestamptz NOT NULL,
   status text NOT NULL DEFAULT 'requested' CHECK (status IN ('requested', 'confirmed', 'completed', 'cancelled')),
+  notes text,
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
