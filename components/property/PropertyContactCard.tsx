@@ -189,7 +189,7 @@ export function PropertyContactCard({
           disabled={!hasLandlord || isTourPending}
         >
           <CalendarIcon className="h-5 w-5" aria-hidden="true" />
-          {isTourPending ? "Requesting..." : requestTourCtaLabel}
+          {isTourPending ? "Processing..." : requestTourCtaLabel}
         </button>
       </div>
       {tourFeedback ? (
@@ -217,6 +217,7 @@ export function PropertyContactCard({
                 type="date"
                 name="date"
                 required
+                min={new Date().toISOString().split('T')[0]}
                 value={tourFormValues.date}
                 onChange={handleTourFieldChange}
                 className="mt-1"

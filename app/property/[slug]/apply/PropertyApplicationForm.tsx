@@ -54,7 +54,11 @@ export function PropertyApplicationForm({ propertyId, landlordId, propertyTitle,
         console.error("[applications] digest trigger failed", err);
       }
 
-      router.push(routes.applications as Route);
+      // Add a small delay to ensure the application is processed
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Use replace instead of push to prevent back navigation issues
+      router.replace(routes.applications as Route);
     } catch (err) {
       console.error("[applications] submission error", err);
       alert("Failed to submit application. Please try again.");
@@ -66,6 +70,12 @@ export function PropertyApplicationForm({ propertyId, landlordId, propertyTitle,
   return (
     <Card className="p-6">
       <h1 className="mb-6 text-2xl font-bold">Apply for {propertyTitle}</h1>
+      
+      {isSubmitting && (
+        <div className="mb-4 rounded-lg bg-blue-50 p-4 text-center">
+          <p className="text-sm text-blue-700">Submitting your application...</p>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>

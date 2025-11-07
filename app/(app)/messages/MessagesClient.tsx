@@ -114,12 +114,19 @@ export default function MessagesClient({
         setMessages((prev) =>
           prev.map((message) => (message.id === optimistic.id ? saved : message))
         );
+        
+        // Refresh the thread list to update last message
+        router.refresh();
       } catch (error) {
-        console.error(error);
+        console.error("[messages] Failed to send message:", error);
         setMessages((prev) => prev.filter((message) => message.id !== optimistic.id));
+        
+        // Show user-friendly error
+        setStatusText("Failed to send message. Please try again.");
+        setTimeout(() => setStatusText(""), 3000);
       }
     },
-    [currentThreadId, currentUserId]
+    [currentThreadId, currentUserId, router]
   );
 
   const renderEmptyState = () => (

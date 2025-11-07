@@ -32,14 +32,19 @@ export function SignOutButton({ className }: SignOutButtonProps) {
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.error("[auth] signOut failed", error);
-        return;
+        // Still redirect even if signOut fails to prevent stuck state
       }
       
       // Wait briefly for SupabaseListener to sync the session state
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 200));
       
-      router.push("/");
+      // Use replace to prevent back navigation issues
+      router.replace("/");
       router.refresh();
+    } catch (err) {
+      console.error("[auth] signOut error", err);
+      // Redirect anyway to prevent stuck state
+      router.replace("/");
     } finally {
       setBusy(false);
     }
