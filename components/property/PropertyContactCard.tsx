@@ -35,6 +35,9 @@ export function PropertyContactCard({
   const [tourState, setTourState] = useState<TourRequestState>(initialTourRequestState);
   const applyTarget = propertySlug ?? propertyId;
   const applyHref = `/property/${applyTarget}/apply` as Route;
+  
+  // Handle missing landlordId gracefully
+  const hasLandlord = Boolean(landlordId);
 
   const handleMessageClick = () => {
     if (!isAuthenticated) {
@@ -122,6 +125,15 @@ export function PropertyContactCard({
         </p>
       </div>
 
+      {!hasLandlord && (
+        <div
+          role="alert"
+          className="rounded-lg border border-yellow-200 bg-yellow-50 px-3 py-2 text-xs text-yellow-700"
+        >
+          This property is currently being configured. Contact our support team for assistance.
+        </div>
+      )}
+
       {error && (
         <div
           role="alert"
@@ -135,7 +147,7 @@ export function PropertyContactCard({
         <button
           type="button"
           onClick={handleMessageClick}
-          disabled={isMessagePending}
+          disabled={isMessagePending || !hasLandlord}
           className={clsx(buttonStyles({ variant: "primary", size: "md" }), "w-full justify-center")}
           aria-label={isAuthenticated ? "Compose a message about this property" : "Sign in to contact the landlord"}
         >
@@ -150,7 +162,7 @@ export function PropertyContactCard({
           <PhoneIcon className="h-5 w-5" aria-hidden="true" />
           Call support
         </a>
-        {applyTarget ? (
+        {applyTarget && hasLandlord ? (
           isAuthenticated ? (
             <Link
               href={applyHref}
@@ -174,7 +186,7 @@ export function PropertyContactCard({
           type="button"
           onClick={handleRequestTourClick}
           className={clsx(buttonStyles({ variant: "secondary", size: "md" }), "w-full justify-center")}
-          disabled={!landlordId || isTourPending}
+          disabled={!hasLandlord || isTourPending}
         >
           <CalendarIcon className="h-5 w-5" aria-hidden="true" />
           {isTourPending ? "Requesting..." : requestTourCtaLabel}
