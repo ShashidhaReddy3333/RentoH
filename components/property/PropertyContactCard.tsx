@@ -18,6 +18,7 @@ type PropertyContactCardProps = {
   isAuthenticated: boolean;
   propertySlug?: string;
   landlordId?: string;
+  currentUserId?: string;
 };
 
 export function PropertyContactCard({
@@ -25,7 +26,8 @@ export function PropertyContactCard({
   propertyTitle,
   isAuthenticated,
   propertySlug,
-  landlordId
+  landlordId,
+  currentUserId
 }: PropertyContactCardProps) {
   const [isMessagePending, startMessageTransition] = useTransition();
   const [isTourPending, startTourTransition] = useTransition();
@@ -34,6 +36,7 @@ export function PropertyContactCard({
   const [tourFormValues, setTourFormValues] = useState({ date: "", time: "", notes: "" });
   const [tourState, setTourState] = useState<TourRequestState>(initialTourRequestState);
   const applyTarget = propertySlug ?? propertyId;
+  const isSelfLandlord = Boolean(landlordId && currentUserId && landlordId === currentUserId);
   const applyHref = `/property/${applyTarget}/apply` as Route;
   
   // Handle missing landlordId gracefully
@@ -43,6 +46,11 @@ export function PropertyContactCard({
     if (!isAuthenticated) {
       const detailTarget = propertySlug ?? propertyId;
       window.location.href = `/auth/sign-in?next=/property/${detailTarget}`;
+      return;
+    }
+
+    if (isSelfLandlord) {
+      setError("You manage this property.");
       return;
     }
 
@@ -64,6 +72,10 @@ export function PropertyContactCard({
     }
     if (!landlordId) {
       setTourState({ status: "error", message: "Tour scheduling is unavailable for this listing." });
+      return;
+    }
+    if (isSelfLandlord) {
+      setTourState({ status: "error", message: "You already manage this property." });
       return;
     }
     setTourState(initialTourRequestState);
@@ -147,12 +159,18 @@ export function PropertyContactCard({
         <button
           type="button"
           onClick={handleMessageClick}
-          disabled={isMessagePending || !hasLandlord}
+          disabled={isMessagePending || !hasLandlord || isSelfLandlord}
           className={clsx(buttonStyles({ variant: "primary", size: "md" }), "w-full justify-center")}
           aria-label={isAuthenticated ? "Compose a message about this property" : "Sign in to contact the landlord"}
         >
           <EnvelopeIcon className="h-5 w-5" aria-hidden="true" />
-          {isMessagePending ? "Opening conversation..." : isAuthenticated ? "Message landlord" : "Sign in to contact"}
+          {isMessagePending
+            ? "Opening conversation..."
+            : isSelfLandlord
+              ? "You manage this listing"
+              : isAuthenticated
+                ? "Message landlord"
+                : "Sign in to contact"}
         </button>
         <a
           href="tel:+15195557421"
@@ -162,7 +180,7 @@ export function PropertyContactCard({
           <PhoneIcon className="h-5 w-5" aria-hidden="true" />
           Call support
         </a>
-        {applyTarget && hasLandlord ? (
+        {applyTarget && hasLandlord && !isSelfLandlord ? (
           isAuthenticated ? (
             <Link
               href={applyHref}
@@ -186,11 +204,19 @@ export function PropertyContactCard({
           type="button"
           onClick={handleRequestTourClick}
           className={clsx(buttonStyles({ variant: "secondary", size: "md" }), "w-full justify-center")}
-          disabled={!hasLandlord || isTourPending}
+          disabled={!hasLandlord || isTourPending || isSelfLandlord}
         >
           <CalendarIcon className="h-5 w-5" aria-hidden="true" />
           {isTourPending ? "Processing..." : requestTourCtaLabel}
         </button>
+        {isSelfLandlord ? (
+          <Link
+            href={{ pathname: `/dashboard/listings/${propertyId}` as Route }}
+            className={clsx(buttonStyles({ variant: "ghost", size: "md" }), "w-full justify-center")}
+          >
+            Manage listing
+          </Link>
+        ) : null}
       </div>
       {tourFeedback ? (
         <p

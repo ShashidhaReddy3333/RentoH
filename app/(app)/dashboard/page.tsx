@@ -317,7 +317,7 @@ function YourListings({
                   {property.status === "draft" ? "Draft" : "Active"}
                 </span>
                 <Link
-                  href={`/dashboard/listings/${property.id}`}
+                  href={{ pathname: `/dashboard/listings/${property.id}` }}
                   className="text-xs font-semibold text-brand-blue hover:text-brand-teal"
                 >
                   Manage
@@ -343,7 +343,7 @@ function UpcomingTours({ tours, role }: { tours: Tour[]; role: "tenant" | "landl
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-brand-dark">{label}</h2>
         <Link
-          href={{ pathname: role === "tenant" ? "/dashboard/tours" : "/dashboard/tours" }}
+          href={{ pathname: "/tours" }}
           className="text-sm font-semibold text-brand-blue transition hover:text-brand-teal"
         >
           View details
@@ -387,7 +387,7 @@ function ApplicationsTable({
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-brand-dark">{title}</h2>
         <Link
-          href={{ pathname: "/dashboard/applications" }}
+          href={{ pathname: "/applications" }}
           className="text-sm font-semibold text-brand-blue transition hover:text-brand-teal"
         >
           See all

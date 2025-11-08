@@ -1,4 +1,4 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -87,7 +87,7 @@ export default async function EditListingPage({ params }: PageProps) {
         <p className="text-sm text-text-muted">
           Update details, reorder photos, or adjust availability. Changes go live immediately after you save.
         </p>
-        <Link href={{ pathname: "/dashboard/listings" }} className={buttonStyles({ variant: "ghost", size: "sm" })}>
+        <Link prefetch={false} href={{ pathname: "/dashboard/listings" }} className={buttonStyles({ variant: "ghost", size: "sm" })}>
           Back to listings
         </Link>
       </header>

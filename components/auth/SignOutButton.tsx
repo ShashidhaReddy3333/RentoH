@@ -41,10 +41,22 @@ export function SignOutButton({ className }: SignOutButtonProps) {
       // Use replace to prevent back navigation issues
       router.replace("/");
       router.refresh();
+
+      // Hard navigation fallback in case client routing is stale
+      if (typeof window !== "undefined") {
+        setTimeout(() => {
+          if (window.location.pathname !== "/") {
+            window.location.assign("/");
+          }
+        }, 150);
+      }
     } catch (err) {
       console.error("[auth] signOut error", err);
       // Redirect anyway to prevent stuck state
       router.replace("/");
+      if (typeof window !== "undefined") {
+        window.location.assign("/");
+      }
     } finally {
       setBusy(false);
     }

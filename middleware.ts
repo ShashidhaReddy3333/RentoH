@@ -7,6 +7,7 @@ import { createSupabaseMiddlewareClient } from './lib/supabase/middleware';
 // All routes that require authentication
 const PROTECTED_ROUTES = [
   '/dashboard',
+  '/dashboard/:path*',
   '/messages',
   '/profile',
   '/favorites',
@@ -15,7 +16,6 @@ const PROTECTED_ROUTES = [
   '/onboarding',
   '/onboarding/:path*',
   '/listings/new',
-  '/listings/:id/manage',
   '/admin',
   '/admin/:path*'
 ] as const;

@@ -108,6 +108,7 @@ export default async function PropertyPage({ params }: PageParams) {
             propertyTitle={property.title}
             isAuthenticated={isAuthenticated}
             landlordId={property.landlordId}
+            currentUserId={user?.id}
           />
         </div>
       </div>
