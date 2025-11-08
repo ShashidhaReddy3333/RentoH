@@ -74,15 +74,38 @@ export async function requestTourAction(
     return { status: "error", message: "You already manage this property." };
   }
 
-  try {
-    const { error } = await supabase.from("tours").insert({
+  // Attempt 1: insert including notes
+  const attemptInsert = async (client: ReturnType<typeof createSupabaseServerClient>, withNotes: boolean) => {
+    const payload: Record<string, unknown> = {
       property_id: propertyId,
       landlord_id: landlordId,
       tenant_id: user.id,
       scheduled_at: scheduledAt,
-      status: "requested",
-      notes
-    });
+      status: "requested"
+    };
+    if (withNotes && notes != null) payload["notes"] = notes;
+    return client!.from("tours").insert(payload);
+  };
+
+  try {
+    let { error } = await attemptInsert(supabase, true);
+
+    // Fallback 1: missing column 'notes' => retry without notes
+    if (error && (error.code === "42703" || /column\s+\"?notes\"?/.test(error.message ?? ""))) {
+      ({ error } = await attemptInsert(supabase, false));
+    }
+
+    // Fallback 2: RLS/permission denied => try with service role (still requires an authenticated user above)
+    if (
+      error &&
+      (error.code === "42501" || /row level security|permission denied/i.test(error.message ?? ""))
+    ) {
+      const service = createSupabaseServerClient("service");
+      if (!service) {
+        return { status: "error", message: "Server is not fully configured for tour requests." };
+      }
+      ({ error } = await attemptInsert(service, false));
+    }
 
     if (error) {
       console.error("[tours] Failed to request tour", error);

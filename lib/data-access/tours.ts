@@ -38,7 +38,6 @@ async function listUpcomingTours(role: Exclude<UserRole, "guest">, limit: number
         scheduled_at,
         landlord_id,
         tenant_id,
-        notes,
         property:properties (
           ${PROPERTY_COLUMNS}
         )

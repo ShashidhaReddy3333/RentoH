@@ -1,5 +1,4 @@
-import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
-import { cookies } from "next/headers";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
 import { PropertyApplicationForm } from "@/app/property/[slug]/apply/PropertyApplicationForm";
@@ -7,7 +6,10 @@ import { PropertyApplicationForm } from "@/app/property/[slug]/apply/PropertyApp
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export default async function ApplyPage({ params }: { params: { slug: string } }) {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createSupabaseServerClient();
+  if (!supabase) {
+    redirect("/auth/sign-in");
+  }
   const {
     data: { session }
   } = await supabase.auth.getSession();
@@ -26,11 +28,7 @@ export default async function ApplyPage({ params }: { params: { slug: string } }
         id,
         slug,
         title,
-        landlord:profiles!properties_landlord_id_fkey (
-          id,
-          full_name,
-          email
-        )
+        landlord_id
       `
     )
     .eq(column, identifier)
@@ -54,13 +52,8 @@ export default async function ApplyPage({ params }: { params: { slug: string } }
     .eq("tenant_id", session.user.id)
     .maybeSingle();
 
-  type Landlord = { id: string; full_name?: string | null; email?: string | null };
-  const landlordRecord = Array.isArray(property.landlord)
-    ? property.landlord[0]
-    : property.landlord;
-  const landlord = landlordRecord as Landlord | undefined;
-
-  if (!landlord) {
+  const landlordId: string | undefined = (property as any).landlord_id ?? undefined;
+  if (!landlordId) {
     redirect("/browse");
   }
 
@@ -84,7 +77,7 @@ export default async function ApplyPage({ params }: { params: { slug: string } }
       ) : (
         <PropertyApplicationForm
           propertyId={propertyId}
-          landlordId={landlord.id}
+          landlordId={landlordId}
           propertyTitle={property.title}
           userId={session.user.id}
         />
