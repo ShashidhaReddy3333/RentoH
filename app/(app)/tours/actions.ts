@@ -91,7 +91,7 @@ export async function requestTourAction(
     let { error } = await attemptInsert(supabase, true);
 
     // Fallback 1: missing column 'notes' => retry without notes
-    if (error && (error.code === "42703" || /column\s+\"?notes\"?/.test(error.message ?? ""))) {
+    if (error && (error.code === "42703" || /column\s+"?notes"?/.test(error.message ?? ""))) {
       ({ error } = await attemptInsert(supabase, false));
     }
 

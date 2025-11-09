@@ -52,7 +52,7 @@ export default async function ApplyPage({ params }: { params: { slug: string } }
     .eq("tenant_id", session.user.id)
     .maybeSingle();
 
-  const landlordId: string | undefined = (property as any).landlord_id ?? undefined;
+  const landlordId: string | undefined = (property as { landlord_id?: string | null }).landlord_id ?? undefined;
   if (!landlordId) {
     redirect("/browse");
   }
