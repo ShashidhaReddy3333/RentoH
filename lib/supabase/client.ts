@@ -22,7 +22,28 @@ export function createSupabaseBrowserClient(): SupabaseClient | null {
 
   if (!browserClient) {
     browserClient = createBrowserClient(supabaseUrl, supabaseAnonKey, {
-      auth: { persistSession: true, autoRefreshToken: true }
+      cookies: {
+        get(name: string) {
+          if (typeof document === 'undefined') return undefined;
+          const cookies = document.cookie.split('; ');
+          const cookie = cookies.find(c => c.startsWith(`${name}=`));
+          return cookie?.substring(name.length + 1);
+        },
+        set(name: string, value: string, options: { maxAge?: number; path?: string }) {
+          if (typeof document === 'undefined') return;
+          let cookieString = `${name}=${value}`;
+          if (options.path) cookieString += `; path=${options.path}`;
+          if (options.maxAge) cookieString += `; max-age=${options.maxAge}`;
+          cookieString += '; SameSite=Lax';
+          document.cookie = cookieString;
+        },
+        remove(name: string, options: { path?: string }) {
+          if (typeof document === 'undefined') return;
+          let cookieString = `${name}=; max-age=0`;
+          if (options.path) cookieString += `; path=${options.path}`;
+          document.cookie = cookieString;
+        }
+      }
     });
   }
 

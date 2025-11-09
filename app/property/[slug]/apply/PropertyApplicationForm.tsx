@@ -3,7 +3,7 @@
 import type { Route } from "next";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -18,7 +18,12 @@ interface Props {
 
 export function PropertyApplicationForm({ propertyId, landlordId, propertyTitle, userId }: Props) {
   const router = useRouter();
-  const supabase = createClientComponentClient();
+  const supabase = createSupabaseBrowserClient();
+  
+  if (!supabase) {
+    console.error('[PropertyApplicationForm] Supabase client not available');
+    return null;
+  }
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     monthlyIncome: "",

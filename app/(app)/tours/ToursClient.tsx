@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { format } from 'date-fns';
@@ -43,7 +43,12 @@ export default function ToursClient({ tours, userRole, userId }: Props) {
   // avoid unused-var lint in the client bundle.
   void userId;
   const [filter, setFilter] = useState('all');
-  const supabase = createClientComponentClient();
+  const supabase = createSupabaseBrowserClient();
+  
+  if (!supabase) {
+    console.error('[ToursClient] Supabase client not available');
+    return <div className="text-center py-8"><p className="text-red-500">Unable to load tours</p></div>;
+  }
 
   const filteredTours = tours.filter(tour => {
     if (filter === 'all') return true;

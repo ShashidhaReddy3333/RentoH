@@ -1,10 +1,13 @@
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { default as ApplicationsClient } from '@/app/(app)/applications/ApplicationsClient';
 
 export default async function ApplicationsPage() {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createSupabaseServerClient();
+  
+  if (!supabase) {
+    throw new Error('Supabase client not available');
+  }
   const { data: { session } } = await supabase.auth.getSession();
 
   if (!session) {

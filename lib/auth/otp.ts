@@ -1,11 +1,15 @@
 "use client";
 
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 import { clientEnv } from "@/lib/env";
 
 export async function sendEmailOtp(email: string) {
-  const supabase = createClientComponentClient();
+  const supabase = createSupabaseBrowserClient();
+  
+  if (!supabase) {
+    throw new Error("Supabase client not available");
+  }
   const siteUrl = clientEnv.NEXT_PUBLIC_SITE_URL;
 
   if (!siteUrl) {

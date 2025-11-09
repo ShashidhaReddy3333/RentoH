@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { formatDistance } from 'date-fns';
@@ -46,7 +46,12 @@ interface Props {
 
 export default function ApplicationsClient({ applications, userRole }: Props) {
   const [filter, setFilter] = useState('all');
-  const supabase = createClientComponentClient();
+  const supabase = createSupabaseBrowserClient();
+  
+  if (!supabase) {
+    console.error('[ApplicationsClient] Supabase client not available');
+    return <div className="text-center py-8"><p className="text-red-500">Unable to load applications</p></div>;
+  }
 
   const filteredApplications = applications.filter(app => {
     if (filter === 'all') return true;
