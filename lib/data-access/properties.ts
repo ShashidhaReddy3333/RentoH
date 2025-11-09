@@ -403,25 +403,32 @@ async function mapRowToPropertyWithAssets(record: SupabasePropertyRow): Promise<
 
   const bucket = env.SUPABASE_STORAGE_BUCKET_LISTINGS || "listings";
 
-  if (env.SUPABASE_SERVICE_ROLE_KEY) {
-    const service = createClient(env.NEXT_PUBLIC_SUPABASE_URL!, env.SUPABASE_SERVICE_ROLE_KEY);
-    const signedPromises = images.map(async (img) => {
-      if (!img || img.startsWith("http")) return img;
-      try {
-        const { data: signed, error: signErr } = await service.storage.from(bucket).createSignedUrl(img, 60 * 60);
-        if (signErr || !signed) {
-          console.warn("[properties] Failed to create signed URL, using public URL fallback", { img, error: signErr });
+  // Use public URLs for production to avoid signed URL complexity
+  if (env.SUPABASE_SERVICE_ROLE_KEY && env.NODE_ENV !== 'production') {
+    try {
+      const service = createClient(env.NEXT_PUBLIC_SUPABASE_URL!, env.SUPABASE_SERVICE_ROLE_KEY);
+      const signedPromises = images.map(async (img) => {
+        if (!img || img.startsWith("http")) return img;
+        try {
+          const { data: signed, error: signErr } = await service.storage.from(bucket).createSignedUrl(img, 60 * 60);
+          if (signErr || !signed) {
+            console.warn("[properties] Failed to create signed URL, using public URL fallback", { img, error: signErr });
+            return buildPublicStorageUrl(img) ?? img;
+          }
+          return signed.signedUrl;
+        } catch (error) {
+          console.warn("[properties] Unexpected error creating signed URL, using public URL fallback", { img, error });
           return buildPublicStorageUrl(img) ?? img;
         }
-        return signed.signedUrl;
-      } catch (error) {
-        console.warn("[properties] Unexpected error creating signed URL, using public URL fallback", { img, error });
-        return buildPublicStorageUrl(img) ?? img;
-      }
-    });
+      });
 
-    const signedUrls = await Promise.all(signedPromises);
-    return { ...prop, images: signedUrls, imageStoragePaths: images };
+      const signedUrls = await Promise.all(signedPromises);
+      return { ...prop, images: signedUrls, imageStoragePaths: images };
+    } catch (error) {
+      console.error("[properties] Failed to process signed URLs, falling back to public URLs", error);
+      const publicUrls = resolveImageUrls(images);
+      return { ...prop, images: publicUrls, imageStoragePaths: images };
+    }
   }
 
   const publicUrls = resolveImageUrls(images);

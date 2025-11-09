@@ -70,7 +70,14 @@ export async function generateMetadata({ params }: PageParams): Promise<Metadata
 }
 
 export default async function PropertyPage({ params }: PageParams) {
-  const property = await getBySlugOrId(params.slug);
+  let property;
+  try {
+    property = await getBySlugOrId(params.slug);
+  } catch (error) {
+    console.error('[property] Failed to load property', params.slug, error);
+    notFound();
+  }
+  
   if (!property) {
     notFound();
   }

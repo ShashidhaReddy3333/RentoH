@@ -47,10 +47,8 @@ if (supabaseHost) {
   connectSrc.push(`https://${supabaseHost}`);
 }
 
-// Allow Vercel Live feedback in development/preview
-if (process.env.NODE_ENV !== 'production' || process.env['VERCEL_ENV'] === 'preview') {
-  connectSrc.push('https://vercel.live', 'wss://ws-us3.pusher.com');
-}
+// Always allow Vercel Live (Vercel only loads it in preview/development)
+connectSrc.push('https://vercel.live', 'wss://ws-us3.pusher.com');
 
 const imgSrc = [
   "'self'",
@@ -87,10 +85,8 @@ scriptSrc.push("'unsafe-eval'", "'unsafe-inline'");
 if (supabaseHost) {
   scriptSrc.push(`https://${supabaseHost}`);
 }
-// Allow Vercel Live feedback in development/preview
-if (process.env.NODE_ENV !== 'production' || process.env['VERCEL_ENV'] === 'preview') {
-  scriptSrc.push('https://vercel.live');
-}
+// Always allow Vercel Live for deployments (Vercel only loads it in preview/development)
+scriptSrc.push('https://vercel.live');
 
 const csp = [
   "default-src 'self'",
