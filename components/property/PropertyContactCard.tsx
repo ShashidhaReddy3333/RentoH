@@ -237,9 +237,10 @@ export function PropertyContactCard({
           className="space-y-4 rounded-2xl border border-brand-outline/60 bg-brand-light/40 p-4"
         >
           <div className="grid gap-3 sm:grid-cols-2">
-            <label className="text-sm font-semibold text-brand-dark">
+            <label htmlFor="tour-date" className="text-sm font-semibold text-brand-dark">
               Preferred date
               <Input
+                id="tour-date"
                 type="date"
                 name="date"
                 required
@@ -249,9 +250,10 @@ export function PropertyContactCard({
                 className="mt-1"
               />
             </label>
-            <label className="text-sm font-semibold text-brand-dark">
+            <label htmlFor="tour-time" className="text-sm font-semibold text-brand-dark">
               Preferred time
               <Input
+                id="tour-time"
                 type="time"
                 name="time"
                 required
@@ -261,9 +263,10 @@ export function PropertyContactCard({
               />
             </label>
           </div>
-          <label className="text-sm font-semibold text-brand-dark">
+          <label htmlFor="tour-notes" className="text-sm font-semibold text-brand-dark">
             Notes for the landlord (optional)
             <textarea
+              id="tour-notes"
               name="notes"
               value={tourFormValues.notes}
               onChange={handleTourFieldChange}
