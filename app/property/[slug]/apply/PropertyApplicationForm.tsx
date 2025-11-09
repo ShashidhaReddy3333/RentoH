@@ -18,17 +18,17 @@ interface Props {
 
 export function PropertyApplicationForm({ propertyId, landlordId, propertyTitle, userId }: Props) {
   const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    monthlyIncome: "",
+    message: ""
+  });
   const supabase = createSupabaseBrowserClient();
   
   if (!supabase) {
     console.error('[PropertyApplicationForm] Supabase client not available');
     return null;
   }
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState({
-    monthlyIncome: "",
-    message: ""
-  });
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
