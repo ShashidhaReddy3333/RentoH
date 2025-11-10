@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseClientWithUser } from "@/lib/supabase/auth";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/middleware/rate-limit";
 
 async function readJson(request: Request) {
   try {
@@ -32,6 +33,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
+  // Rate limiting
+  const rateLimitResult = checkRateLimit(user.id, RATE_LIMITS.favorites);
+  if (!rateLimitResult.allowed) {
+    return NextResponse.json(
+      { error: "Too many requests. Please try again later." },
+      { 
+        status: 429,
+        headers: {
+          'X-RateLimit-Limit': RATE_LIMITS.favorites.maxRequests.toString(),
+          'X-RateLimit-Remaining': '0',
+          'X-RateLimit-Reset': rateLimitResult.resetAt.toString(),
+        }
+      }
+    );
+  }
+
   try {
     const { error } = await supabase.from("favorites").insert({ user_id: user.id, property_id: propertyId });
     if (error) {
@@ -62,6 +79,22 @@ export async function DELETE(request: Request) {
   const { supabase, user } = await getSupabaseClientWithUser();
   if (!supabase || !user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
+
+  // Rate limiting
+  const rateLimitResult = checkRateLimit(user.id, RATE_LIMITS.favorites);
+  if (!rateLimitResult.allowed) {
+    return NextResponse.json(
+      { error: "Too many requests. Please try again later." },
+      { 
+        status: 429,
+        headers: {
+          'X-RateLimit-Limit': RATE_LIMITS.favorites.maxRequests.toString(),
+          'X-RateLimit-Remaining': '0',
+          'X-RateLimit-Reset': rateLimitResult.resetAt.toString(),
+        }
+      }
+    );
   }
 
   try {
