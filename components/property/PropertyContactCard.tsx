@@ -9,6 +9,7 @@ import type { ChangeEvent, FormEvent } from "react";
 
 import { buttonStyles } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { TimePicker } from "@/components/ui/TimePicker";
 import { createThreadForProperty } from "@/app/(app)/messages/create-thread-action";
 import { requestTourAction } from "@/app/(app)/tours/actions";
 import { initialTourRequestState, type TourRequestState } from "@/app/(app)/tours/types";
@@ -88,6 +89,10 @@ export function PropertyContactCard({
   const handleTourFieldChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = event.target;
     setTourFormValues((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleTimeChange = (value: string) => {
+    setTourFormValues((prev) => ({ ...prev, time: value }));
   };
 
   const handleTourSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -262,14 +267,14 @@ export function PropertyContactCard({
             </label>
             <label htmlFor="tour-time" className="text-sm font-semibold text-brand-dark">
               Preferred time
-              <Input
+              <TimePicker
                 id="tour-time"
-                type="time"
                 name="time"
                 required
                 value={tourFormValues.time}
-                onChange={handleTourFieldChange}
+                onChange={handleTimeChange}
                 className="mt-1"
+                aria-describedby={tourState.status === "validation-error" ? "tour-error" : undefined}
               />
             </label>
           </div>
