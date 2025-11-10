@@ -1,12 +1,12 @@
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeftIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline';
+import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { formatDistance } from 'date-fns';
 import Image from 'next/image';
 
-import { buttonStyles } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import ApplicationActions from './ApplicationActions';
 
 export default async function ApplicationDetailPage({ params }: { params: { id: string } }) {
   const supabase = createSupabaseServerClient();
@@ -260,34 +260,10 @@ export default async function ApplicationDetailPage({ params }: { params: { id: 
         {isLandlord && (
           <Card className="p-6">
             <h2 className="text-lg font-semibold mb-4 text-brand-dark">Actions</h2>
-            <div className="flex gap-3">
-              {application.status !== 'approved' && (
-                <form action="/api/applications/update" method="POST">
-                  <input type="hidden" name="id" value={application.id} />
-                  <input type="hidden" name="status" value="approved" />
-                  <button
-                    type="submit"
-                    className={buttonStyles({ variant: 'primary' })}
-                  >
-                    <CheckCircleIcon className="h-5 w-5" />
-                    Approve
-                  </button>
-                </form>
-              )}
-              {application.status !== 'rejected' && application.status !== 'approved' && (
-                <form action="/api/applications/update" method="POST">
-                  <input type="hidden" name="id" value={application.id} />
-                  <input type="hidden" name="status" value="rejected" />
-                  <button
-                    type="submit"
-                    className={buttonStyles({ variant: 'secondary' })}
-                  >
-                    <XCircleIcon className="h-5 w-5" />
-                    Reject
-                  </button>
-                </form>
-              )}
-            </div>
+            <ApplicationActions 
+              applicationId={application.id} 
+              currentStatus={application.status || 'submitted'} 
+            />
           </Card>
         )}
       </div>
