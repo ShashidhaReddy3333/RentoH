@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import ListingImageUploader from "@/components/ListingImageUploader";
 import { Button } from "@/components/ui/button";
 import { InputField } from "@/components/ui/input";
-import type { ListingFormState } from "@/app/(app)/listings/new/actions";
+import type { ListingFormState } from "@/app/(app)/listings/new/types";
 import { listingFormSchema } from "@/lib/validation/listingSchema";
 import type { ListingFormInput, ListingFormValues } from "@/lib/validation/listingSchema";
 import { useDebounce } from "@/lib/utils/hooks";

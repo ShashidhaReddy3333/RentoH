@@ -4,14 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { hasSupabaseEnv, missingSupabaseMessage } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-
-export type TourRequestState =
-  | { status: "idle" }
-  | { status: "success" }
-  | { status: "error"; message: string }
-  | { status: "validation-error"; message: string };
-
-export const initialTourRequestState: TourRequestState = { status: "idle" };
+import type { TourRequestState } from "./types";
 
 function parseDateTime(date: string, time: string): string | null {
   if (!date || !time) {

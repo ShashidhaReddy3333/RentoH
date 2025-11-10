@@ -10,7 +10,8 @@ import type { ChangeEvent, FormEvent } from "react";
 import { buttonStyles } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createThreadForProperty } from "@/app/(app)/messages/create-thread-action";
-import { initialTourRequestState, requestTourAction, type TourRequestState } from "@/app/(app)/tours/actions";
+import { requestTourAction } from "@/app/(app)/tours/actions";
+import { initialTourRequestState, type TourRequestState } from "@/app/(app)/tours/types";
 
 type PropertyContactCardProps = {
   propertyId: string;

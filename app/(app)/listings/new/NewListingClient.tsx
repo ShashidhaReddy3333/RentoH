@@ -12,9 +12,9 @@ import {
   createListingAction,
   saveDraftAction,
   fetchDraftAction,
-  updateListingAction,
-  type ListingFormState
+  updateListingAction
 } from "./actions";
+import type { ListingFormState } from "./types";
 import type { ListingFormValues } from "@/lib/validation/listingSchema";
 
 const initialListingFormState: ListingFormState = { status: "idle" };

@@ -2,7 +2,7 @@ import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
-import type { ListingFormState } from "@/app/(app)/listings/new/actions";
+import type { ListingFormState } from "@/app/(app)/listings/new/types";
 import ListingForm from "@/components/forms/ListingForm";
 import type { ListingFormValues } from "@/lib/validation/listingSchema";
 

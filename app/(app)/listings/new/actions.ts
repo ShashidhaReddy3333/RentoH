@@ -1,4 +1,4 @@
-'use server';
+"use server";
 
 import { revalidatePath } from "next/cache";
 import { randomUUID } from "node:crypto";
@@ -9,22 +9,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSlug } from "@/lib/utils/slug";
 import type { Property } from "@/lib/types";
 import { ListingSchema } from "./schema";
-
-type ListingStateMetadata = {
-  listingId?: string;
-};
-
-export type ListingFormState =
-  | ({ status: "idle" } & ListingStateMetadata)
-  | ({ status: "success" } & ListingStateMetadata)
-  | ({ status: "error"; message: string } & ListingStateMetadata)
-  | ({ status: "auto-saved"; timestamp: number } & ListingStateMetadata)
-  | ({
-      status: "validation-error";
-      message: string;
-      fieldErrors: Record<string, string[]>;
-      formErrors?: string[];
-    } & ListingStateMetadata);
+import type { ListingFormState } from "./types";
 
 const DRAFT_STORAGE_KEY = "__rento_listing_draft__";
 
