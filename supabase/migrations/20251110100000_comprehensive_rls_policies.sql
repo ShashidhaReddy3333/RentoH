@@ -9,7 +9,7 @@ ALTER TABLE public.favorites ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.applications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.tours ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.threads ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.message_threads ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
 -- =====================================================
@@ -144,7 +144,7 @@ CREATE POLICY messages_read_participant ON public.messages
   FOR SELECT
   USING (
     EXISTS (
-      SELECT 1 FROM public.threads t
+      SELECT 1 FROM public.message_threads t
       WHERE t.id = messages.thread_id
       AND (t.tenant_id = auth.uid() OR t.landlord_id = auth.uid())
     )
@@ -157,37 +157,37 @@ CREATE POLICY messages_insert_participant ON public.messages
   WITH CHECK (
     auth.uid() = sender_id
     AND EXISTS (
-      SELECT 1 FROM public.threads t
+      SELECT 1 FROM public.message_threads t
       WHERE t.id = messages.thread_id
       AND (t.tenant_id = auth.uid() OR t.landlord_id = auth.uid())
     )
   );
 
 -- =====================================================
--- THREADS TABLE POLICIES
+-- MESSAGE_THREADS TABLE POLICIES
 -- =====================================================
 
 -- Tenants can read their own threads
-DROP POLICY IF EXISTS threads_read_tenant ON public.threads;
-CREATE POLICY threads_read_tenant ON public.threads
+DROP POLICY IF EXISTS threads_read_tenant ON public.message_threads;
+CREATE POLICY threads_read_tenant ON public.message_threads
   FOR SELECT
   USING (auth.uid() = tenant_id);
 
 -- Landlords can read their threads
-DROP POLICY IF EXISTS threads_read_landlord ON public.threads;
-CREATE POLICY threads_read_landlord ON public.threads
+DROP POLICY IF EXISTS threads_read_landlord ON public.message_threads;
+CREATE POLICY threads_read_landlord ON public.message_threads
   FOR SELECT
   USING (auth.uid() = landlord_id);
 
 -- Tenants can create threads
-DROP POLICY IF EXISTS threads_insert_tenant ON public.threads;
-CREATE POLICY threads_insert_tenant ON public.threads
+DROP POLICY IF EXISTS threads_insert_tenant ON public.message_threads;
+CREATE POLICY threads_insert_tenant ON public.message_threads
   FOR INSERT
   WITH CHECK (auth.uid() = tenant_id);
 
 -- Participants can update threads (e.g., mark as read)
-DROP POLICY IF EXISTS threads_update_participant ON public.threads;
-CREATE POLICY threads_update_participant ON public.threads
+DROP POLICY IF EXISTS threads_update_participant ON public.message_threads;
+CREATE POLICY threads_update_participant ON public.message_threads
   FOR UPDATE
   USING (auth.uid() = tenant_id OR auth.uid() = landlord_id)
   WITH CHECK (auth.uid() = tenant_id OR auth.uid() = landlord_id);
@@ -200,7 +200,7 @@ CREATE POLICY threads_update_participant ON public.threads
 DROP POLICY IF EXISTS profiles_read_own ON public.profiles;
 CREATE POLICY profiles_read_own ON public.profiles
   FOR SELECT
-  USING (auth.uid() = user_id);
+  USING (auth.uid() = id);
 
 -- Users can read profiles of people they interact with
 DROP POLICY IF EXISTS profiles_read_contacts ON public.profiles;
@@ -208,14 +208,14 @@ CREATE POLICY profiles_read_contacts ON public.profiles
   FOR SELECT
   USING (
     EXISTS (
-      SELECT 1 FROM public.threads t
-      WHERE (t.tenant_id = auth.uid() AND t.landlord_id = profiles.user_id)
-         OR (t.landlord_id = auth.uid() AND t.tenant_id = profiles.user_id)
+      SELECT 1 FROM public.message_threads t
+      WHERE (t.tenant_id = auth.uid() AND t.landlord_id = profiles.id)
+         OR (t.landlord_id = auth.uid() AND t.tenant_id = profiles.id)
     )
     OR EXISTS (
       SELECT 1 FROM public.applications a
-      WHERE (a.tenant_id = auth.uid() AND a.landlord_id = profiles.user_id)
-         OR (a.landlord_id = auth.uid() AND a.tenant_id = profiles.user_id)
+      WHERE (a.tenant_id = auth.uid() AND a.landlord_id = profiles.id)
+         OR (a.landlord_id = auth.uid() AND a.tenant_id = profiles.id)
     )
   );
 
@@ -223,14 +223,14 @@ CREATE POLICY profiles_read_contacts ON public.profiles
 DROP POLICY IF EXISTS profiles_insert ON public.profiles;
 CREATE POLICY profiles_insert ON public.profiles
   FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
+  WITH CHECK (auth.uid() = id);
 
 -- Users can update their own profile
 DROP POLICY IF EXISTS profiles_update ON public.profiles;
 CREATE POLICY profiles_update ON public.profiles
   FOR UPDATE
-  USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
+  USING (auth.uid() = id)
+  WITH CHECK (auth.uid() = id);
 
 -- =====================================================
 -- VERIFICATION
@@ -243,7 +243,7 @@ DECLARE
     rls_enabled boolean;
 BEGIN
     FOR table_name IN 
-        SELECT unnest(ARRAY['properties', 'favorites', 'applications', 'tours', 'messages', 'threads', 'profiles'])
+        SELECT unnest(ARRAY['properties', 'favorites', 'applications', 'tours', 'messages', 'message_threads', 'profiles'])
     LOOP
         SELECT relrowsecurity INTO rls_enabled
         FROM pg_class
