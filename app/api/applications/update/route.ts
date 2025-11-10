@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
@@ -37,14 +38,6 @@ export async function POST(request: NextRequest) {
   }
 
   // Update the application
-  const timeline = [
-    {
-      status,
-      timestamp: new Date().toISOString(),
-      note: `Application ${status}`
-    }
-  ];
-
   const { error } = await supabase
     .from('applications')
     .update({ 

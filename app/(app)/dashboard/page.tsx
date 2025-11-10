@@ -424,7 +424,7 @@ function ApplicationsTable({
             </thead>
             <tbody className="divide-y divide-black/5 bg-white">
               {applications.map((application) => (
-                <ApplicationRow key={application.id} application={application} isLandlord={false} />
+                <ApplicationRow key={application.id} application={application} />
               ))}
             </tbody>
           </table>
@@ -434,7 +434,7 @@ function ApplicationsTable({
   );
 }
 
-function ApplicationRow({ application, isLandlord }: { application: ApplicationSummary; isLandlord: boolean }) {
+function ApplicationRow({ application }: { application: ApplicationSummary }) {
   return (
     <tr className="hover:bg-surface cursor-pointer transition">
       <td className="px-4 py-3 font-semibold text-brand-dark">

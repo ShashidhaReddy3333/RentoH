@@ -229,7 +229,7 @@ export default async function ApplicationDetailPage({ params }: { params: { id: 
             <div>
               <h2 className="text-lg font-semibold mb-3 text-brand-dark">Timeline</h2>
               <div className="space-y-3">
-                {application.timeline.map((event: any, index: number) => (
+                {application.timeline.map((event: { status?: string; timestamp?: string; note?: string }, index: number) => (
                   <div key={index} className="flex items-start gap-3">
                     <div className={`w-2 h-2 rounded-full mt-2 ${
                       event.status === 'approved' ? 'bg-green-500' :
@@ -238,7 +238,7 @@ export default async function ApplicationDetailPage({ params }: { params: { id: 
                     }`} />
                     <div className="flex-1">
                       <p className="text-sm font-medium text-brand-dark">
-                        {event.status?.charAt(0).toUpperCase() + event.status?.slice(1)}
+                        {event.status ? event.status.charAt(0).toUpperCase() + event.status.slice(1) : 'Updated'}
                       </p>
                       {event.timestamp && (
                         <p className="text-xs text-text-muted">
