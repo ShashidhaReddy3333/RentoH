@@ -6,24 +6,19 @@ import { FaceSmileIcon } from "@heroicons/react/24/outline";
 import clsx from "clsx";
 
 import { buttonStyles } from "@/components/ui/button";
-import { uploadMessageAttachment, formatFileSize, getFileIcon, type UploadResult } from "@/lib/storage/attachments";
 
 type ComposerProps = {
   disabled?: boolean;
-  onSend: (text: string, attachment?: UploadResult) => Promise<void>;
-  currentUserId?: string;
+  onSend: (text: string) => Promise<void>;
 };
 
 const iconButtonClasses =
   "inline-flex h-9 w-9 items-center justify-center rounded-full text-neutral-500 transition hover:bg-brand-light hover:text-brand-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white";
 
-export default function Composer({ disabled = false, onSend, currentUserId }: ComposerProps) {
+export default function Composer({ disabled = false, onSend }: ComposerProps) {
   const [value, setValue] = useState("");
   const [isSending, setIsSending] = useState(false);
-  const [attachment, setAttachment] = useState<UploadResult | null>(null);
-  const [uploadError, setUploadError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const resetHeight = useCallback(() => {
     const el = textareaRef.current;
