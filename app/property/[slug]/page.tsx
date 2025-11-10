@@ -87,6 +87,22 @@ export default async function PropertyPage({ params }: PageParams) {
   const mapboxToken = env.NEXT_PUBLIC_MAPBOX_TOKEN ?? null;
   const amenities = property.amenities ?? [];
   const isFavorite = await isFavorited(property.id).catch(() => false);
+  
+  // Check if user has already applied to this property
+  let hasExistingApplication = false;
+  if (user) {
+    const { createSupabaseServerClient } = await import('@/lib/supabase/server');
+    const supabase = createSupabaseServerClient();
+    if (supabase) {
+      const { data } = await supabase
+        .from('applications')
+        .select('id')
+        .eq('property_id', property.id)
+        .eq('tenant_id', user.id)
+        .maybeSingle();
+      hasExistingApplication = Boolean(data);
+    }
+  }
 
   return (
     <main className="mx-auto max-w-6xl space-y-8 px-4 py-8 lg:space-y-10 lg:py-12">
@@ -116,6 +132,7 @@ export default async function PropertyPage({ params }: PageParams) {
             isAuthenticated={isAuthenticated}
             landlordId={property.landlordId}
             currentUserId={user?.id}
+            hasExistingApplication={hasExistingApplication}
           />
         </div>
       </div>

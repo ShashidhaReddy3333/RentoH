@@ -17,7 +17,7 @@ import Chip from "@/components/messages/Chip";
 import { buttonStyles } from "@/components/ui/button";
 import type { Message, MessageThread } from "@/lib/types";
 
-import { sendMessageAction } from "./actions";
+import { sendMessageAction, markThreadAsReadAction } from "./actions";
 
 type MessagesClientProps = {
   threads: MessageThread[];
@@ -70,6 +70,15 @@ export default function MessagesClient({
     }
   }, [currentThreadId, threads]);
 
+  // Mark the active thread as read when it changes
+  useEffect(() => {
+    if (activeThreadId) {
+      markThreadAsReadAction(activeThreadId).catch((error) => {
+        console.error("[messages] Failed to mark initial thread as read", error);
+      });
+    }
+  }, [activeThreadId]);
+
   const filteredThreads = useMemo(() => {
     if (!search.trim()) return threads;
     const q = search.trim().toLowerCase();
@@ -87,11 +96,18 @@ export default function MessagesClient({
   );
 
   const handleSelectThread = useCallback(
-    (threadId: string) => {
+    async (threadId: string) => {
       setCurrentThreadId(threadId);
       const next = new URLSearchParams(params?.toString() ?? "");
       next.set("t", threadId);
       router.push(`${pathname}?${next.toString()}` as Route, { scroll: false });
+      
+      // Mark the thread as read when it's opened
+      try {
+        await markThreadAsReadAction(threadId);
+      } catch (error) {
+        console.error("[messages] Failed to mark thread as read", error);
+      }
     },
     [params, pathname, router]
   );

@@ -79,24 +79,28 @@ async function TenantDashboard() {
       title: "Saved homes",
       value: favorites.length,
       change: favorites.length ? `${favorites.length} ready to review` : undefined,
-      icon: <HomeModernIcon className="h-6 w-6 text-brand-teal" aria-hidden="true" />
+      icon: <HomeModernIcon className="h-6 w-6 text-brand-teal" aria-hidden="true" />,
+      href: "/favorites"
     },
     {
       title: "Applications",
       value: applications.length,
       change: applications.length ? `${applications.length} submitted` : undefined,
-      icon: <ClipboardDocumentListIcon className="h-6 w-6 text-brand-blue" aria-hidden="true" />
+      icon: <ClipboardDocumentListIcon className="h-6 w-6 text-brand-blue" aria-hidden="true" />,
+      href: "/applications"
     },
     {
       title: "Tours booked",
       value: tours.length,
       change: tours[0] ? formatRelativeDate(tours[0].scheduledAt) : undefined,
-      icon: <CalendarIcon className="h-6 w-6 text-brand-green" aria-hidden="true" />
+      icon: <CalendarIcon className="h-6 w-6 text-brand-green" aria-hidden="true" />,
+      href: "/tours"
     },
     {
       title: "Unread messages",
       value: unreadMessages,
-      icon: <ChatBubbleOvalLeftEllipsisIcon className="h-6 w-6 text-brand-teal" aria-hidden="true" />
+      icon: <ChatBubbleOvalLeftEllipsisIcon className="h-6 w-6 text-brand-teal" aria-hidden="true" />,
+      href: "/messages"
     }
   ];
 
@@ -142,24 +146,28 @@ async function LandlordDashboard() {
       title: "Active listings",
       value: activeListings.length,
       change: draftListings.length ? `${draftListings.length} drafts ready` : undefined,
-      icon: <HomeModernIcon className="h-6 w-6 text-brand-teal" aria-hidden="true" />
+      icon: <HomeModernIcon className="h-6 w-6 text-brand-teal" aria-hidden="true" />,
+      href: "/dashboard/listings"
     },
     {
       title: "Applications",
       value: applications.length,
       change: applications.length ? `${applications.length} awaiting review` : undefined,
-      icon: <ClipboardDocumentListIcon className="h-6 w-6 text-brand-blue" aria-hidden="true" />
+      icon: <ClipboardDocumentListIcon className="h-6 w-6 text-brand-blue" aria-hidden="true" />,
+      href: "/applications"
     },
     {
       title: "Upcoming tours",
       value: tours.length,
       change: tours[0] ? formatRelativeDate(tours[0].scheduledAt) : undefined,
-      icon: <CalendarIcon className="h-6 w-6 text-brand-green" aria-hidden="true" />
+      icon: <CalendarIcon className="h-6 w-6 text-brand-green" aria-hidden="true" />,
+      href: "/tours"
     },
     {
       title: "Unread messages",
       value: unreadMessages,
-      icon: <ChatBubbleOvalLeftEllipsisIcon className="h-6 w-6 text-brand-teal" aria-hidden="true" />
+      icon: <ChatBubbleOvalLeftEllipsisIcon className="h-6 w-6 text-brand-teal" aria-hidden="true" />,
+      href: "/messages"
     }
   ];
 
@@ -416,22 +424,32 @@ function ApplicationsTable({
             </thead>
             <tbody className="divide-y divide-black/5 bg-white">
               {applications.map((application) => (
-                <tr key={application.id}>
-                  <td className="px-4 py-3 font-semibold text-brand-dark">{application.applicantName}</td>
-                  <td className="px-4 py-3 text-text-muted">{application.propertyTitle}</td>
-                  <td className="px-4 py-3">
-                    <span className="rounded-full bg-brand-teal/10 px-3 py-1 text-xs font-semibold capitalize text-brand-teal">
-                      {application.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-xs text-text-muted">{formatDateTime(application.submittedAt)}</td>
-                </tr>
+                <ApplicationRow key={application.id} application={application} isLandlord={false} />
               ))}
             </tbody>
           </table>
         </div>
       )}
     </section>
+  );
+}
+
+function ApplicationRow({ application, isLandlord }: { application: ApplicationSummary; isLandlord: boolean }) {
+  return (
+    <tr className="hover:bg-surface cursor-pointer transition">
+      <td className="px-4 py-3 font-semibold text-brand-dark">
+        <Link href={`/applications/${application.id}`} className="hover:text-brand-teal">
+          {application.applicantName}
+        </Link>
+      </td>
+      <td className="px-4 py-3 text-text-muted">{application.propertyTitle}</td>
+      <td className="px-4 py-3">
+        <span className="rounded-full bg-brand-teal/10 px-3 py-1 text-xs font-semibold capitalize text-brand-teal">
+          {application.status}
+        </span>
+      </td>
+      <td className="px-4 py-3 text-xs text-text-muted">{formatDateTime(application.submittedAt)}</td>
+    </tr>
   );
 }
 

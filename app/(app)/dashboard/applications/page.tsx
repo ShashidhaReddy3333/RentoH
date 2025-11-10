@@ -107,8 +107,12 @@ export default async function ApplicationsPage() {
 
 function ApplicationRow({ application, isLandlord }: { application: ApplicationSummary; isLandlord: boolean }) {
   return (
-    <tr>
-      <td className="px-6 py-4 text-sm font-semibold text-brand-dark">{application.propertyTitle}</td>
+    <tr className="hover:bg-surface cursor-pointer transition">
+      <td className="px-6 py-4 text-sm font-semibold text-brand-dark">
+        <Link href={`/applications/${application.id}`} className="hover:text-brand-teal">
+          {application.propertyTitle}
+        </Link>
+      </td>
       <td className="px-6 py-4 text-sm text-text-muted">
         {isLandlord ? application.applicantName : capitalize(application.status)}
       </td>

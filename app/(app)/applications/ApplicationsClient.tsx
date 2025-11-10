@@ -111,7 +111,7 @@ export default function ApplicationsClient({ applications, userRole }: Props) {
                 </div>
                 <div>
                   <h3 className="font-semibold text-lg">
-                    <Link href={`/property/${app.property.id}`}>
+                    <Link href={`/applications/${app.id}`} className="hover:text-brand-teal">
                       {app.property.title}
                     </Link>
                   </h3>

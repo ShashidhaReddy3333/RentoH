@@ -20,6 +20,7 @@ type PropertyContactCardProps = {
   propertySlug?: string;
   landlordId?: string;
   currentUserId?: string;
+  hasExistingApplication?: boolean;
 };
 
 export function PropertyContactCard({
@@ -28,7 +29,8 @@ export function PropertyContactCard({
   isAuthenticated,
   propertySlug,
   landlordId,
-  currentUserId
+  currentUserId,
+  hasExistingApplication = false
 }: PropertyContactCardProps) {
   const [isMessagePending, startMessageTransition] = useTransition();
   const [isTourPending, startTourTransition] = useTransition();
@@ -182,7 +184,14 @@ export function PropertyContactCard({
           Call support
         </a>
         {applyTarget && hasLandlord && !isSelfLandlord ? (
-          isAuthenticated ? (
+          hasExistingApplication ? (
+            <Link
+              href="/applications"
+              className={clsx(buttonStyles({ variant: "secondary", size: "md" }), "w-full justify-center")}
+            >
+              View your application
+            </Link>
+          ) : isAuthenticated ? (
             <Link
               href={applyHref}
               className={clsx(buttonStyles({ variant: "primary", size: "md" }), "w-full justify-center")}

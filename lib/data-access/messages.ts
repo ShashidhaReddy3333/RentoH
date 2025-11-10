@@ -145,6 +145,33 @@ export async function hasUnreadThreads(): Promise<boolean> {
   return Boolean(data && data.some((row) => (row.unread_count ?? 0) > 0));
 }
 
+export async function markThreadAsRead(threadId: string): Promise<void> {
+  const { supabase, user } = await getSupabaseClientWithUser();
+  if (!supabase || !user) {
+    console.error("[messages] Cannot mark as read: Supabase client unavailable");
+    return;
+  }
+
+  // Mark all messages in this thread that were sent by the other party as read
+  const { error } = await supabase
+    .from("messages")
+    .update({ read_at: new Date().toISOString() })
+    .eq("thread_id", threadId)
+    .neq("sender_id", user.id)
+    .is("read_at", null);
+
+  if (error) {
+    console.error("[messages] Failed to mark thread as read", error);
+  }
+
+  // Reset the unread count for this thread
+  await supabase
+    .from("message_threads")
+    .update({ unread_count: 0 })
+    .eq("id", threadId)
+    .or(`tenant_id.eq.${user.id},landlord_id.eq.${user.id}`);
+}
+
 function mapThreadFromSupabase(record: SupabaseThreadRow, currentUserId: string): MessageThread {
   const tenantProfile = Array.isArray(record.tenant_profile)
     ? record.tenant_profile[0] ?? null
