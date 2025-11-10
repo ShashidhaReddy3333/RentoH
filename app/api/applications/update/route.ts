@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { checkRateLimit, RATE_LIMITS } from '@/lib/middleware/rate-limit';
 
 export async function POST(request: NextRequest) {
   const supabase = createSupabaseServerClient();
@@ -16,6 +17,22 @@ export async function POST(request: NextRequest) {
   
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  // Rate limiting
+  const rateLimitResult = checkRateLimit(user.id, RATE_LIMITS.applications);
+  if (!rateLimitResult.allowed) {
+    return NextResponse.json(
+      { error: 'Too many requests. Please try again later.' },
+      { 
+        status: 429,
+        headers: {
+          'X-RateLimit-Limit': RATE_LIMITS.applications.maxRequests.toString(),
+          'X-RateLimit-Remaining': '0',
+          'X-RateLimit-Reset': rateLimitResult.resetAt.toString(),
+        }
+      }
+    );
   }
 
   const formData = await request.formData();

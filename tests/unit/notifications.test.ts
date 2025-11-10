@@ -77,14 +77,21 @@ describe("notification preferences and digest system", () => {
     await generateDigestForUser(mockUser.id, { trigger: "test" });
 
     // Should have logged digest with messages but no applications
-    // Find the digest log entry
-    const digestLogEntry = consoleSpy.mock.calls.find(call => 
-      call[0] === "[digest] Generated digest for user:"
-    );
+    // Find the digest log entry (logInfo outputs JSON string)
+    const digestLogEntry = consoleSpy.mock.calls.find(call => {
+      try {
+        const parsed = JSON.parse(call[0]);
+        return parsed.message === "Digest generated" && parsed.userId === mockUser.id;
+      } catch {
+        return false;
+      }
+    });
 
     expect(digestLogEntry).toBeDefined();
-    const digestLog = digestLogEntry ? JSON.parse(digestLogEntry[1]) : null;
+    const digestLog = digestLogEntry ? JSON.parse(digestLogEntry[0]) : null;
     expect(digestLog).toBeDefined();
+    expect(digestLog).toHaveProperty('messagesCount');
+    expect(digestLog).toHaveProperty('applicationsCount');
     expect(digestLog!.messagesCount).toBeGreaterThanOrEqual(0);
     expect(digestLog!.applicationsCount).toBeGreaterThanOrEqual(0);
   });

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { hasSupabaseEnv, missingSupabaseMessage } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/middleware/rate-limit";
 import type { TourRequestState } from "./types";
 
 function parseDateTime(date: string, time: string): string | null {
@@ -75,6 +76,15 @@ export async function requestTourAction(
     }
 
     console.log("[tours] User authenticated:", user.id);
+
+    // Rate limiting
+    const rateLimitResult = checkRateLimit(user.id, RATE_LIMITS.tours);
+    if (!rateLimitResult.allowed) {
+      return {
+        status: "error",
+        message: "Too many tour requests. Please wait a moment and try again."
+      };
+    }
 
     if (user.id === landlordId) {
       return { status: "error", message: "You already manage this property." };
@@ -152,6 +162,112 @@ export async function requestTourAction(
   } catch (error) {
     console.error("[tours] Unexpected error requesting tour:", error);
     const message = error instanceof Error ? error.message : "Unable to submit tour request. Please try again.";
+    return { status: "error", message };
+  }
+}
+
+/**
+ * Reschedule a tour (landlord-only action)
+ */
+export async function rescheduleTourAction(
+  _prev: TourRequestState,
+  formData: FormData
+): Promise<TourRequestState> {
+  try {
+    const tourId = String(formData.get("tourId") ?? "").trim();
+    const date = String(formData.get("date") ?? "").trim();
+    const time = String(formData.get("time") ?? "").trim();
+    const notesRaw = formData.get("notes");
+    const notes = typeof notesRaw === "string" ? notesRaw.slice(0, 500) : null;
+
+    if (!tourId) {
+      return { status: "validation-error", message: "Tour ID is required." };
+    }
+
+    if (!date || !time) {
+      return { status: "validation-error", message: "Choose a new date and time." };
+    }
+
+    const scheduledAt = parseDateTime(date, time);
+    if (!scheduledAt) {
+      return { status: "validation-error", message: "Enter a valid date and time." };
+    }
+
+    // Validate future date/time
+    const scheduledDate = new Date(scheduledAt);
+    if (scheduledDate <= new Date()) {
+      return { status: "validation-error", message: "Tour must be scheduled in the future." };
+    }
+
+    if (!hasSupabaseEnv) {
+      return { status: "error", message: missingSupabaseMessage };
+    }
+
+    const supabase = createSupabaseServerClient();
+    if (!supabase) {
+      return { status: "error", message: "Service unavailable." };
+    }
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { status: "error", message: "Authentication required." };
+    }
+
+    // Rate limiting
+    const rateLimitResult = checkRateLimit(user.id, RATE_LIMITS.tours);
+    if (!rateLimitResult.allowed) {
+      return {
+        status: "error",
+        message: "Too many requests. Please wait a moment."
+      };
+    }
+
+    // Verify user is the landlord for this tour
+    const { data: tour, error: fetchError } = await supabase
+      .from("tours")
+      .select("landlord_id, property_id, tenant_id")
+      .eq("id", tourId)
+      .single();
+
+    if (fetchError || !tour) {
+      return { status: "error", message: "Tour not found." };
+    }
+
+    if (tour.landlord_id !== user.id) {
+      return { status: "error", message: "Only the landlord can reschedule this tour." };
+    }
+
+    // Update the tour
+    const updatePayload: Record<string, unknown> = {
+      scheduled_at: scheduledAt,
+      status: "rescheduled",
+      updated_at: new Date().toISOString()
+    };
+
+    if (notes) {
+      updatePayload['notes'] = notes;
+    }
+
+    const { error: updateError } = await supabase
+      .from("tours")
+      .update(updatePayload)
+      .eq("id", tourId);
+
+    if (updateError) {
+      console.error("[tours] Reschedule error:", updateError);
+      return { status: "error", message: "Failed to reschedule tour." };
+    }
+
+    // TODO: Send notification to tenant about reschedule
+    console.log("[tours] Tour rescheduled successfully:", { tourId, scheduledAt });
+
+    revalidatePath("/tours");
+    revalidatePath("/dashboard");
+
+    return { status: "success" };
+  } catch (error) {
+    console.error("[tours] Unexpected error rescheduling tour:", error);
+    const message = error instanceof Error ? error.message : "Unable to reschedule tour.";
     return { status: "error", message };
   }
 }

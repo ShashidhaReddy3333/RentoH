@@ -54,9 +54,22 @@ function SignInContent() {
     }
 
     try {
-      const { error: signInError } = await supabase.auth.signInWithPassword({
+      // Add timeout protection to prevent indefinite hanging
+      const signInPromise = supabase.auth.signInWithPassword({
         email,
         password
+      });
+
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Request timed out')), 15000);
+      });
+
+      const { error: signInError } = await Promise.race([
+        signInPromise,
+        timeoutPromise
+      ]).catch((err) => {
+        // Handle network errors and timeouts
+        throw err;
       });
 
       if (signInError) {
@@ -72,6 +85,16 @@ function SignInContent() {
         next && next.startsWith('/') ? (next as Route) : '/dashboard';
       router.replace(target);
       router.refresh();
+    } catch (err) {
+      // Handle unexpected errors (network issues, timeouts, etc.)
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      if (errorMessage.includes('timed out')) {
+        setError('Connection timed out. Please check your internet and try again.');
+      } else if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
+        setError('Network error. Please check your connection and try again.');
+      } else {
+        setError(`Sign-in failed: ${errorMessage}`);
+      }
     } finally {
       setBusy(false);
     }
