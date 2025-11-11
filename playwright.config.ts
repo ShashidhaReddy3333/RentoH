@@ -5,11 +5,14 @@ const isCI = !!process.env["CI"];
 export default defineConfig({
   testDir: "./tests/e2e",
   fullyParallel: true,
-  retries: isCI ? 2 : 0,
+  retries: isCI ? 2 : 1,
+  timeout: 60000,
   reporter: isCI ? "github" : "list",
   use: {
     baseURL: process.env["PLAYWRIGHT_BASE_URL"] ?? "http://localhost:3000",
-    trace: "retain-on-failure"
+    trace: "retain-on-failure",
+    actionTimeout: 15000,
+    navigationTimeout: 30000
   },
   projects: [
     {

@@ -17,7 +17,8 @@ export const test = base.extend<Fixtures>({
     
     const browser = await chromium.launch();
     const page = await browser.newPage();
-    await page.goto(siteUrl);
+    
+    // Set auth token before navigation
     await page.addInitScript((args: string[]) => {
       if (args[0] && args[1]) {
         localStorage.setItem(args[0], args[1]);
@@ -26,6 +27,13 @@ export const test = base.extend<Fixtures>({
       `sb-${new URL(supabaseUrl).hostname}-auth-token`,
       JSON.stringify(data.session),
     ]);
+    
+    // Navigate and wait for network to be idle
+    await page.goto(siteUrl, { waitUntil: 'networkidle' });
+    
+    // Wait for auth to settle
+    await page.waitForTimeout(2000);
+    
     const path = 'tmp/landlord.json';
     await page.context().storageState({ path });
     await browser.close();
@@ -45,7 +53,8 @@ export const test = base.extend<Fixtures>({
     
     const browser = await chromium.launch();
     const page = await browser.newPage();
-    await page.goto(siteUrl);
+    
+    // Set auth token before navigation
     await page.addInitScript((args: string[]) => {
       if (args[0] && args[1]) {
         localStorage.setItem(args[0], args[1]);
@@ -54,6 +63,13 @@ export const test = base.extend<Fixtures>({
       `sb-${new URL(supabaseUrl).hostname}-auth-token`,
       JSON.stringify(data.session),
     ]);
+    
+    // Navigate and wait for network to be idle
+    await page.goto(siteUrl, { waitUntil: 'networkidle' });
+    
+    // Wait for auth to settle
+    await page.waitForTimeout(2000);
+    
     const path = 'tmp/tenant.json';
     await page.context().storageState({ path });
     await browser.close();

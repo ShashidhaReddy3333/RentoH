@@ -22,3 +22,8 @@ curl-output.html
 # OS-specific
 Thumbs.db
 .DS_Store
+
+# Test artifacts
+tmp/
+test-results/
+playwright-report/
