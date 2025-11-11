@@ -14,7 +14,10 @@
         "analyze": "cross-env ANALYZE=true next build",
         "analyze:unused": "node scripts/analyze-unused.js",
         "analyze:bundle": "npx nextjs-bundle-analysis --build-output .next --budget scripts/bundle-budget.json",
-        "build:analyze": "npm run analyze && npm run analyze:bundle"
+        "build:analyze": "npm run analyze && npm run analyze:bundle",
+        "db:seed:e2e": "node scripts/seed-e2e.cjs",
+        "e2e:local": "cross-env NODE_ENV=test dotenv -e .env.test -- playwright test",
+        "db:reset:local": "supabase db reset && dotenv -e .env.test -- node scripts/seed-e2e.cjs"
     },
     "dependencies": {
         "@heroicons/react": "^2.2.0",
@@ -53,6 +56,8 @@
         "@typescript-eslint/parser": "^7.18.0",
         "autoprefixer": "^10.4.21",
         "cross-env": "^7.0.3",
+        "dotenv": "^17.2.3",
+        "dotenv-cli": "^7.4.2",
         "eslint": "^8.57.1",
         "eslint-config-next": "14.2.4",
         "eslint-config-prettier": "^9.1.2",
