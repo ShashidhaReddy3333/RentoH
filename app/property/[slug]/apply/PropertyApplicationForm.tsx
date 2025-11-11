@@ -1,13 +1,14 @@
 'use client';
 
 import type { Route } from "next";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { routes } from "@/lib/routes";
+import { focusFirstInvalidInput } from "@/lib/utils/focus-management";
 
 interface Props {
   propertyId: string;
@@ -18,7 +19,9 @@ interface Props {
 
 export function PropertyApplicationForm({ propertyId, landlordId, propertyTitle, userId }: Props) {
   const router = useRouter();
+  const formRef = useRef<HTMLFormElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<{ monthlyIncome?: string; message?: string }>({});
   const [formData, setFormData] = useState({
     monthlyIncome: "",
     message: ""
@@ -30,8 +33,41 @@ export function PropertyApplicationForm({ propertyId, landlordId, propertyTitle,
     return null;
   }
 
+  const validateForm = () => {
+    const newErrors: { monthlyIncome?: string; message?: string } = {};
+    
+    if (!formData.monthlyIncome || formData.monthlyIncome.trim() === "") {
+      newErrors.monthlyIncome = "Monthly income is required";
+    } else if (Number(formData.monthlyIncome) <= 0) {
+      newErrors.monthlyIncome = "Monthly income must be greater than 0";
+    }
+    
+    if (!formData.message || formData.message.trim() === "") {
+      newErrors.message = "Message is required";
+    } else if (formData.message.trim().length < 10) {
+      newErrors.message = "Message must be at least 10 characters";
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    
+    // Validate form
+    if (!validateForm()) {
+      // Focus the first invalid input
+      if (formRef.current) {
+        setTimeout(() => {
+          if (formRef.current) {
+            focusFirstInvalidInput(formRef.current);
+          }
+        }, 100);
+      }
+      return;
+    }
+    
     setIsSubmitting(true);
 
     try {
@@ -82,7 +118,7 @@ export function PropertyApplicationForm({ propertyId, landlordId, propertyTitle,
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
         <div>
           <label htmlFor="monthlyIncome" className="mb-1 block text-sm font-medium text-gray-700">
             Monthly income
@@ -93,15 +129,29 @@ export function PropertyApplicationForm({ propertyId, landlordId, propertyTitle,
               type="number"
               id="monthlyIncome"
               required
-              className="block w-full rounded-md border border-gray-300 px-3 py-2 pl-7 focus:border-brand-teal focus:outline-none focus:ring-2 focus:ring-brand-teal"
+              aria-invalid={!!errors.monthlyIncome}
+              aria-describedby={errors.monthlyIncome ? "monthlyIncome-error" : undefined}
+              className={`block w-full rounded-md border px-3 py-2 pl-7 focus:outline-none focus:ring-2 ${
+                errors.monthlyIncome
+                  ? "border-red-500 focus:border-red-500 focus:ring-red-200"
+                  : "border-gray-300 focus:border-brand-teal focus:ring-brand-teal"
+              }`}
               value={formData.monthlyIncome}
-              onChange={(event) =>
-                setFormData((prev) => ({ ...prev, monthlyIncome: event.target.value }))
-              }
+              onChange={(event) => {
+                setFormData((prev) => ({ ...prev, monthlyIncome: event.target.value }));
+                if (errors.monthlyIncome) {
+                  setErrors((prev) => ({ ...prev, monthlyIncome: undefined }));
+                }
+              }}
               placeholder="5000"
               min={0}
             />
           </div>
+          {errors.monthlyIncome && (
+            <p id="monthlyIncome-error" className="mt-1 text-sm text-red-600" role="alert">
+              {errors.monthlyIncome}
+            </p>
+          )}
         </div>
 
         <div>
@@ -111,14 +161,28 @@ export function PropertyApplicationForm({ propertyId, landlordId, propertyTitle,
           <textarea
             id="message"
             required
-            className="block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-brand-teal focus:outline-none focus:ring-2 focus:ring-brand-teal"
+            aria-invalid={!!errors.message}
+            aria-describedby={errors.message ? "message-error" : undefined}
+            className={`block w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 ${
+              errors.message
+                ? "border-red-500 focus:border-red-500 focus:ring-red-200"
+                : "border-gray-300 focus:border-brand-teal focus:ring-brand-teal"
+            }`}
             rows={4}
             value={formData.message}
-            onChange={(event) =>
-              setFormData((prev) => ({ ...prev, message: event.target.value }))
-            }
+            onChange={(event) => {
+              setFormData((prev) => ({ ...prev, message: event.target.value }));
+              if (errors.message) {
+                setErrors((prev) => ({ ...prev, message: undefined }));
+              }
+            }}
             placeholder="Introduce yourself and explain why you would be a great tenant..."
           />
+          {errors.message && (
+            <p id="message-error" className="mt-1 text-sm text-red-600" role="alert">
+              {errors.message}
+            </p>
+          )}
         </div>
 
         <div className="flex items-center justify-end gap-4">
