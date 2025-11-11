@@ -20,7 +20,14 @@ export function useFavorites() {
       });
 
       if (!res.ok) {
-        throw new Error("Failed to fetch favorites");
+        let message = "Failed to fetch favorites";
+        try {
+          const body = await res.json();
+          if (body && typeof body === "object") {
+            message = body.error || body.message || message;
+          }
+        } catch {}
+        throw new Error(message);
       }
 
       const data = await res.json();

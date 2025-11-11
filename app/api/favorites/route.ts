@@ -65,7 +65,7 @@ export async function POST(request: Request) {
     // Revalidate pages that show favorites
     revalidatePath("/favorites");
     revalidatePath("/dashboard");
-    revalidatePath(`/property/${propertyId}`);
+    revalidatePath("/property/[slug]");
 
     return NextResponse.json({ ok: true }, { status: 201 });
   } catch (err: unknown) {
@@ -119,7 +119,7 @@ export async function DELETE(request: Request) {
     // Revalidate pages that show favorites
     revalidatePath("/favorites");
     revalidatePath("/dashboard");
-    revalidatePath(`/property/${propertyId}`);
+    revalidatePath("/property/[slug]");
 
     return NextResponse.json({ ok: true });
   } catch (err: unknown) {

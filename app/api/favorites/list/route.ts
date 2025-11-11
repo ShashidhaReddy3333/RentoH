@@ -3,8 +3,10 @@ import { getSupabaseClientWithUser } from "@/lib/supabase/auth";
 
 export async function GET() {
   const { supabase, user } = await getSupabaseClientWithUser();
-  
-  if (!supabase || !user) {
+  if (!supabase) {
+    return NextResponse.json({ error: "Supabase not configured" }, { status: 500 });
+  }
+  if (!user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
@@ -19,8 +21,8 @@ export async function GET() {
           address,
           city,
           price,
-          bedrooms,
-          bathrooms,
+          beds,
+          baths,
           images,
           slug,
           type,
@@ -51,8 +53,8 @@ export async function GET() {
         address: string;
         city: string;
         price: number;
-        bedrooms: number;
-        bathrooms: number;
+        beds: number;
+        baths: number;
         images: string[];
         slug: string;
         type: "apartment" | "house" | "condo" | "townhouse";
@@ -66,8 +68,8 @@ export async function GET() {
         address: property.address,
         city: property.city,
         price: property.price,
-        beds: property.bedrooms,
-        baths: property.bathrooms,
+        beds: property.beds,
+        baths: property.baths,
         images: property.images,
         slug: property.slug,
         type: property.type,
