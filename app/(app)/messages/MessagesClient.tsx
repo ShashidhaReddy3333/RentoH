@@ -18,6 +18,7 @@ import { buttonStyles } from "@/components/ui/button";
 import type { Message, MessageThread } from "@/lib/types";
 
 import { sendMessageAction, markThreadAsReadAction } from "./actions";
+import { useMessageSubscription } from "@/lib/realtime/message-subscription";
 
 type MessagesClientProps = {
   threads: MessageThread[];
@@ -78,6 +79,23 @@ export default function MessagesClient({
       });
     }
   }, [activeThreadId]);
+
+  // Subscribe to realtime message updates
+  useMessageSubscription(currentThreadId, {
+    onInsert: useCallback((message: Message) => {
+      // Only add if not already in the list (avoid duplicates from optimistic updates)
+      setMessages((prev) => {
+        const exists = prev.some((m) => m.id === message.id);
+        if (exists) return prev;
+        return [...prev, message];
+      });
+    }, []),
+    onUpdate: useCallback((message: Message) => {
+      setMessages((prev) => 
+        prev.map((m) => (m.id === message.id ? message : m))
+      );
+    }, [])
+  });
 
   const filteredThreads = useMemo(() => {
     if (!search.trim()) return threads;

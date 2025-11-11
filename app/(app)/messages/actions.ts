@@ -29,14 +29,8 @@ export async function sendMessageAction(threadId: string, text: string): Promise
     throw new Error(errorData.error || 'Failed to send message');
   }
 
-  // Return a properly formatted message object
-  return {
-    id: `${Date.now()}`, // Temporary ID, should be replaced by server
-    threadId,
-    senderId: 'self', // Will be set by server
-    text,
-    createdAt: new Date().toISOString()
-  };
+  const data = await response.json();
+  return data.message;
 }
 
 export async function markThreadAsReadAction(threadId: string) {

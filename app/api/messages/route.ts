@@ -177,7 +177,16 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { success: true },
+      { 
+        success: true,
+        message: {
+          id: newMessage.id,
+          threadId: newMessage.thread_id,
+          senderId: newMessage.sender_id,
+          text: newMessage.body,
+          createdAt: newMessage.created_at ?? new Date().toISOString()
+        }
+      },
       { status: 200 }
     );
 
