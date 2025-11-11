@@ -8,7 +8,12 @@ const SUPABASE_WARNING = /Supabase credentials are not configured/i;
 const routes = [
   { path: "/", label: "marketing home" },
   { path: "/browse", label: "browse listings" },
-  { path: "/listings/new", label: "listing form" }
+  { path: "/favorites", label: "favorites page" },
+  { path: "/applications", label: "applications page" },
+  { path: "/tours", label: "tours page" },
+  { path: "/messages", label: "messages page" },
+  { path: "/dashboard", label: "dashboard page" },
+  { path: "/auth/sign-in", label: "sign in page" }
 ] as const;
 
 test.describe("Accessibility audit", () => {
