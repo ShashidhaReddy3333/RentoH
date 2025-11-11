@@ -1,212 +1,31 @@
 # Page snapshot
 
 ```yaml
-- generic [active] [ref=e1]:
-  - alert [ref=e2]
-  - link "Skip to main content" [ref=e3] [cursor=pointer]:
-    - /url: "#main-content"
-  - banner [ref=e4]:
-    - generic [ref=e5]:
-      - link "R Rento." [ref=e6] [cursor=pointer]:
-        - /url: /
-        - generic [ref=e7]: R
-        - generic [ref=e8]: Rento.
-      - navigation [ref=e9]:
-        - link "Browse" [ref=e10] [cursor=pointer]:
-          - /url: /browse
-          - generic [ref=e11]: Browse
-        - link "Dashboard" [ref=e12] [cursor=pointer]:
-          - /url: /dashboard
-          - generic [ref=e13]: Dashboard
-        - link "Messages" [ref=e14] [cursor=pointer]:
-          - /url: /messages
-          - generic [ref=e15]: Messages
-      - generic [ref=e16]:
-        - button "Switch to dark mode" [ref=e17] [cursor=pointer]:
-          - generic [ref=e18]:
-            - img [ref=e19]
-            - img [ref=e21]
-          - generic [ref=e23]: Switch to dark mode
-        - link "Open home filters" [ref=e24] [cursor=pointer]:
-          - /url: /browse?filters=open
-          - img [ref=e25]
-          - generic [ref=e27]: Filters
-        - generic [ref=e28]:
-          - link "Sign in" [ref=e29] [cursor=pointer]:
-            - /url: /auth/sign-in
-          - link "Join Rento" [ref=e30] [cursor=pointer]:
-            - /url: /auth/sign-up
-  - main [ref=e31]:
-    - generic [ref=e32]:
-      - status [ref=e33]:
-        - paragraph [ref=e34]: Supabase connection inactive
-        - paragraph [ref=e35]:
-          - text: Add
-          - code [ref=e36]: NEXT_PUBLIC_SUPABASE_URL
-          - text: and
-          - code [ref=e37]: NEXT_PUBLIC_SUPABASE_ANON_KEY
-          - text: to your environment to enable real data. Until then we'll show safe placeholders.
-        - paragraph [ref=e38]:
-          - text: Need help? Review the
-          - link "Supabase quickstart" [ref=e39] [cursor=pointer]:
-            - /url: https://supabase.com/docs/guides/getting-started
-          - text: .
-      - generic [ref=e40]:
-        - generic [ref=e41]:
-          - heading "Add a new property" [level=1] [ref=e42]
-          - paragraph [ref=e43]: Store mocked listing data locally until Supabase is connected. All fields marked with an asterisk are required.
-        - generic [ref=e44]:
-          - generic [ref=e45]: Provide complete and accurate details so renters can quickly decide if the listing fits their needs.
-          - region "Basic Info" [ref=e47]:
-            - generic [ref=e48]:
-              - heading "Basic Info" [level=2] [ref=e49]
-              - paragraph [ref=e50]: Essential details renters will see first.
-            - generic [ref=e51]:
-              - generic [ref=e53]:
-                - textbox "Listing title" [ref=e54]:
-                  - /placeholder: " "
-                - generic:
-                  - text: Listing title
-                  - generic: "*"
-              - generic [ref=e55]:
-                - generic [ref=e56]:
-                  - spinbutton "Monthly rent ($)" [ref=e57]
-                  - generic:
-                    - text: Monthly rent ($)
-                    - generic: "*"
-                - paragraph [ref=e58]: Enter the monthly rent before incentives.
-              - generic [ref=e60]:
-                - spinbutton "Bedrooms" [ref=e61]
-                - generic:
-                  - text: Bedrooms
-                  - generic: "*"
-              - generic [ref=e63]:
-                - spinbutton "Bathrooms" [ref=e64]
-                - generic:
-                  - text: Bathrooms
-                  - generic: "*"
-              - generic [ref=e66]:
-                - spinbutton "Square footage (optional)" [ref=e67]
-                - generic: Square footage (optional)
-              - generic [ref=e68]:
-                - generic [ref=e69]: Property type*
-                - combobox "Property type" [ref=e70]:
-                  - option "Apartment" [selected]
-                  - option "Condo"
-                  - option "House"
-                  - option "Townhouse"
-            - generic [ref=e71]:
-              - generic [ref=e73]:
-                - textbox "Street address" [ref=e74]:
-                  - /placeholder: " "
-                - generic:
-                  - text: Street address
-                  - generic: "*"
-              - generic [ref=e76]:
-                - textbox "City" [ref=e77]:
-                  - /placeholder: " "
-                - generic:
-                  - text: City
-                  - generic: "*"
-              - generic [ref=e78]:
-                - generic [ref=e79]:
-                  - textbox "Postal code" [ref=e80]:
-                    - /placeholder: " "
-                  - generic:
-                    - text: Postal code
-                    - generic: "*"
-                - paragraph [ref=e81]: Format ANA NAN for Canadian addresses.
-              - generic [ref=e82]:
-                - generic [ref=e83]: Rent frequency*
-                - combobox "Rent frequency" [ref=e84]:
-                  - option "Monthly" [selected]
-                  - option "Weekly"
-                  - option "Biweekly"
-              - generic [ref=e85]:
-                - text: Available from
-                - textbox "Available from" [ref=e87]
-              - generic [ref=e89]:
-                - textbox "Parking details" [ref=e90]:
-                  - /placeholder: e.g. 1 spot, underground, street
-                - generic: Parking details
-          - region "Features" [ref=e91]:
-            - generic [ref=e92]:
-              - heading "Features" [level=2] [ref=e93]
-              - paragraph [ref=e94]: Highlight what makes this home stand out.
-            - generic [ref=e95]:
-              - generic [ref=e96]:
-                - text: Amenities
-                - paragraph [ref=e97]: Select all amenities included with this rental.
-              - group [ref=e98]:
-                - generic [ref=e99]:
-                  - checkbox "In-suite laundry" [ref=e100]
-                  - generic [ref=e101]: In-suite laundry
-                - generic [ref=e102]:
-                  - checkbox "Gym" [ref=e103]
-                  - generic [ref=e104]: Gym
-                - generic [ref=e105]:
-                  - checkbox "Pool" [ref=e106]
-                  - generic [ref=e107]: Pool
-                - generic [ref=e108]:
-                  - checkbox "Air conditioning" [ref=e109]
-                  - generic [ref=e110]: Air conditioning
-                - generic [ref=e111]:
-                  - checkbox "Balcony" [ref=e112]
-                  - generic [ref=e113]: Balcony
-                - generic [ref=e114]:
-                  - checkbox "Storage" [ref=e115]
-                  - generic [ref=e116]: Storage
-                - generic [ref=e117]:
-                  - checkbox "Elevator" [ref=e118]
-                  - generic [ref=e119]: Elevator
-                - generic [ref=e120]:
-                  - checkbox "Wheelchair access" [ref=e121]
-                  - generic [ref=e122]: Wheelchair access
-            - generic [ref=e123]:
-              - generic [ref=e124]:
-                - generic [ref=e125]: Pets allowed?
-                - combobox "Pets allowed?" [ref=e126]:
-                  - option "Select" [selected]
-                  - option "Yes"
-                  - option "No"
-              - generic [ref=e127]:
-                - generic [ref=e128]: Smoking allowed?
-                - combobox "Smoking allowed?" [ref=e129]:
-                  - option "Select" [selected]
-                  - option "Yes"
-                  - option "No"
-            - generic [ref=e130]:
-              - generic [ref=e131]: Description*
-              - textbox "Description" [ref=e132]:
-                - /placeholder: Mention standout amenities, nearby transit, and application requirements.
-              - paragraph [ref=e133]: Aim for at least 20 characters to give renters enough detail.
-          - region "Photos" [ref=e134]:
-            - generic [ref=e135]:
-              - heading "Photos" [level=2] [ref=e136]
-              - paragraph [ref=e137]: Upload high-quality images and choose a cover photo.
-            - generic "Upload listing images" [ref=e139]:
-              - paragraph [ref=e140]: Drag and drop images here or
-              - generic [ref=e141] [cursor=pointer]:
-                - button "Choose images to upload" [ref=e142]
-                - text: Upload images
-              - paragraph [ref=e143]: PNG or JPEG up to 5MB each. Max 12 images.
-          - generic [ref=e144]:
-            - paragraph [ref=e145]: Fields marked with * are required.
-            - button "Publish Listing" [ref=e147] [cursor=pointer]:
-              - generic [ref=e148]: Publish Listing
-        - paragraph [ref=e149]: Supabase credentials are not configured, so submissions remain in-memory for testing purposes.
-  - contentinfo [ref=e150]:
-    - generic [ref=e151]:
-      - paragraph [ref=e152]: © 2025 Rento. All rights reserved.
-      - navigation "Footer" [ref=e153]:
-        - list [ref=e154]:
-          - listitem [ref=e155]:
-            - link "Browse" [ref=e156] [cursor=pointer]:
-              - /url: /browse
-          - listitem [ref=e157]:
-            - link "Privacy" [ref=e158] [cursor=pointer]:
-              - /url: /privacy
-          - listitem [ref=e159]:
-            - link "Support" [ref=e160] [cursor=pointer]:
-              - /url: /contact
+- dialog "Unhandled Runtime Error" [ref=e4]:
+  - generic [ref=e5]:
+    - generic [ref=e6]:
+      - generic [ref=e7]:
+        - navigation [ref=e8]:
+          - button "previous" [disabled] [ref=e9]:
+            - img "previous" [ref=e10]
+          - button "next" [disabled] [ref=e12]:
+            - img "next" [ref=e13]
+          - generic [ref=e15]: 1 of 1 error
+          - generic [ref=e16]:
+            - text: Next.js (14.2.4) is outdated
+            - link "(learn more)" [ref=e18] [cursor=pointer]:
+              - /url: https://nextjs.org/docs/messages/version-staleness
+        - button "Close" [ref=e19] [cursor=pointer]:
+          - img [ref=e21]
+      - heading "Unhandled Runtime Error" [level=1] [ref=e24]
+      - paragraph [ref=e25]: "Error: useTheme must be used within a ThemeProvider"
+    - generic [ref=e26]:
+      - heading "Source" [level=2] [ref=e27]
+      - generic [ref=e28]:
+        - link "app\\theme-provider.tsx (210:11) @ useTheme" [ref=e30] [cursor=pointer]:
+          - generic [ref=e31]: app\theme-provider.tsx (210:11) @ useTheme
+          - img [ref=e32]
+        - generic [ref=e36]: "208 | const context = useContext(ThemeContext); 209 | if (!context) { > 210 | throw new Error(\"useTheme must be used within a ThemeProvider\"); | ^ 211 | } 212 | 213 | return context;"
+      - heading "Call Stack" [level=2] [ref=e37]
+      - button "Show collapsed frames" [ref=e38] [cursor=pointer]
 ```

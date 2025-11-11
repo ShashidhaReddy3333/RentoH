@@ -1,88 +1,31 @@
 # Page snapshot
 
 ```yaml
-- generic [ref=e1]:
-  - alert [ref=e2]
-  - link "Skip to main content" [ref=e3] [cursor=pointer]:
-    - /url: "#main-content"
-  - banner [ref=e4]:
-    - generic [ref=e5]:
-      - link "R Rento." [ref=e6] [cursor=pointer]:
-        - /url: /
-        - generic [ref=e7]: R
-        - generic [ref=e8]: Rento.
-      - navigation [ref=e9]:
-        - link "Browse" [ref=e10] [cursor=pointer]:
-          - /url: /browse
-          - generic [ref=e11]: Browse
-        - link "Dashboard" [ref=e12] [cursor=pointer]:
-          - /url: /dashboard
-          - generic [ref=e13]: Dashboard
-        - link "Messages" [ref=e14] [cursor=pointer]:
-          - /url: /messages
-          - generic [ref=e15]: Messages
-      - generic [ref=e16]:
-        - button "Switch to dark mode" [ref=e17] [cursor=pointer]:
-          - generic [ref=e18]:
-            - img [ref=e19]
-            - img [ref=e21]
-          - generic [ref=e23]: Switch to dark mode
-        - link "Open home filters" [ref=e24] [cursor=pointer]:
-          - /url: /browse?filters=open
-          - img [ref=e25]
-          - generic [ref=e27]: Filters
-        - generic [ref=e28]:
-          - link "Sign in" [ref=e29] [cursor=pointer]:
-            - /url: /auth/sign-in
-          - link "Join Rento" [ref=e30] [cursor=pointer]:
-            - /url: /auth/sign-up
-  - main [ref=e31]:
-    - generic [ref=e32]:
-      - status [ref=e33]:
-        - paragraph [ref=e34]: Supabase connection inactive
-        - paragraph [ref=e35]:
-          - text: Add
-          - code [ref=e36]: NEXT_PUBLIC_SUPABASE_URL
-          - text: and
-          - code [ref=e37]: NEXT_PUBLIC_SUPABASE_ANON_KEY
-          - text: to your environment to enable real data. Until then we'll show safe placeholders.
-        - paragraph [ref=e38]:
-          - text: Need help? Review the
-          - link "Supabase quickstart" [ref=e39] [cursor=pointer]:
-            - /url: https://supabase.com/docs/guides/getting-started
-          - text: .
-      - generic [ref=e40]:
-        - generic [ref=e41]:
-          - heading "Welcome back" [level=1] [ref=e42]
-          - paragraph [ref=e43]: Enter your credentials to access the dashboard.
-        - generic [ref=e45]:
-          - form "Sign-in form" [ref=e46]:
-            - generic [ref=e47]:
-              - text: Email
-              - textbox "Email" [ref=e48]:
-                - /placeholder: you@example.com
-            - generic [ref=e49]:
-              - text: Password
-              - textbox "Password" [ref=e50]:
-                - /placeholder: Enter your password
-              - paragraph [ref=e51]: Minimum 8 characters. Do not share your password.
-            - button "Sign in" [ref=e52] [cursor=pointer]
-          - paragraph [ref=e53]:
-            - text: New to Rento?
-            - link "Create an account" [active] [ref=e54] [cursor=pointer]:
-              - /url: /auth/sign-up
-  - contentinfo [ref=e55]:
-    - generic [ref=e56]:
-      - paragraph [ref=e57]: © 2025 Rento. All rights reserved.
-      - navigation "Footer" [ref=e58]:
-        - list [ref=e59]:
-          - listitem [ref=e60]:
-            - link "Browse" [ref=e61] [cursor=pointer]:
-              - /url: /browse
-          - listitem [ref=e62]:
-            - link "Privacy" [ref=e63] [cursor=pointer]:
-              - /url: /privacy
-          - listitem [ref=e64]:
-            - link "Support" [ref=e65] [cursor=pointer]:
-              - /url: /contact
+- dialog "Unhandled Runtime Error" [ref=e4]:
+  - generic [ref=e5]:
+    - generic [ref=e6]:
+      - generic [ref=e7]:
+        - navigation [ref=e8]:
+          - button "previous" [disabled] [ref=e9]:
+            - img "previous" [ref=e10]
+          - button "next" [disabled] [ref=e12]:
+            - img "next" [ref=e13]
+          - generic [ref=e15]: 1 of 1 error
+          - generic [ref=e16]:
+            - text: Next.js (14.2.4) is outdated
+            - link "(learn more)" [ref=e18] [cursor=pointer]:
+              - /url: https://nextjs.org/docs/messages/version-staleness
+        - button "Close" [ref=e19] [cursor=pointer]:
+          - img [ref=e21]
+      - heading "Unhandled Runtime Error" [level=1] [ref=e24]
+      - paragraph [ref=e25]: "Error: useTheme must be used within a ThemeProvider"
+    - generic [ref=e26]:
+      - heading "Source" [level=2] [ref=e27]
+      - generic [ref=e28]:
+        - link "app\\theme-provider.tsx (210:11) @ useTheme" [ref=e30] [cursor=pointer]:
+          - generic [ref=e31]: app\theme-provider.tsx (210:11) @ useTheme
+          - img [ref=e32]
+        - generic [ref=e36]: "208 | const context = useContext(ThemeContext); 209 | if (!context) { > 210 | throw new Error(\"useTheme must be used within a ThemeProvider\"); | ^ 211 | } 212 | 213 | return context;"
+      - heading "Call Stack" [level=2] [ref=e37]
+      - button "Show collapsed frames" [ref=e38] [cursor=pointer]
 ```
