@@ -1,3 +1,5 @@
+-- Reference only; canonical DDL lives in supabase/migrations/*
+
 create extension if not exists "pgcrypto";
 
 create table if not exists public.profiles (
@@ -275,7 +277,7 @@ create policy tours_read_landlord on public.tours
   );
 
 create policy tours_insert on public.tours
-  for insert with check (auth.uid() = tenant_id);
+  for insert with check (.uid() = tenant_id);
 
 drop policy if exists prefs_read on public.user_preferences;
 drop policy if exists prefs_upsert on public.user_preferences;
