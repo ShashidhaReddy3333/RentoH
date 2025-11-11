@@ -1,0 +1,314 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - alert [ref=e2]
+  - link "Skip to main content" [ref=e3] [cursor=pointer]:
+    - /url: "#main-content"
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - link "R Rento." [ref=e6] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e7]: R
+        - generic [ref=e8]: Rento.
+      - navigation [ref=e9]:
+        - link "Browse" [ref=e10] [cursor=pointer]:
+          - /url: /browse
+          - generic [ref=e11]: Browse
+        - link "Dashboard" [ref=e12] [cursor=pointer]:
+          - /url: /dashboard
+          - generic [ref=e13]: Dashboard
+        - link "Messages" [ref=e14] [cursor=pointer]:
+          - /url: /messages
+          - generic [ref=e15]: Messages
+      - generic [ref=e16]:
+        - button "Switch to dark mode" [ref=e17] [cursor=pointer]:
+          - generic [ref=e18]:
+            - img [ref=e19]
+            - img [ref=e21]
+          - generic [ref=e23]: Switch to dark mode
+        - link "Open home filters" [ref=e24] [cursor=pointer]:
+          - /url: /browse?filters=open
+          - img [ref=e25]
+          - generic [ref=e27]: Filters
+        - generic [ref=e28]:
+          - link "Sign in" [ref=e29] [cursor=pointer]:
+            - /url: /auth/sign-in
+          - link "Join Rento" [ref=e30] [cursor=pointer]:
+            - /url: /auth/sign-up
+  - main [ref=e31]:
+    - generic [ref=e32]:
+      - status [ref=e33]:
+        - paragraph [ref=e34]: Supabase connection inactive
+        - paragraph [ref=e35]:
+          - text: Add
+          - code [ref=e36]: NEXT_PUBLIC_SUPABASE_URL
+          - text: and
+          - code [ref=e37]: NEXT_PUBLIC_SUPABASE_ANON_KEY
+          - text: to your environment to enable real data. Until then we'll show safe placeholders.
+        - paragraph [ref=e38]:
+          - text: Need help? Review the
+          - link "Supabase quickstart" [ref=e39] [cursor=pointer]:
+            - /url: https://supabase.com/docs/guides/getting-started
+          - text: .
+      - generic [ref=e40]:
+        - region "Filter listings" [ref=e42]:
+          - heading "Filter listings" [level=3] [ref=e43]
+          - generic [ref=e44]:
+            - generic [ref=e45]:
+              - text: City
+              - textbox "City" [ref=e46]:
+                - /placeholder: Search by city
+            - generic [ref=e47]:
+              - generic [ref=e48]:
+                - generic [ref=e49]:
+                  - text: Budget
+                  - paragraph [ref=e50]: Set your monthly rent range
+                - generic [ref=e51]:
+                  - generic [ref=e52]: $500
+                  - generic [ref=e53]: "-"
+                  - generic [ref=e54]: $6,000
+              - generic [ref=e55]:
+                - generic [ref=e56]:
+                  - generic [ref=e57]:
+                    - text: Min rent
+                    - spinbutton "Min rent" [ref=e58]
+                  - generic [ref=e59]:
+                    - text: Max rent
+                    - spinbutton "Max rent" [ref=e60]
+                - generic [ref=e61]:
+                  - slider "Minimum price" [active] [ref=e62] [cursor=pointer]: "500"
+                  - slider "Maximum price" [ref=e63] [cursor=pointer]: "6000"
+            - generic [ref=e64]:
+              - generic [ref=e65]:
+                - text: Beds
+                - spinbutton "Beds" [ref=e66]
+              - generic [ref=e67]:
+                - text: Baths
+                - spinbutton "Baths" [ref=e68]
+            - generic [ref=e69]:
+              - text: Type
+              - combobox "Type" [ref=e70]:
+                - option "Any" [selected]
+                - option "Apartment"
+                - option "House"
+                - option "Condo"
+                - option "Townhouse"
+          - generic [ref=e71]:
+            - generic [ref=e72]:
+              - generic [ref=e73]: Pet-friendly
+              - switch "Pet-friendly" [ref=e75]
+            - generic [ref=e78]:
+              - generic [ref=e79]: Furnished
+              - switch "Furnished" [ref=e81]
+            - generic [ref=e84]:
+              - generic [ref=e85]: Verified listings only
+              - switch "Verified listings only" [ref=e87]
+          - generic [ref=e90]:
+            - button "Clear all" [ref=e91] [cursor=pointer]
+            - button "Apply filters" [ref=e92] [cursor=pointer]
+        - generic [ref=e93]:
+          - generic [ref=e94]:
+            - status [ref=e96]: Showing 8 homes
+            - generic [ref=e97]:
+              - generic [ref=e98]:
+                - generic [ref=e99]: Sort
+                - combobox "Sort" [ref=e100]:
+                  - option "Newest" [selected]
+                  - option "Price (Low to High)"
+                  - option "Price (High to Low)"
+              - generic [ref=e101]:
+                - button "Grid" [pressed] [ref=e102] [cursor=pointer]:
+                  - img [ref=e103]
+                  - text: Grid
+                - button "Map" [ref=e105] [cursor=pointer]:
+                  - img [ref=e106]
+                  - text: Map
+          - generic [ref=e109]:
+            - button "View details for Sunlit Loft near King Street" [ref=e111] [cursor=pointer]:
+              - generic [ref=e112]:
+                - img "Primary photo for Sunlit Loft near King Street" [ref=e115]
+                - generic [ref=e116]:
+                  - generic [ref=e117]:
+                    - img [ref=e118]
+                    - text: Verified
+                  - button "Save listing" [ref=e120]:
+                    - img [ref=e121]
+              - generic [ref=e123]:
+                - generic [ref=e124]:
+                  - paragraph [ref=e125]: $2,450/month
+                  - link "Sunlit Loft near King Street" [ref=e126]:
+                    - /url: /property/prop_royal-loft
+                  - paragraph [ref=e127]:
+                    - img [ref=e128]
+                    - generic [ref=e131]: Waterloo
+                - generic [ref=e132]:
+                  - generic [ref=e133]: Condo
+                  - generic [ref=e134]: 2 beds
+                  - generic [ref=e135]: 2 baths
+                - generic [ref=e136]:
+                  - generic [ref=e137]: Pet-friendly
+                  - generic [ref=e138]: Furnished
+            - button "View details for Green Meadows Family Home" [ref=e140] [cursor=pointer]:
+              - generic [ref=e141]:
+                - img "Primary photo for Green Meadows Family Home" [ref=e144]
+                - generic [ref=e145]:
+                  - generic [ref=e146]:
+                    - img [ref=e147]
+                    - text: Verified
+                  - button "Save listing" [ref=e149]:
+                    - img [ref=e150]
+              - generic [ref=e152]:
+                - generic [ref=e153]:
+                  - paragraph [ref=e154]: $3,200/month
+                  - link "Green Meadows Family Home" [ref=e155]:
+                    - /url: /property/prop_green-meadows
+                  - paragraph [ref=e156]:
+                    - img [ref=e157]
+                    - generic [ref=e160]: Kitchener
+                - generic [ref=e161]:
+                  - generic [ref=e162]: House
+                  - generic [ref=e163]: 4 beds
+                  - generic [ref=e164]: 3 baths
+            - button "View details for Lakeview Corner Apartment" [ref=e166] [cursor=pointer]:
+              - generic [ref=e167]:
+                - img "Primary photo for Lakeview Corner Apartment" [ref=e170]
+                - button "Save listing" [ref=e172]:
+                  - img [ref=e173]
+              - generic [ref=e175]:
+                - generic [ref=e176]:
+                  - paragraph [ref=e177]: $2,100/month
+                  - link "Lakeview Corner Apartment" [ref=e178]:
+                    - /url: /property/prop_lakeview
+                  - paragraph [ref=e179]:
+                    - img [ref=e180]
+                    - generic [ref=e183]: Cambridge
+                - generic [ref=e184]:
+                  - generic [ref=e185]: Apartment
+                  - generic [ref=e186]: 2 beds
+                  - generic [ref=e187]: 1 baths
+                - generic [ref=e188]:
+                  - generic [ref=e189]: Pet-friendly
+                  - generic [ref=e190]: Furnished
+                  - generic [ref=e191]: New listing
+            - button "View details for Downtown Designer Suite" [ref=e193] [cursor=pointer]:
+              - generic [ref=e194]:
+                - img "Primary photo for Downtown Designer Suite" [ref=e197]
+                - generic [ref=e198]:
+                  - generic [ref=e199]:
+                    - img [ref=e200]
+                    - text: Verified
+                  - button "Save listing" [ref=e202]:
+                    - img [ref=e203]
+              - generic [ref=e205]:
+                - generic [ref=e206]:
+                  - paragraph [ref=e207]: $2,750/month
+                  - link "Downtown Designer Suite" [ref=e208]:
+                    - /url: /property/prop_downtown-suite
+                  - paragraph [ref=e209]:
+                    - img [ref=e210]
+                    - generic [ref=e213]: Waterloo
+                - generic [ref=e214]:
+                  - generic [ref=e215]: Apartment
+                  - generic [ref=e216]: 2 beds
+                  - generic [ref=e217]: 2 baths
+                - generic [ref=e219]: Furnished
+            - button "View details for Riverwalk Modern Condo" [ref=e221] [cursor=pointer]:
+              - generic [ref=e222]:
+                - img "Primary photo for Riverwalk Modern Condo" [ref=e225]
+                - button "Save listing" [ref=e227]:
+                  - img [ref=e228]
+              - generic [ref=e230]:
+                - generic [ref=e231]:
+                  - paragraph [ref=e232]: $2,350/month
+                  - link "Riverwalk Modern Condo" [ref=e233]:
+                    - /url: /property/prop_riverwalk
+                  - paragraph [ref=e234]:
+                    - img [ref=e235]
+                    - generic [ref=e238]: Kitchener
+                - generic [ref=e239]:
+                  - generic [ref=e240]: Condo
+                  - generic [ref=e241]: 1 beds
+                  - generic [ref=e242]: 1 baths
+                - generic [ref=e243]:
+                  - generic [ref=e244]: Pet-friendly
+                  - generic [ref=e245]: New listing
+            - button "View details for Southridge Garden Home" [ref=e247] [cursor=pointer]:
+              - generic [ref=e248]:
+                - img "Primary photo for Southridge Garden Home" [ref=e251]
+                - generic [ref=e252]:
+                  - generic [ref=e253]:
+                    - img [ref=e254]
+                    - text: Verified
+                  - button "Save listing" [ref=e256]:
+                    - img [ref=e257]
+              - generic [ref=e259]:
+                - generic [ref=e260]:
+                  - paragraph [ref=e261]: $2,950/month
+                  - link "Southridge Garden Home" [ref=e262]:
+                    - /url: /property/prop_southridge
+                  - paragraph [ref=e263]:
+                    - img [ref=e264]
+                    - generic [ref=e267]: Guelph
+                - generic [ref=e268]:
+                  - generic [ref=e269]: House
+                  - generic [ref=e270]: 3 beds
+                  - generic [ref=e271]: 2 baths
+                - generic [ref=e273]: Pet-friendly
+            - button "View details for Midtown Studio with Balcony" [ref=e275] [cursor=pointer]:
+              - generic [ref=e276]:
+                - img "Primary photo for Midtown Studio with Balcony" [ref=e279]
+                - button "Save listing" [ref=e281]:
+                  - img [ref=e282]
+              - generic [ref=e284]:
+                - generic [ref=e285]:
+                  - paragraph [ref=e286]: $1,850/month
+                  - link "Midtown Studio with Balcony" [ref=e287]:
+                    - /url: /property/prop_midtown
+                  - paragraph [ref=e288]:
+                    - img [ref=e289]
+                    - generic [ref=e292]: Waterloo
+                - generic [ref=e293]:
+                  - generic [ref=e294]: Apartment
+                  - generic [ref=e295]: 1 beds
+                  - generic [ref=e296]: 1 baths
+                - generic [ref=e297]:
+                  - generic [ref=e298]: Furnished
+                  - generic [ref=e299]: New listing
+            - button "View details for Townhouse Steps from LRT" [ref=e301] [cursor=pointer]:
+              - generic [ref=e302]:
+                - img "Primary photo for Townhouse Steps from LRT" [ref=e305]
+                - generic [ref=e306]:
+                  - generic [ref=e307]:
+                    - img [ref=e308]
+                    - text: Verified
+                  - button "Save listing" [ref=e310]:
+                    - img [ref=e311]
+              - generic [ref=e313]:
+                - generic [ref=e314]:
+                  - paragraph [ref=e315]: $2,650/month
+                  - link "Townhouse Steps from LRT" [ref=e316]:
+                    - /url: /property/prop_townhouse
+                  - paragraph [ref=e317]:
+                    - img [ref=e318]
+                    - generic [ref=e321]: Waterloo
+                - generic [ref=e322]:
+                  - generic [ref=e323]: House
+                  - generic [ref=e324]: 3 beds
+                  - generic [ref=e325]: 2 baths
+                - generic [ref=e327]: Pet-friendly
+  - contentinfo [ref=e328]:
+    - generic [ref=e329]:
+      - paragraph [ref=e330]: © 2025 Rento. All rights reserved.
+      - navigation "Footer" [ref=e331]:
+        - list [ref=e332]:
+          - listitem [ref=e333]:
+            - link "Browse" [ref=e334] [cursor=pointer]:
+              - /url: /browse
+          - listitem [ref=e335]:
+            - link "Privacy" [ref=e336] [cursor=pointer]:
+              - /url: /privacy
+          - listitem [ref=e337]:
+            - link "Support" [ref=e338] [cursor=pointer]:
+              - /url: /contact
+```

@@ -1,0 +1,152 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - alert [ref=e2]
+  - link "Skip to main content" [ref=e3] [cursor=pointer]:
+    - /url: "#main-content"
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - link "R Rento." [ref=e6] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e7]: R
+        - generic [ref=e8]: Rento.
+      - navigation [ref=e9]:
+        - link "Browse" [ref=e10] [cursor=pointer]:
+          - /url: /browse
+          - generic [ref=e11]: Browse
+        - link "Dashboard" [ref=e12] [cursor=pointer]:
+          - /url: /dashboard
+          - generic [ref=e13]: Dashboard
+        - link "Messages" [ref=e14] [cursor=pointer]:
+          - /url: /messages
+          - generic [ref=e15]: Messages
+      - generic [ref=e16]:
+        - button "Switch to dark mode" [ref=e17] [cursor=pointer]:
+          - generic [ref=e18]:
+            - img [ref=e19]
+            - img [ref=e21]
+          - generic [ref=e23]: Switch to dark mode
+        - link "Open home filters" [ref=e24] [cursor=pointer]:
+          - /url: /browse?filters=open
+          - img [ref=e25]
+          - generic [ref=e27]: Filters
+        - generic [ref=e28]:
+          - link "Sign in" [ref=e29] [cursor=pointer]:
+            - /url: /auth/sign-in
+          - link "Join Rento" [ref=e30] [cursor=pointer]:
+            - /url: /auth/sign-up
+  - main [ref=e31]:
+    - generic [ref=e32]:
+      - status [ref=e33]:
+        - paragraph [ref=e34]: Supabase connection inactive
+        - paragraph [ref=e35]:
+          - text: Add
+          - code [ref=e36]: NEXT_PUBLIC_SUPABASE_URL
+          - text: and
+          - code [ref=e37]: NEXT_PUBLIC_SUPABASE_ANON_KEY
+          - text: to your environment to enable real data. Until then we'll show safe placeholders.
+        - paragraph [ref=e38]:
+          - text: Need help? Review the
+          - link "Supabase quickstart" [ref=e39] [cursor=pointer]:
+            - /url: https://supabase.com/docs/guides/getting-started
+          - text: .
+      - generic [ref=e40]:
+        - generic [ref=e41]:
+          - generic [ref=e42]:
+            - generic [ref=e43]:
+              - text: Just launched
+              - generic [ref=e44]: Supabase starter for modern rental teams
+            - heading "Discover a rental you will love living in" [level=1] [ref=e45]
+            - paragraph [ref=e46]: Search curated rentals, preview neighborhoods, and keep every landlord conversation organized from day one.
+          - generic [ref=e49]:
+            - generic [ref=e50]:
+              - generic [ref=e51]: Location
+              - textbox "Location" [ref=e52]:
+                - /placeholder: Neighbourhood or city
+              - generic [ref=e53]: Search by neighbourhood or city
+            - generic [ref=e54]:
+              - generic [ref=e55]: Min price
+              - textbox "Min price" [ref=e56]:
+                - /placeholder: 1,800
+              - generic [ref=e57]: Optional
+            - generic [ref=e58]:
+              - generic [ref=e59]: Max price
+              - textbox "Max price" [ref=e60]:
+                - /placeholder: 2,800
+              - generic [ref=e61]: Optional
+            - generic [ref=e62]:
+              - generic [ref=e63]: Beds
+              - textbox "Beds" [ref=e64]:
+                - /placeholder: 2+
+              - generic [ref=e65]: Optional
+            - button "Search homes" [ref=e66] [cursor=pointer]
+          - generic [ref=e67]:
+            - generic [ref=e68]:
+              - term [ref=e69]: Quality-checked listings
+              - definition [ref=e70]: 120+
+            - generic [ref=e71]:
+              - term [ref=e72]: Verified owners online now
+              - definition [ref=e73]: "65"
+            - generic [ref=e74]:
+              - term [ref=e75]: Tours scheduled this month
+              - definition [ref=e76]: "48"
+        - region "Spotlight rentals" [ref=e77]:
+          - generic [ref=e78]:
+            - generic [ref=e79]:
+              - heading "Spotlight rentals" [level=2] [ref=e80]
+              - paragraph [ref=e81]: Fresh picks from the demo catalog. Plug in Supabase to surface your real-time listings.
+            - link "See every listing" [ref=e82] [cursor=pointer]:
+              - /url: /browse
+        - region "Your renting game plan" [ref=e83]:
+          - generic [ref=e84]:
+            - heading "Your renting game plan" [level=2] [ref=e85]
+            - paragraph [ref=e86]: Every stage is built to keep you informed, organized, and ahead of schedule.
+          - generic [ref=e87]:
+            - generic [ref=e88]:
+              - img [ref=e90]
+              - generic [ref=e92]:
+                - heading "Filter matches faster" [level=3] [ref=e93]
+                - paragraph [ref=e94]: Dial in price, commute, and amenities to get smart suggestions in seconds.
+            - generic [ref=e95]:
+              - img [ref=e97]
+              - generic [ref=e99]:
+                - heading "Tour and apply in one place" [level=3] [ref=e100]
+                - paragraph [ref=e101]: Chat with owners, lock tour times, and send applications without losing the thread.
+            - generic [ref=e102]:
+              - img [ref=e104]
+              - generic [ref=e106]:
+                - heading "Settle in confidently" [level=3] [ref=e107]
+                - paragraph [ref=e108]: Track approvals, receive reminders, and lean on verified partners for each step.
+        - generic [ref=e110]:
+          - generic [ref=e111]:
+            - img [ref=e112]
+            - generic [ref=e114]: Identity-checked listings and protected messaging
+          - link "See how we safeguard renters" [ref=e115] [cursor=pointer]:
+            - /url: /privacy
+        - generic [ref=e116]:
+          - generic [ref=e117]:
+            - heading "Kick off your rental hunt today" [level=2] [ref=e118]
+            - paragraph [ref=e119]: Tour listings, compare favorites, and reach out to owners in one secure workspace.
+          - generic [ref=e120]:
+            - link "Explore listings" [ref=e121] [cursor=pointer]:
+              - /url: /browse
+              - text: Explore listings
+              - generic [ref=e122]: "->"
+            - link "Join Rento" [ref=e123] [cursor=pointer]:
+              - /url: /auth/sign-up
+  - contentinfo [ref=e124]:
+    - generic [ref=e125]:
+      - paragraph [ref=e126]: © 2025 Rento. All rights reserved.
+      - navigation "Footer" [ref=e127]:
+        - list [ref=e128]:
+          - listitem [ref=e129]:
+            - link "Browse" [ref=e130] [cursor=pointer]:
+              - /url: /browse
+          - listitem [ref=e131]:
+            - link "Privacy" [ref=e132] [cursor=pointer]:
+              - /url: /privacy
+          - listitem [ref=e133]:
+            - link "Support" [ref=e134] [cursor=pointer]:
+              - /url: /contact
+```

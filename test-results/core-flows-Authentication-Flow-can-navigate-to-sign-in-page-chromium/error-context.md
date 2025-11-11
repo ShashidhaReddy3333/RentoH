@@ -1,0 +1,88 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - alert [ref=e2]: Rento
+  - link "Skip to main content" [ref=e3] [cursor=pointer]:
+    - /url: "#main-content"
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - link "R Rento." [ref=e6] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e7]: R
+        - generic [ref=e8]: Rento.
+      - navigation [ref=e9]:
+        - link "Browse" [ref=e10] [cursor=pointer]:
+          - /url: /browse
+          - generic [ref=e11]: Browse
+        - link "Dashboard" [ref=e12] [cursor=pointer]:
+          - /url: /dashboard
+          - generic [ref=e13]: Dashboard
+        - link "Messages" [ref=e14] [cursor=pointer]:
+          - /url: /messages
+          - generic [ref=e15]: Messages
+      - generic [ref=e16]:
+        - button "Switch to dark mode" [ref=e17] [cursor=pointer]:
+          - generic [ref=e18]:
+            - img [ref=e19]
+            - img [ref=e21]
+          - generic [ref=e23]: Switch to dark mode
+        - link "Open home filters" [ref=e24] [cursor=pointer]:
+          - /url: /browse?filters=open
+          - img [ref=e25]
+          - generic [ref=e27]: Filters
+        - generic [ref=e28]:
+          - link "Sign in" [active] [ref=e29] [cursor=pointer]:
+            - /url: /auth/sign-in
+          - link "Join Rento" [ref=e30] [cursor=pointer]:
+            - /url: /auth/sign-up
+  - main [ref=e31]:
+    - generic [ref=e32]:
+      - status [ref=e33]:
+        - paragraph [ref=e34]: Supabase connection inactive
+        - paragraph [ref=e35]:
+          - text: Add
+          - code [ref=e36]: NEXT_PUBLIC_SUPABASE_URL
+          - text: and
+          - code [ref=e37]: NEXT_PUBLIC_SUPABASE_ANON_KEY
+          - text: to your environment to enable real data. Until then we'll show safe placeholders.
+        - paragraph [ref=e38]:
+          - text: Need help? Review the
+          - link "Supabase quickstart" [ref=e39] [cursor=pointer]:
+            - /url: https://supabase.com/docs/guides/getting-started
+          - text: .
+      - generic [ref=e40]:
+        - generic [ref=e41]:
+          - heading "Welcome back" [level=1] [ref=e42]
+          - paragraph [ref=e43]: Enter your credentials to access the dashboard.
+        - generic [ref=e45]:
+          - form "Sign-in form" [ref=e46]:
+            - generic [ref=e47]:
+              - text: Email
+              - textbox "Email" [ref=e48]:
+                - /placeholder: you@example.com
+            - generic [ref=e49]:
+              - text: Password
+              - textbox "Password" [ref=e50]:
+                - /placeholder: Enter your password
+              - paragraph [ref=e51]: Minimum 8 characters. Do not share your password.
+            - button "Sign in" [ref=e52] [cursor=pointer]
+          - paragraph [ref=e53]:
+            - text: New to Rento?
+            - link "Create an account" [ref=e54] [cursor=pointer]:
+              - /url: /auth/sign-up
+  - contentinfo [ref=e55]:
+    - generic [ref=e56]:
+      - paragraph [ref=e57]: © 2025 Rento. All rights reserved.
+      - navigation "Footer" [ref=e58]:
+        - list [ref=e59]:
+          - listitem [ref=e60]:
+            - link "Browse" [ref=e61] [cursor=pointer]:
+              - /url: /browse
+          - listitem [ref=e62]:
+            - link "Privacy" [ref=e63] [cursor=pointer]:
+              - /url: /privacy
+          - listitem [ref=e64]:
+            - link "Support" [ref=e65] [cursor=pointer]:
+              - /url: /contact
+```
