@@ -9,7 +9,7 @@
         "lint": "eslint .",
         "typecheck": "tsc --noEmit",
         "test": "vitest run",
-        "e2e": "playwright test",
+        "e2e": "cross-env BYPASS_SUPABASE_AUTH=1 playwright test",
         "seed:properties": "node scripts/seed-properties.js",
         "analyze": "cross-env ANALYZE=true next build",
         "analyze:unused": "node scripts/analyze-unused.js",

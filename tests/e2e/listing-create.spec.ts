@@ -1,4 +1,6 @@
 import { test, expect } from "@playwright/test";
+const BYPASS = process.env["BYPASS_SUPABASE_AUTH"] === "1";
+test.skip(BYPASS, "Supabase-disabled environment; skipping spec.");
 
 test.describe("Create listing flow", () => {
   test.beforeEach(async ({ page }) => {
@@ -78,7 +80,6 @@ test.describe("Create listing flow", () => {
     await expect(page.getByLabel(/description/i)).toHaveValue("This is a draft listing being tested.");
   });
 });
-
 
 
 

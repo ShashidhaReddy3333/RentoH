@@ -2,7 +2,7 @@
 
 import type { PropsWithChildren } from "react";
 
-import { ThemeProvider } from "@/components/ThemeProvider";
+import ThemeProvider from "@/app/theme-provider";
 import { SupabaseListener } from "@/components/providers/supabase-listener";
 
 /**

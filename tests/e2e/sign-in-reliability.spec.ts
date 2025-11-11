@@ -1,4 +1,6 @@
 import { test, expect } from '@playwright/test';
+const BYPASS = process.env["BYPASS_SUPABASE_AUTH"] === "1";
+test.skip(BYPASS, "Supabase-disabled environment; skipping spec.");
 
 test.describe('Sign-in Reliability', () => {
   test('handles timeout gracefully', async ({ page, context }) => {

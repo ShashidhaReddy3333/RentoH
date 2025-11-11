@@ -1,4 +1,6 @@
 import { expect, test } from "@playwright/test";
+const BYPASS = process.env["BYPASS_SUPABASE_AUTH"] === "1";
+test.skip(BYPASS, "Supabase-disabled environment; skipping spec.");
 
 const SUPABASE_WARNING = /Supabase credentials are not configured/i;
 

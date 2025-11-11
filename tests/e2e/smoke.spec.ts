@@ -2,12 +2,14 @@ import { test, expect } from "@playwright/test";
 
 test("home renders", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByText(/Featured homes|Search/i)).toBeVisible();
+  // Use a stable test id to avoid strict-mode ambiguity
+  await expect(page.getByTestId("search-submit")).toBeVisible();
 });
 
 test("browse renders", async ({ page }) => {
   await page.goto("/browse");
-  await expect(page.getByText(/Search results|No homes match/i)).toBeVisible();
+  const status = page.locator('span[role="status"]');
+  await expect(status.first()).toContainText(/Showing|results/);
 });
 
 test("auth sign-in renders", async ({ page }) => {
