@@ -99,9 +99,9 @@ CREATE POLICY tours_update_tenant ON public.tours
   WITH CHECK (
     auth.uid() = tenant_id
     AND (
-      -- Tenants can only cancel or update notes
-      (OLD.status = status AND notes IS NOT NULL) OR
-      status = 'cancelled'
+      -- Tenants can only set status to cancelled or leave it unchanged
+      status = 'cancelled' OR 
+      status IN ('requested', 'confirmed', 'rescheduled')
     )
   );
 
