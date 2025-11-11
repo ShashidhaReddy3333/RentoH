@@ -117,13 +117,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Insert message - sender_id is explicitly set to authenticated user ID
-    const { error: insertError } = await supabase.from("messages").insert({
-      thread_id: payload.threadId,
-      sender_id: userId, // Ensures sender.id === auth.uid()
-      body: payload.body
-    });
+    const { data: newMessage, error: insertError } = await supabase
+      .from("messages")
+      .insert({
+        thread_id: payload.threadId,
+        sender_id: userId, // Ensures sender.id === auth.uid()
+        body: payload.body
+      })
+      .select()
+      .single();
 
-    if (insertError) {
+    if (insertError || !newMessage) {
       console.error("[messages] Insert error:", insertError);
       return NextResponse.json(
         { error: "Failed to send message", code: "MESSAGE_ERROR" },
@@ -131,13 +135,36 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Determine recipient to increment their unread count
+    const recipientId = userId === thread.landlord_id ? thread.tenant_id : thread.landlord_id;
+
+    // Update thread metadata including unread count
+    const { error: threadUpdateError } = await supabase
+      .from("message_threads")
+      .update({
+        last_message: payload.body,
+        last_message_at: newMessage.created_at ?? new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .eq("id", payload.threadId);
+
+    if (threadUpdateError) {
+      console.error("[messages] Thread update error:", threadUpdateError);
+    }
+
+    // Increment unread count for recipient using SQL
+    const { error: rpcError } = await supabase.rpc('increment_thread_unread_count', {
+      p_thread_id: payload.threadId,
+      p_user_id: recipientId
+    });
+    
+    if (rpcError) {
+      console.error("[messages] Failed to increment unread count:", rpcError);
+      // Non-blocking error - continue anyway
+    }
+
     // Trigger a consolidated digest for the recipient (dev stub — logs/email stub)
     try {
-      let recipientId: string | undefined;
-      if (thread) {
-        recipientId = userId === thread.landlord_id ? thread.tenant_id : thread.landlord_id;
-      }
-
       if (recipientId) {
         try {
           await generateDigestForUser(recipientId, { trigger: "message" });
@@ -148,15 +175,6 @@ export async function POST(request: NextRequest) {
     } catch (e) {
       console.error("[digest] unexpected error", e);
     }
-
-    // Update thread metadata
-    await supabase
-      .from("message_threads")
-      .update({
-        last_message: payload.body,
-        updated_at: new Date().toISOString()
-      })
-      .eq("id", payload.threadId);
 
     return NextResponse.json(
       { success: true },

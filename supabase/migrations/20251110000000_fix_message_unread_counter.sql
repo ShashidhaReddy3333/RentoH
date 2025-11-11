@@ -1,5 +1,7 @@
--- Migration: Fix message unread counter
--- This migration creates triggers to automatically update the unread_count in message_threads
+-- =====================================================
+-- Message Unread Counter Fix and Function
+-- Created: 2024-11-10
+-- ===================================================== unread_count in message_threads
 
 -- Function to increment unread count when a new message is inserted
 CREATE OR REPLACE FUNCTION increment_unread_count()
@@ -67,3 +69,19 @@ WHERE unread_count IS NULL;
 -- Add index for better performance
 CREATE INDEX IF NOT EXISTS idx_messages_thread_sender ON messages(thread_id, sender_id);
 CREATE INDEX IF NOT EXISTS idx_messages_read_at ON messages(read_at) WHERE read_at IS NULL;
+
+-- Manual RPC function to increment unread count (for direct API calls)
+CREATE OR REPLACE FUNCTION increment_thread_unread_count(p_thread_id UUID, p_user_id UUID)
+RETURNS void AS $$
+BEGIN
+  -- Increment unread count for the specified thread
+  -- This is called from the API when a message is sent
+  UPDATE message_threads
+  SET unread_count = COALESCE(unread_count, 0) + 1
+  WHERE id = p_thread_id
+  AND (
+    (tenant_id = p_user_id) OR
+    (landlord_id = p_user_id)
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;

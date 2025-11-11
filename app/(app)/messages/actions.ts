@@ -1,9 +1,42 @@
 "use server";
 
-import { sendMessage, markThreadAsRead } from "@/lib/data-access/messages";
+import { cookies } from "next/headers";
+import { markThreadAsRead } from "@/lib/data-access/messages";
+import type { Message } from "@/lib/types";
 
-export async function sendMessageAction(threadId: string, text: string) {
-  return sendMessage(threadId, text);
+export async function sendMessageAction(threadId: string, text: string): Promise<Message> {
+  // Get CSRF token from cookies
+  const cookieStore = cookies();
+  const csrfToken = cookieStore.get('csrf-token')?.value;
+
+  // Call the API route instead of directly accessing Supabase
+  const origin = process.env['NEXT_PUBLIC_SITE_URL'] || 'http://localhost:3000';
+  const response = await fetch(`${origin}/api/messages`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Cookie': cookieStore.toString()
+    },
+    body: JSON.stringify({
+      threadId,
+      body: text,
+      csrf: csrfToken
+    })
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ error: 'Failed to send message' }));
+    throw new Error(errorData.error || 'Failed to send message');
+  }
+
+  // Return a properly formatted message object
+  return {
+    id: `${Date.now()}`, // Temporary ID, should be replaced by server
+    threadId,
+    senderId: 'self', // Will be set by server
+    text,
+    createdAt: new Date().toISOString()
+  };
 }
 
 export async function markThreadAsReadAction(threadId: string) {
