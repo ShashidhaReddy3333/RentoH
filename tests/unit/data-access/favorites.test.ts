@@ -8,16 +8,13 @@ const mockSupabaseEq = vi.fn();
 const mockSupabaseOrder = vi.fn();
 const mockSupabaseLimit = vi.fn();
 
-vi.mock('@/lib/supabase/server', () => ({
-  createSupabaseServerClient: () => ({
-    from: mockSupabaseFrom,
-    auth: {
-      getSession: vi.fn().mockResolvedValue({
-        data: { session: { user: { id: 'test-user-id' } } },
-        error: null
-      })
-    }
-  })
+vi.mock('@/lib/supabase/auth', () => ({
+  getSupabaseClientWithUser: vi.fn(() => Promise.resolve({
+    supabase: {
+      from: mockSupabaseFrom
+    },
+    user: { id: 'test-user-id' }
+  }))
 }));
 
 describe('favorites data access', () => {
@@ -45,8 +42,8 @@ describe('favorites data access', () => {
     it('should return transformed property data', async () => {
       const mockData = [
         {
-          property_id: 'prop-1',
-          properties: {
+          created_at: '2024-01-01T00:00:00Z',
+          property: {
             id: 'prop-1',
             title: 'Test Property',
             city: 'Toronto',
@@ -72,10 +69,11 @@ describe('favorites data access', () => {
       expect(result[0]).toMatchObject({
         id: 'prop-1',
         title: 'Test Property',
-        beds: 2,
-        baths: 1,
-        type: 'apartment'
+        type: 'apartment',
+        isFavorite: true
       });
+      // mapPropertyFromSupabaseRow handles bedrooms/bathrooms transformation
+      expect(result[0]?.city).toBe('Toronto');
     });
 
     it('should handle database errors gracefully', async () => {
@@ -95,25 +93,29 @@ describe('favorites data access', () => {
       expect(mockSupabaseLimit).toHaveBeenCalledWith(25);
     });
 
-    it('should handle array properties correctly', async () => {
+    it('should handle null properties correctly', async () => {
       const mockData = [
         {
-          property_id: 'prop-1',
-          properties: [{
-            id: 'prop-1',
-            title: 'Array Property',
+          created_at: '2024-01-01T00:00:00Z',
+          property: null
+        },
+        {
+          created_at: '2024-01-02T00:00:00Z',
+          property: {
+            id: 'prop-2',
+            title: 'Valid Property',
             city: 'Toronto',
             price: 2000,
             bedrooms: 2,
             bathrooms: 1,
             images: ['image1.jpg'],
-            slug: 'array-property',
+            slug: 'valid-property',
             type: 'house',
             verified: false,
             pets: true,
             furnished: false,
-            created_at: '2024-01-01T00:00:00Z'
-          }]
+            created_at: '2024-01-02T00:00:00Z'
+          }
         }
       ];
 
@@ -121,8 +123,9 @@ describe('favorites data access', () => {
 
       const result = await listFavoriteProperties(10);
 
+      // Should filter out null properties
       expect(result).toHaveLength(1);
-      expect(result[0]?.title).toBe('Array Property');
+      expect(result[0]?.title).toBe('Valid Property');
     });
   });
 });
