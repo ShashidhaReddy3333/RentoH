@@ -5,6 +5,7 @@ import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { format } from 'date-fns';
+import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
 import Image from 'next/image';
 import Link from 'next/link';
 import { createTourCalendarEvent, generateICS, generateGoogleCalendarUrl } from '@/lib/ics';
@@ -43,6 +44,7 @@ export default function ToursClient({ tours, userRole, userId }: Props) {
   // avoid unused-var lint in the client bundle.
   void userId;
   const [filter, setFilter] = useState('all');
+  const [localTimezone] = useState(() => Intl.DateTimeFormat().resolvedOptions().timeZone);
   const supabase = createSupabaseBrowserClient();
   
   if (!supabase) {
@@ -141,7 +143,14 @@ export default function ToursClient({ tours, userRole, userId }: Props) {
                   </h3>
                   <p className="text-sm text-gray-500">{tour.property.address}</p>
                   <p className="text-sm text-gray-500">
-                    {format(new Date(tour.scheduled_at), 'PPP p')}
+                    {formatInTimeZone(
+                      new Date(tour.scheduled_at),
+                      localTimezone,
+                      'PPP p'
+                    )}
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    {localTimezone !== 'UTC' && `(${localTimezone})`}
                   </p>
                   <div className={`inline-block px-2 py-1 rounded-full text-sm mt-2 ${statusColors[tour.status]}`}>
                     {tour.status.charAt(0).toUpperCase() + tour.status.slice(1)}
