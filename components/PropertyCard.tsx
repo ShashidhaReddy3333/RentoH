@@ -13,6 +13,7 @@ import { formatCurrency } from "@/lib/utils/format";
 
 type PropertyCardProps = {
   property: Property;
+  onToggleFavorite?: (isSaved: boolean) => void;
 };
 
 const typeLabels: Record<Property["type"], string> = {
@@ -22,7 +23,7 @@ const typeLabels: Record<Property["type"], string> = {
   townhouse: "Townhouse"
 };
 
-export default function PropertyCard({ property }: PropertyCardProps) {
+export default function PropertyCard({ property, onToggleFavorite }: PropertyCardProps) {
   const router = useRouter();
   const target = property.slug ?? property.id;
   const primaryImage = property.images[0];
@@ -69,7 +70,11 @@ export default function PropertyCard({ property }: PropertyCardProps) {
               Verified
             </span>
           ) : null}
-          <FavoriteButton propertyId={property.id} initialSaved={Boolean(property.isFavorite)} />
+          <FavoriteButton 
+            propertyId={property.id} 
+            initialSaved={Boolean(property.isFavorite)}
+            onToggle={onToggleFavorite}
+          />
         </div>
       </div>
 

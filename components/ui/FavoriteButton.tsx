@@ -7,6 +7,7 @@ type FavoriteButtonProps = {
   propertyId: string;
   initialSaved?: boolean;
   className?: string;
+  onToggle?: (isSaved: boolean) => void;
 };
 
 function showToast(message: string, opts: { success?: boolean } = {}) {
@@ -36,7 +37,7 @@ function extractMessage(err: unknown): string | undefined {
   return undefined;
 }
 
-export default function FavoriteButton({ propertyId, initialSaved = false, className }: FavoriteButtonProps) {
+export default function FavoriteButton({ propertyId, initialSaved = false, className, onToggle }: FavoriteButtonProps) {
   const [saved, setSaved] = useState<boolean>(initialSaved);
   const [busy, setBusy] = useState(false);
 
@@ -59,6 +60,11 @@ export default function FavoriteButton({ propertyId, initialSaved = false, class
       }
 
       showToast(next ? "Saved to favorites" : "Removed from favorites", { success: true });
+      
+      // Trigger callback if provided
+      if (onToggle) {
+        onToggle(next);
+      }
     } catch (err: unknown) {
       // revert optimistic
       setSaved(!next);
@@ -68,7 +74,7 @@ export default function FavoriteButton({ propertyId, initialSaved = false, class
     } finally {
       setBusy(false); // Revert busy state regardless of success or failure
     }
-  }, [saved, propertyId, busy]);
+  }, [saved, propertyId, busy, onToggle]);
 
   return (
     <button
