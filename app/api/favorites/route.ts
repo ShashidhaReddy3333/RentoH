@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { getSupabaseClientWithUser } from "@/lib/supabase/auth";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/middleware/rate-limit";
 
@@ -61,6 +62,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: msg }, { status: 500 });
     }
 
+    // Revalidate pages that show favorites
+    revalidatePath("/favorites");
+    revalidatePath("/dashboard");
+    revalidatePath(`/property/${propertyId}`);
+
     return NextResponse.json({ ok: true }, { status: 201 });
   } catch (err: unknown) {
     console.error("[api/favorites] POST error", err);
@@ -109,6 +115,11 @@ export async function DELETE(request: Request) {
       const msg = extractMessage(error) ?? "Failed to remove favorite";
       return NextResponse.json({ error: msg }, { status: 500 });
     }
+
+    // Revalidate pages that show favorites
+    revalidatePath("/favorites");
+    revalidatePath("/dashboard");
+    revalidatePath(`/property/${propertyId}`);
 
     return NextResponse.json({ ok: true });
   } catch (err: unknown) {
