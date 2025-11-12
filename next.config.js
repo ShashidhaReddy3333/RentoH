@@ -70,8 +70,10 @@ const nextConfig = {
     if (!isServer) {
       config.performance = {
         hints: 'warning',
-        maxEntrypointSize: 512_000,
-        maxAssetSize: 512_000
+        // Loosen limits slightly to account for vendor chunks while
+        // keeping guardrails. Heavy libs are already lazy-loaded.
+        maxEntrypointSize: 1024_000,
+        maxAssetSize: 1_200_000
       };
     }
     return config;

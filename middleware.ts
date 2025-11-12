@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 import { env, hasSupabaseEnv } from './lib/env';
-import { createSupabaseMiddlewareClient } from './lib/supabase/middleware';
+// Defer importing Supabase middleware client to runtime to avoid bundling it
+// into Edge-restricted contexts during build analysis.
 
 // All routes that require authentication
 const PROTECTED_ROUTES = [
@@ -174,6 +175,7 @@ export async function middleware(req: NextRequest) {
     return applySecurityHeaders(req, NextResponse.next());
   }
 
+  const { createSupabaseMiddlewareClient } = await import('./lib/supabase/middleware');
   const { supabase, response } = createSupabaseMiddlewareClient(req);
   const {
     data: { session }
@@ -265,5 +267,3 @@ function generateCsrfToken(): string {
 
   return Array.from({ length: 32 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
 }
-
-

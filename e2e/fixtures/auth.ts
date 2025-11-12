@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 
 type Fixtures = { landlordStorage: string; tenantStorage: string; };
 export const test = base.extend<Fixtures>({
-  landlordStorage: async ({}, use) => {
+  landlordStorage: async (_args, use) => {
     const supabaseUrl = process.env['NEXT_PUBLIC_SUPABASE_URL'] || 'http://127.0.0.1:54321';
     const supabaseKey = process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY'] || '';
     const siteUrl = process.env['NEXT_PUBLIC_SITE_URL'] || 'http://localhost:3000';
@@ -39,7 +39,7 @@ export const test = base.extend<Fixtures>({
     await browser.close();
     await use(path);
   },
-  tenantStorage: async ({}, use) => {
+  tenantStorage: async (_args, use) => {
     const supabaseUrl = process.env['NEXT_PUBLIC_SUPABASE_URL'] || 'http://127.0.0.1:54321';
     const supabaseKey = process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY'] || '';
     const siteUrl = process.env['NEXT_PUBLIC_SITE_URL'] || 'http://localhost:3000';

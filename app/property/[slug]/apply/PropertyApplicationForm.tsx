@@ -16,7 +16,7 @@ interface Props {
   userId: string;
 }
 
-export function PropertyApplicationForm({ propertyId, landlordId, propertyTitle, userId }: Props) {
+export function PropertyApplicationForm({ propertyId, landlordId: _landlordId, propertyTitle, userId: _userId }: Props) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);

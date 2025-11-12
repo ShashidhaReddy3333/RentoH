@@ -106,7 +106,7 @@ test.describe('Applications Flow', () => {
 });
 
 test.describe('Application Status Transitions', () => {
-  test('landlord can transition application status', async ({ page }) => {
+  test('landlord can transition application status', async ({ page: _page }) => {
     // This test requires:
     // 1. Landlord authentication
     // 2. An existing application in 'submitted' status
@@ -116,14 +116,14 @@ test.describe('Application Status Transitions', () => {
     test.skip();
   });
 
-  test('status transitions show toast notifications', async ({ page }) => {
+  test('status transitions show toast notifications', async ({ page: _page }) => {
     // Navigate to application detail as landlord
     // Click status transition button
     // Verify toast notification appears
     test.skip();
   });
 
-  test('tenant can see updated application status', async ({ page }) => {
+  test('tenant can see updated application status', async ({ page: _page }) => {
     // Navigate to applications as tenant
     // Verify status badges show correct status
     test.skip();

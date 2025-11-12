@@ -15,16 +15,17 @@ function extractMessage(obj: unknown): string | undefined {
 }
 
 export async function POST(request: Request) {
-  let body: any;
+  let body: unknown;
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const propertyId = body?.propertyId as string | undefined;
-  const message = body?.message as string | undefined;
-  const monthlyIncomeRaw = body?.monthlyIncome;
+  const rec = (body ?? {}) as Record<string, unknown>;
+  const propertyId = typeof rec["propertyId"] === "string" ? (rec["propertyId"] as string) : undefined;
+  const message = typeof rec["message"] === "string" ? (rec["message"] as string) : undefined;
+  const monthlyIncomeRaw = rec["monthlyIncome"];
   const monthlyIncome = typeof monthlyIncomeRaw === "number" ? monthlyIncomeRaw : Number.parseInt(String(monthlyIncomeRaw ?? ""), 10);
 
   if (!propertyId || !Number.isFinite(monthlyIncome)) {

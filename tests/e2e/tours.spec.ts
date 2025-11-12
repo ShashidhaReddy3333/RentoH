@@ -159,13 +159,13 @@ test.describe('Tours & Scheduling', () => {
     }
   });
 
-  test('should submit tour request successfully', async ({ page }) => {
+  test('should submit tour request successfully', async ({ page: _page }) => {
     // This test requires proper setup and mocking
     // Placeholder for when environment is configured
     test.skip();
   });
 
-  test('landlord can confirm tour request', async ({ page }) => {
+  test('landlord can confirm tour request', async ({ page: _page }) => {
     // Navigate to tours page as landlord
     // Find pending tour
     // Click confirm button
@@ -173,7 +173,7 @@ test.describe('Tours & Scheduling', () => {
     test.skip();
   });
 
-  test('landlord can cancel tour request', async ({ page }) => {
+  test('landlord can cancel tour request', async ({ page: _page }) => {
     // Similar to confirm test but for cancellation
     test.skip();
   });

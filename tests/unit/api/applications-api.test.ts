@@ -1,8 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Utility to parse NextResponse
 async function readJson(res: Response) {
-  const data = await (res as any).json();
+  const data = (await res.json()) as unknown;
   return data;
 }
 
@@ -25,11 +26,11 @@ function makeSupabaseStub(options: {
         };
       }
       if (table === 'applications') {
-        let payload: any = null;
-        const api: any = {
+        let _payload: Record<string, unknown> | null = null;
+        const api: Record<string, unknown> = {
           // For POST insert chain
-          insert(body: any) { payload = body; return api; },
-          select(_cols?: any) { return api; },
+          insert(body: Record<string, unknown>) { _payload = body; return api; },
+          select(_cols?: unknown) { return api; },
           async maybeSingle() {
             if (options.insertAppId) {
               return { data: { id: options.insertAppId }, error: null } as const;
@@ -42,17 +43,17 @@ function makeSupabaseStub(options: {
           },
           eq(_field?: string, _value?: string) { return api; },
           // For PATCH update chain
-          update(_fields?: any) {
+          update(_fields?: Record<string, unknown>) {
             return {
               eq() { return { error: options.updateError ?? null } as const; }
             };
           }
         };
-        return api as any;
+        return api as unknown;
       }
       throw new Error(`Unexpected table ${table}`);
     }
-  } as any;
+  } as unknown as { from: (t: string) => unknown };
 }
 
 // Mock revalidatePath to no-op

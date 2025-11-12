@@ -13,7 +13,7 @@ import { PropertyAbout } from "@/components/property/PropertyAbout";
 import { PropertyAmenities } from "@/components/property/PropertyAmenities";
 import { PropertyKeyFacts } from "@/components/property/PropertyKeyFacts";
 import { PropertyContactCard } from "@/components/property/PropertyContactCard";
-import { PropertyLocationMap } from "@/components/property/PropertyLocationMap";
+import MapLoader from "@/components/MapLoader";
 import { RecentlyViewedTracker } from "@/components/recently-viewed/RecentlyViewedTracker";
 import type { RecentlyViewedProperty } from "@/components/recently-viewed/types";
 
@@ -134,7 +134,7 @@ export default async function PropertyPage({ params }: PageParams) {
           <PropertyAbout property={property} />
           <PropertyAmenities amenities={amenities} />
           {property.coordinates ? (
-            <PropertyLocationMap
+            <MapLoader
               coordinates={property.coordinates}
               address={property.address}
               mapboxToken={mapboxToken}

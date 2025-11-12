@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+export const dynamic = "force-dynamic";
+
 import { getSupabaseHealth } from "@/lib/supabase/health";
 
 export async function GET() {

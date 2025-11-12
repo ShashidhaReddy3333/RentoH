@@ -67,7 +67,7 @@ test.describe('Sign-in Reliability', () => {
 
   test('clears error on subsequent attempt', async ({ page, context }) => {
     // First attempt: simulate error
-    await context.route('**/*supabase.co/auth/**', async (route, request) => {
+    await context.route('**/*supabase.co/auth/**', async (route, _request) => {
       await route.abort('failed');
     });
 
