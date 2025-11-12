@@ -95,7 +95,7 @@ export async function POST(request: Request) {
     const errMsg = String(insertResult.error.message ?? "");
     const needsRetry =
       insertResult.error.code === "42703" ||
-      /column\s+\"?(message|submitted_at|monthly_income)\"?/i.test(errMsg);
+      /column\s+"?(message|submitted_at|monthly_income)"?/i.test(errMsg);
 
     if (needsRetry) {
       const fallback: Record<string, unknown> = { ...payloadBase };
