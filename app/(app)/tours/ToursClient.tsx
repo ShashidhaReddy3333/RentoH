@@ -8,6 +8,7 @@ import { formatInTimeZone } from 'date-fns-tz';
 import Image from 'next/image';
 import Link from 'next/link';
 import { createTourCalendarEvent, generateICS, generateGoogleCalendarUrl } from '@/lib/ics';
+import { CheckCircleIcon, XCircleIcon, ClockIcon } from '@heroicons/react/24/outline';
 
 interface Tour {
   id: string;
@@ -38,10 +39,16 @@ interface Props {
   userId: string;
 }
 
-export default function ToursClient({ tours, userRole, userId }: Props) {
+export default function ToursClient({ tours, userRole }: Props) {
   const [filter, setFilter] = useState('all');
   const [items, setItems] = useState<Tour[]>(tours);
   const [localTimezone] = useState(() => Intl.DateTimeFormat().resolvedOptions().timeZone);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    tourId: string;
+    status: string;
+    tourTitle: string;
+  } | null>(null);
   const supabase = createSupabaseBrowserClient();
 
   useEffect(() => { setItems(tours); }, [tours]);
@@ -72,11 +79,11 @@ export default function ToursClient({ tours, userRole, userId }: Props) {
     return <div className="text-center py-8"><p className="text-red-500">Unable to load tours</p></div>;
   }
 
-  const updateTourStatus = async (id: string, status: string, _note: string) => {
+  const updateTourStatus = async (id: string, status: string, note?: string) => {
     const res = await fetch('/api/tours/update', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tourId: id, status, notes: _note })
+      body: JSON.stringify({ tourId: id, status, notes: note || '' })
     });
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
@@ -85,7 +92,17 @@ export default function ToursClient({ tours, userRole, userId }: Props) {
       return;
     }
     setItems((prev) => prev.map((t) => (t.id === id ? { ...t, status } : t)));
-    showToast(`Tour ${status}`, { success: true });
+    const statusLabels: Record<string, string> = {
+      confirmed: 'confirmed',
+      completed: 'marked as completed',
+      cancelled: 'cancelled'
+    };
+    showToast(`Tour ${statusLabels[status] || status}`, { success: true });
+    setConfirmDialog(null);
+  };
+
+  const openConfirmDialog = (tourId: string, status: string, tourTitle: string) => {
+    setConfirmDialog({ isOpen: true, tourId, status, tourTitle });
   };
 
   const handleDownloadICS = (tour: Tour) => {
@@ -182,43 +199,77 @@ export default function ToursClient({ tours, userRole, userId }: Props) {
                 </div>
               </div>
 
-              <div className="space-x-2">
+              <div className="flex flex-wrap gap-2">
                 <Button
                   variant="secondary"
+                  size="sm"
                   onClick={() => handleDownloadICS(tour)}
+                  aria-label="Download calendar event"
                 >
                   Download ICS
                 </Button>
                 <Button
                   variant="secondary"
+                  size="sm"
                   onClick={() => handleGoogleCalendar(tour)}
+                  aria-label="Add to Google Calendar"
                 >
-                  Add to Google Calendar
+                  Google Calendar
                 </Button>
 
-                {userRole === 'landlord' && tour.status === 'requested' && (
+                {userRole === 'landlord' && (
                   <>
-                    <Button
-                      variant="primary"
-                      onClick={() => updateTourStatus(tour.id, 'confirmed', 'Tour confirmed')}
-                    >
-                      Confirm
-                    </Button>
-                    <Button
-                      variant="danger"
-                      onClick={() => updateTourStatus(tour.id, 'cancelled', 'Tour cancelled')}
-                    >
-                      Cancel
-                    </Button>
+                    {tour.status === 'requested' && (
+                      <>
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => openConfirmDialog(tour.id, 'confirmed', tour.property.title)}
+                          aria-label="Confirm tour"
+                        >
+                          <CheckCircleIcon className="h-4 w-4 mr-1" aria-hidden="true" />
+                          Confirm
+                        </Button>
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          onClick={() => openConfirmDialog(tour.id, 'cancelled', tour.property.title)}
+                          aria-label="Cancel tour"
+                        >
+                          <XCircleIcon className="h-4 w-4 mr-1" aria-hidden="true" />
+                          Cancel
+                        </Button>
+                      </>
+                    )}
+                    {tour.status === 'confirmed' && (
+                      <>
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => openConfirmDialog(tour.id, 'completed', tour.property.title)}
+                          aria-label="Mark tour as completed"
+                        >
+                          <CheckCircleIcon className="h-4 w-4 mr-1" aria-hidden="true" />
+                          Complete
+                        </Button>
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          onClick={() => openConfirmDialog(tour.id, 'cancelled', tour.property.title)}
+                          aria-label="Cancel tour"
+                        >
+                          <XCircleIcon className="h-4 w-4 mr-1" aria-hidden="true" />
+                          Cancel
+                        </Button>
+                      </>
+                    )}
+                    {(tour.status === 'completed' || tour.status === 'cancelled') && (
+                      <span className="inline-flex items-center gap-1 text-sm text-text-muted px-3 py-2">
+                        <ClockIcon className="h-4 w-4" aria-hidden="true" />
+                        No actions available
+                      </span>
+                    )}
                   </>
-                )}
-                {userRole === 'landlord' && tour.status === 'confirmed' && (
-                  <Button
-                    variant="secondary"
-                    onClick={() => updateTourStatus(tour.id, 'completed', 'Tour completed')}
-                  >
-                    Mark completed
-                  </Button>
                 )}
               </div>
             </div>
@@ -237,6 +288,54 @@ export default function ToursClient({ tours, userRole, userId }: Props) {
           </div>
         )}
       </div>
+
+      {/* Confirmation Dialog */}
+      {confirmDialog?.isOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => setConfirmDialog(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="dialog-title"
+        >
+          <div
+            className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 id="dialog-title" className="mb-4 text-xl font-semibold text-brand-dark">
+              {confirmDialog.status === 'confirmed' && 'Confirm Tour'}
+              {confirmDialog.status === 'completed' && 'Complete Tour'}
+              {confirmDialog.status === 'cancelled' && 'Cancel Tour'}
+            </h2>
+            <p className="mb-6 text-sm text-text-muted">
+              {confirmDialog.status === 'confirmed' &&
+                `Are you sure you want to confirm the tour for "${confirmDialog.tourTitle}"? The tenant will be notified.`}
+              {confirmDialog.status === 'completed' &&
+                `Mark the tour for "${confirmDialog.tourTitle}" as completed? This action indicates the tour has taken place.`}
+              {confirmDialog.status === 'cancelled' &&
+                `Are you sure you want to cancel the tour for "${confirmDialog.tourTitle}"? The tenant will be notified.`}
+            </p>
+            <div className="flex justify-end gap-3">
+              <Button
+                variant="secondary"
+                onClick={() => setConfirmDialog(null)}
+                aria-label="Cancel action"
+              >
+                Cancel
+              </Button>
+              <Button
+                variant={confirmDialog.status === 'cancelled' ? 'danger' : 'primary'}
+                onClick={() => updateTourStatus(confirmDialog.tourId, confirmDialog.status)}
+                aria-label={`Confirm ${confirmDialog.status}`}
+              >
+                {confirmDialog.status === 'confirmed' && 'Confirm Tour'}
+                {confirmDialog.status === 'completed' && 'Mark Completed'}
+                {confirmDialog.status === 'cancelled' && 'Cancel Tour'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

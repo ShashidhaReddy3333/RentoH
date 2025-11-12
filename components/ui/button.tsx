@@ -29,12 +29,12 @@ const buttonVariants = cva(
     variants: {
       variant: {
         primary:
-          "bg-brand-primary text-white shadow-sm hover:bg-brand-primary/90 focus-visible:ring-brand-primary/40",
+          "bg-brand-primary text-white shadow-sm hover:bg-brand-primary/90 active:bg-brand-primary/80 focus-visible:ring-brand-primary/40 disabled:bg-brand-primary/50",
         secondary:
-          "border-brand-outline/70 bg-surface text-textc shadow-sm hover:border-brand-primary hover:text-brand-primary",
-        ghost: "border-transparent bg-transparent text-brand-primary hover:bg-brand-primaryMuted",
+          "border-brand-outline/70 bg-surface text-textc shadow-sm hover:border-brand-primary hover:text-brand-primary active:bg-surface-muted focus-visible:ring-brand-primary/40",
+        ghost: "border-transparent bg-transparent text-brand-primary hover:bg-brand-primaryMuted active:bg-brand-primary/20",
         danger:
-          "border-transparent bg-danger text-white shadow-sm hover:bg-danger/90 focus-visible:ring-danger/40"
+          "border-transparent bg-danger text-white shadow-sm hover:bg-danger/90 active:bg-danger/80 focus-visible:ring-danger/40 disabled:bg-danger/50"
       },
       size: {
         sm: "h-9 rounded-md px-3 text-sm",
