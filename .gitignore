@@ -14,6 +14,7 @@ curl-output.html
 
 # Environment files
 .env*
+!.env.example
 
 # Editor folders
 .idea/
@@ -27,3 +28,17 @@ Thumbs.db
 tmp/
 test-results/
 playwright-report/
+coverage/
+
+# Audit and summary documents (development artifacts)
+*SUMMARY*.md
+*AUDIT*.md
+*.pdf
+COMPREHENSIVE_CODE_AUDIT.md
+DEPLOYMENT_FIXES.md
+QUICK_CHECKLIST.md
+QUICK_START.md
+SETUP_GUIDE.md
+
+# Temporary build files
+*.tsbuildinfo
