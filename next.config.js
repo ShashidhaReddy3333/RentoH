@@ -36,8 +36,18 @@ const nextConfig = {
       '@heroicons/react/24/solid',
       '@radix-ui/react-alert-dialog',
       'lodash',
-      'date-fns'
+      'date-fns',
+      'date-fns-tz'
     ]
+  },
+  // Modularize imports for better tree-shaking
+  modularizeImports: {
+    'lodash': {
+      transform: 'lodash/{{member}}'
+    },
+    'date-fns': {
+      transform: 'date-fns/{{member}}'
+    }
   },
   // Compiler optimizations
   compiler: {
