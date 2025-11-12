@@ -79,7 +79,10 @@ const config: Config = {
       boxShadow: {
         sm: shadows.sm,
         md: shadows.md,
-        lg: shadows.lg
+        lg: shadows.lg,
+        xl: shadows.xl,
+        soft: shadows.soft,
+        inner: shadows.inner
       },
       fontFamily: {
         sans: [typography.fontFamily.sans]

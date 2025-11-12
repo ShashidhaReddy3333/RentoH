@@ -48,11 +48,6 @@ export default function ApplicationsClient({ applications, userRole }: Props) {
   const [filter, setFilter] = useState('all');
   const [apps, setApps] = useState<Application[]>(applications);
   const supabase = createSupabaseBrowserClient();
-  
-  if (!supabase) {
-    console.error('[ApplicationsClient] Supabase client not available');
-    return <div className="text-center py-8"><p className="text-red-500">Unable to load applications</p></div>;
-  }
 
   useEffect(() => {
     setApps(applications);
@@ -76,6 +71,8 @@ export default function ApplicationsClient({ applications, userRole }: Props) {
 
   // Realtime: notify tenants when status changes
   useEffect(() => {
+    if (!supabase) return;
+    
     let unsubscribed = false;
     (async () => {
       try {
@@ -89,9 +86,9 @@ export default function ApplicationsClient({ applications, userRole }: Props) {
             table: 'applications',
             filter: `tenant_id=eq.${user.id}`
           }, (payload) => {
-            const row = payload.new as any;
-            const id = row?.id as string | undefined;
-            const status = row?.status as string | undefined;
+            const row = payload.new as Record<string, unknown>;
+            const id = row?.['id'] as string | undefined;
+            const status = row?.['status'] as string | undefined;
             if (!id || !status) return;
             setApps((prev) => prev.map((a) => a.id === id ? { ...a, status } : a));
             showToast(`Application status updated to ${status}`, { success: true });
@@ -103,8 +100,8 @@ export default function ApplicationsClient({ applications, userRole }: Props) {
             supabase.removeChannel(channel);
           }
         };
-      } catch {
-        // ignore
+      } catch (error) {
+        console.error('[ApplicationsClient] Subscription error:', error);
       }
     })();
     return () => {
@@ -117,7 +114,12 @@ export default function ApplicationsClient({ applications, userRole }: Props) {
     return app.status === filter;
   }), [apps, filter]);
 
-  const updateApplicationStatus = async (id: string, status: string, note: string) => {
+  if (!supabase) {
+    console.error('[ApplicationsClient] Supabase client not available');
+    return <div className="text-center py-8"><p className="text-red-500">Unable to load applications</p></div>;
+  }
+
+  const updateApplicationStatus = async (id: string, status: string, _note: string) => {
     const res = await fetch(`/api/applications/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },

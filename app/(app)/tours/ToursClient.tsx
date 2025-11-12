@@ -39,18 +39,10 @@ interface Props {
 }
 
 export default function ToursClient({ tours, userRole, userId }: Props) {
-  // userId is accepted from the server page for context; keep it referenced to
-  // avoid unused-var lint in the client bundle.
-  void userId;
   const [filter, setFilter] = useState('all');
   const [items, setItems] = useState<Tour[]>(tours);
   const [localTimezone] = useState(() => Intl.DateTimeFormat().resolvedOptions().timeZone);
   const supabase = createSupabaseBrowserClient();
-  
-  if (!supabase) {
-    console.error('[ToursClient] Supabase client not available');
-    return <div className="text-center py-8"><p className="text-red-500">Unable to load tours</p></div>;
-  }
 
   useEffect(() => { setItems(tours); }, [tours]);
 
@@ -75,11 +67,16 @@ export default function ToursClient({ tours, userRole, userId }: Props) {
     return tour.status === filter;
   }), [items, filter]);
 
-  const updateTourStatus = async (id: string, status: string, note: string) => {
+  if (!supabase) {
+    console.error('[ToursClient] Supabase client not available');
+    return <div className="text-center py-8"><p className="text-red-500">Unable to load tours</p></div>;
+  }
+
+  const updateTourStatus = async (id: string, status: string, _note: string) => {
     const res = await fetch('/api/tours/update', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tourId: id, status, notes: note })
+      body: JSON.stringify({ tourId: id, status, notes: _note })
     });
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));

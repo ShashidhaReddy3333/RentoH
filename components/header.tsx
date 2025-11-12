@@ -13,6 +13,7 @@ import { MobileMenu } from "./MobileMenu";
 
 const navLinks = [
   { href: "/browse" as const, label: "Browse" },
+  { href: "/compare" as const, label: "Compare" },
   { href: "/dashboard" as const, label: "Dashboard" },
   { href: "/messages" as const, label: "Messages" }
 ];

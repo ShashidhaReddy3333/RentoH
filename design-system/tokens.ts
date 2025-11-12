@@ -97,9 +97,12 @@ export const typography = {
 };
 
 export const shadows = {
-  sm: "0 6px 18px rgba(17, 24, 39, 0.08)",
-  md: "0 12px 28px rgba(17, 24, 39, 0.12)",
-  lg: "0 18px 40px rgba(17, 24, 39, 0.16)"
+  sm: "0 1px 3px rgba(17, 24, 39, 0.06), 0 1px 2px rgba(17, 24, 39, 0.04)",
+  md: "0 4px 6px rgba(17, 24, 39, 0.07), 0 2px 4px rgba(17, 24, 39, 0.05)",
+  lg: "0 10px 15px rgba(17, 24, 39, 0.08), 0 4px 6px rgba(17, 24, 39, 0.05)",
+  xl: "0 20px 25px rgba(17, 24, 39, 0.10), 0 10px 10px rgba(17, 24, 39, 0.04)",
+  soft: "0 2px 8px rgba(17, 24, 39, 0.04), 0 1px 2px rgba(17, 24, 39, 0.02)",
+  inner: "inset 0 2px 4px rgba(17, 24, 39, 0.06)"
 };
 
 export const tokens = {

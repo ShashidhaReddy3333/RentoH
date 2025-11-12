@@ -7,6 +7,7 @@ import FavoriteButton from "@/components/ui/FavoriteButton";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ImageWithSkeleton } from "@/components/ui/image-with-skeleton";
+import { ComparisonButton } from "@/components/property/PropertyComparison";
 
 import type { Property } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils/format";
@@ -105,22 +106,25 @@ export default function PropertyCard({ property, onToggleFavorite }: PropertyCar
           <Badge variant="muted">{property.baths} baths</Badge>
         </div>
 
-        <div className="mt-auto flex flex-wrap gap-2 text-xs text-neutral-600">
-          {property.pets ? (
-            <span className="rounded-full bg-brand-primaryMuted px-3 py-1 font-medium text-brand-primary">
-              Pet-friendly
-            </span>
-          ) : null}
-          {property.furnished ? (
-            <span className="rounded-full bg-brand-successMuted px-3 py-1 font-medium text-brand-success">
-              Furnished
-            </span>
-          ) : null}
-          {!property.verified ? (
-            <span className="rounded-full bg-brand-warningMuted px-3 py-1 font-medium text-brand-dark">
-              New listing
-            </span>
-          ) : null}
+        <div className="mt-auto space-y-3">
+          <div className="flex flex-wrap gap-2 text-xs text-neutral-600">
+            {property.pets ? (
+              <span className="rounded-full bg-brand-primaryMuted px-3 py-1 font-medium text-brand-primary">
+                Pet-friendly
+              </span>
+            ) : null}
+            {property.furnished ? (
+              <span className="rounded-full bg-brand-successMuted px-3 py-1 font-medium text-brand-success">
+                Furnished
+              </span>
+            ) : null}
+            {!property.verified ? (
+              <span className="rounded-full bg-brand-warningMuted px-3 py-1 font-medium text-brand-dark">
+                New listing
+              </span>
+            ) : null}
+          </div>
+          <ComparisonButton propertyId={property.id} />
         </div>
       </div>
     </article>

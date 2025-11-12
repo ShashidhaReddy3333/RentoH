@@ -149,7 +149,7 @@ export default async function HomePage() {
 }
 
 // Client-only SearchBar — loaded only on interaction/hydration
-const SearchBar = dynamic(() => import("@/components/SearchBar"), {
+const SearchBar = dynamic(() => import("@/components/search/SearchWithSuggestions").then(mod => ({ default: mod.SearchWithSuggestions })), {
   ssr: false,
   loading: () => (
     <div className="w-full rounded-3xl border border-black/5 bg-white p-6 shadow-soft">
@@ -157,7 +157,6 @@ const SearchBar = dynamic(() => import("@/components/SearchBar"), {
     </div>
   )
 });
-
 
 function FeaturedSection({ properties }: { properties: Awaited<ReturnType<typeof getFeatured>> }) {
   return (
