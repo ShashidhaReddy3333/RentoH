@@ -28,6 +28,40 @@ BEGIN
     END IF;
 END $$;
 
+-- Add message column if it doesn't exist
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' 
+        AND table_name = 'applications' 
+        AND column_name = 'message'
+    ) THEN
+        ALTER TABLE public.applications 
+        ADD COLUMN message text;
+        RAISE NOTICE '✓ Added message column to applications table';
+    ELSE
+        RAISE NOTICE '→ message column already exists';
+    END IF;
+END $$;
+
+-- Add monthly_income column if it doesn't exist
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' 
+        AND table_name = 'applications' 
+        AND column_name = 'monthly_income'
+    ) THEN
+        ALTER TABLE public.applications 
+        ADD COLUMN monthly_income integer;
+        RAISE NOTICE '✓ Added monthly_income column to applications table';
+    ELSE
+        RAISE NOTICE '→ monthly_income column already exists';
+    END IF;
+END $$;
+
 -- Ensure status column has correct constraints
 DO $$ 
 BEGIN

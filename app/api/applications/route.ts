@@ -66,20 +66,47 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: msg }, { status: 404 });
   }
 
-  const { data, error } = await supabase
-    .from("applications")
-    .insert({
-      property_id: propertyId,
-      landlord_id: property.landlord_id,
-      tenant_id: user.id,
-      monthly_income: monthlyIncome,
-      message: message ?? null,
-      status: "submitted",
-      submitted_at: new Date().toISOString()
-    })
-    .select("id")
-    .maybeSingle();
+  const payloadBase: Record<string, unknown> = {
+    property_id: propertyId,
+    landlord_id: property.landlord_id,
+    tenant_id: user.id,
+    monthly_income: Number.isFinite(monthlyIncome) ? monthlyIncome : null,
+    status: "submitted",
+    submitted_at: new Date().toISOString()
+  };
+  if (typeof message === "string" && message.length > 0) {
+    payloadBase["message"] = message;
+  }
 
+  // Non-null client for subsequent operations (we have already returned when supabase is null)
+  const client = supabase!;
+
+  async function tryInsert(payload: Record<string, unknown>) {
+    return client
+      .from("applications")
+      .insert(payload)
+      .select("id")
+      .maybeSingle();
+  }
+
+  let insertResult = await tryInsert(payloadBase);
+
+  if (insertResult.error) {
+    const errMsg = String(insertResult.error.message ?? "");
+    const needsRetry =
+      insertResult.error.code === "42703" ||
+      /column\s+\"?(message|submitted_at|monthly_income)\"?/i.test(errMsg);
+
+    if (needsRetry) {
+      const fallback: Record<string, unknown> = { ...payloadBase };
+      if (/message/i.test(errMsg)) delete fallback["message"];
+      if (/submitted_at/i.test(errMsg)) delete fallback["submitted_at"];
+      if (/monthly_income/i.test(errMsg)) delete fallback["monthly_income"];
+      insertResult = await tryInsert(fallback);
+    }
+  }
+
+  const { data, error } = insertResult;
   if (error || !data) {
     const msg = extractMessage(error) ?? "Failed to submit application";
     return NextResponse.json({ error: msg }, { status: 500 });

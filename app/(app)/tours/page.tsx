@@ -1,16 +1,15 @@
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { default as ToursClient } from '@/app/(app)/tours/ToursClient';
+import { getCurrentUser } from '@/lib/data-access/profile';
 
 export default async function ToursPage() {
   const supabase = createSupabaseServerClient();
-  
   if (!supabase) {
     throw new Error('Supabase client not available');
   }
-  const { data: { session } } = await supabase.auth.getSession();
-
-  if (!session) {
+  const currentUser = await getCurrentUser();
+  if (!currentUser) {
     redirect('/auth/sign-in');
   }
 
@@ -42,7 +41,7 @@ export default async function ToursPage() {
         avatar_url
       )
     `)
-    .or(`tenant_id.eq.${session.user.id},landlord_id.eq.${session.user.id}`)
+    .or(`tenant_id.eq.${currentUser.id},landlord_id.eq.${currentUser.id}`)
     .order('scheduled_at', { ascending: true });
 
   type ToursClientProps = React.ComponentProps<typeof ToursClient>;
@@ -110,7 +109,7 @@ export default async function ToursPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <ToursClient tours={normalizedTours} userRole={session.user.role || 'tenant'} userId={session.user.id} />
+      <ToursClient tours={normalizedTours} userRole={currentUser.role || 'tenant'} userId={currentUser.id} />
     </div>
   );
 }
