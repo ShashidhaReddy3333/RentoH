@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -46,6 +46,7 @@ interface Props {
 
 export default function ApplicationsClient({ applications, userRole }: Props) {
   const [filter, setFilter] = useState('all');
+  const [apps, setApps] = useState<Application[]>(applications);
   const supabase = createSupabaseBrowserClient();
   
   if (!supabase) {
@@ -53,16 +54,83 @@ export default function ApplicationsClient({ applications, userRole }: Props) {
     return <div className="text-center py-8"><p className="text-red-500">Unable to load applications</p></div>;
   }
 
-  const filteredApplications = applications.filter(app => {
+  useEffect(() => {
+    setApps(applications);
+  }, [applications]);
+
+  function showToast(message: string, opts: { success?: boolean } = {}) {
+    const id = `rento-toast-${Date.now()}`;
+    const el = document.createElement('div');
+    el.id = id;
+    el.className = 'fixed bottom-6 right-6 z-50 rounded-md px-4 py-2 text-sm font-medium shadow-lg';
+    el.style.background = opts.success ? '#DCFCE7' : '#FEF3C7';
+    el.style.color = '#0f172a';
+    el.textContent = message;
+    document.body.appendChild(el);
+    setTimeout(() => {
+      el.style.transition = 'opacity 180ms ease';
+      el.style.opacity = '0';
+      setTimeout(() => el.remove(), 200);
+    }, 2500);
+  }
+
+  // Realtime: notify tenants when status changes
+  useEffect(() => {
+    let unsubscribed = false;
+    (async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        const channel = supabase
+          .channel('applications-updates')
+          .on('postgres_changes', {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'applications',
+            filter: `tenant_id=eq.${user.id}`
+          }, (payload) => {
+            const row = payload.new as any;
+            const id = row?.id as string | undefined;
+            const status = row?.status as string | undefined;
+            if (!id || !status) return;
+            setApps((prev) => prev.map((a) => a.id === id ? { ...a, status } : a));
+            showToast(`Application status updated to ${status}`, { success: true });
+          })
+          .subscribe();
+
+        return () => {
+          if (!unsubscribed) {
+            supabase.removeChannel(channel);
+          }
+        };
+      } catch {
+        // ignore
+      }
+    })();
+    return () => {
+      unsubscribed = true;
+    };
+  }, [supabase]);
+
+  const filteredApplications = useMemo(() => apps.filter(app => {
     if (filter === 'all') return true;
     return app.status === filter;
-  });
+  }), [apps, filter]);
 
   const updateApplicationStatus = async (id: string, status: string, note: string) => {
-    await supabase
-      .from('applications')
-      .update({ status, notes: note })
-      .eq('id', id);
+    const res = await fetch(`/api/applications/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status })
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      const msg = body?.error || body?.message || 'Failed to update application';
+      showToast(msg);
+      return;
+    }
+    setApps((prev) => prev.map((a) => a.id === id ? { ...a, status } : a));
+    showToast(`Application ${status}`, { success: true });
   };
 
   const statusColors: Record<string, string> = {

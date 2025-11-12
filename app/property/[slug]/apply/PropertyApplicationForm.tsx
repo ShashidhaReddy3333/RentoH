@@ -3,7 +3,6 @@
 import type { Route } from "next";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -26,11 +25,21 @@ export function PropertyApplicationForm({ propertyId, landlordId, propertyTitle,
     monthlyIncome: "",
     message: ""
   });
-  const supabase = createSupabaseBrowserClient();
   
-  if (!supabase) {
-    console.error('[PropertyApplicationForm] Supabase client not available');
-    return null;
+  function showToast(message: string, opts: { success?: boolean } = {}) {
+    const id = `rento-toast-${Date.now()}`;
+    const el = document.createElement("div");
+    el.id = id;
+    el.className = "fixed bottom-6 right-6 z-50 rounded-md px-4 py-2 text-sm font-medium shadow-lg";
+    el.style.background = opts.success ? "#DCFCE7" : "#FEF3C7";
+    el.style.color = "#0f172a";
+    el.textContent = message;
+    document.body.appendChild(el);
+    setTimeout(() => {
+      el.style.transition = "opacity 180ms ease";
+      el.style.opacity = "0";
+      setTimeout(() => el.remove(), 200);
+    }, 2500);
   }
 
   const validateForm = () => {
@@ -71,38 +80,33 @@ export function PropertyApplicationForm({ propertyId, landlordId, propertyTitle,
     setIsSubmitting(true);
 
     try {
-      const { error } = await supabase.from("applications").insert({
-        property_id: propertyId,
-        landlord_id: landlordId,
-        tenant_id: userId,
-        monthly_income: Number.parseInt(formData.monthlyIncome, 10),
-        message: formData.message,
-        status: "submitted",
-        submitted_at: new Date().toISOString()
+      const res = await fetch("/api/applications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          propertyId,
+          message: formData.message,
+          monthlyIncome: Number.parseInt(formData.monthlyIncome, 10)
+        })
       });
 
-      if (error) {
-        throw error;
+      if (!res.ok) {
+        let message = "Failed to submit application";
+        try {
+          const body = await res.json();
+          if (body && typeof body === "object") {
+            message = body.error || body.message || message;
+          }
+        } catch {}
+        showToast(message);
+        return;
       }
 
-      try {
-        await fetch("/api/digest", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId: landlordId, reason: "application" })
-        });
-      } catch (err) {
-        console.error("[applications] digest trigger failed", err);
-      }
-
-      // Add a small delay to ensure the application is processed
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Use replace instead of push to prevent back navigation issues
+      showToast("Application submitted", { success: true });
       router.replace(routes.applications as Route);
     } catch (err) {
       console.error("[applications] submission error", err);
-      alert("Failed to submit application. Please try again.");
+      showToast("Failed to submit application. Please try again.");
     } finally {
       setIsSubmitting(false);
     }

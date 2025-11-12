@@ -43,21 +43,21 @@ export default async function ApplicationDetailPage({ params }: { params: { id: 
         images,
         price,
         slug,
-        bedrooms,
-        bathrooms,
+        beds,
+        baths,
         city
       ),
       applicant:profiles!applications_tenant_id_fkey(
         full_name,
         email,
         avatar_url,
-        phone_number
+        phone
       ),
       landlord:profiles!applications_landlord_id_fkey(
         full_name,
         email,
         avatar_url,
-        phone_number
+        phone
       )
     `)
     .eq('id', params.id)
@@ -135,8 +135,8 @@ export default async function ApplicationDetailPage({ params }: { params: { id: 
                   <p className="text-sm text-text-muted">{property?.address}</p>
                   <div className="flex items-center gap-4 mt-2 text-sm text-text-muted">
                     <span>${property?.price?.toLocaleString()}/mo</span>
-                    {property?.bedrooms && <span>{property.bedrooms} bed</span>}
-                    {property?.bathrooms && <span>{property.bathrooms} bath</span>}
+                    {property?.beds && <span>{property.beds} bed</span>}
+                    {property?.baths && <span>{property.baths} bath</span>}
                   </div>
                 </div>
               </div>
@@ -162,8 +162,8 @@ export default async function ApplicationDetailPage({ params }: { params: { id: 
                   <div>
                     <p className="font-semibold text-brand-dark">{applicant.full_name}</p>
                     <p className="text-sm text-text-muted">{applicant.email}</p>
-                    {applicant.phone_number && (
-                      <p className="text-sm text-text-muted">{applicant.phone_number}</p>
+                    {applicant.phone && (
+                      <p className="text-sm text-text-muted">{applicant.phone}</p>
                     )}
                   </div>
                 </div>
