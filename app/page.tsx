@@ -129,6 +129,7 @@ export default async function HomePage() {
       <FeaturedSection properties={featured} />
       <HowItWorks />
       <SafetyStrip />
+      <RecentlyViewedRail />
       <section className="grid gap-6 rounded-3xl bg-gradient-to-r from-brand-blue/15 via-brand-teal/15 to-brand-green/15 px-6 py-10 shadow-soft sm:px-10 sm:py-12">
         <div className="space-y-2">
           <h2 className="text-2xl font-semibold text-brand-dark">Kick off your rental hunt today</h2>
@@ -157,6 +158,11 @@ const SearchBar = dynamic(() => import("@/components/search/SearchWithSuggestion
     </div>
   )
 });
+
+const RecentlyViewedRail = dynamic(
+  () => import("@/components/recently-viewed/RecentlyViewedRail").then((mod) => ({ default: mod.RecentlyViewedRail })),
+  { ssr: false, loading: () => null }
+);
 
 function FeaturedSection({ properties }: { properties: Awaited<ReturnType<typeof getFeatured>> }) {
   return (

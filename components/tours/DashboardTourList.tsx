@@ -11,8 +11,12 @@ import {
   TOUR_STATUS_META,
   landlordActionsFor,
   tenantActionsFor,
-  type TourAction
+  isActionableStatus,
+  type TourAction,
+  type TourStatusActionValue
 } from "@/lib/tours/status";
+import { TourStatusMenu } from "@/components/tours/TourStatusMenu";
+import { updateTourStatusClient } from "@/lib/tours/update-status";
 
 type DashboardTourListProps = {
   tours: Tour[];
@@ -29,27 +33,31 @@ export function DashboardTourList({ tours, userRole, localTimezone }: DashboardT
     current.map((tour) => (tour.id === next.id ? next : tour))
   );
 
-  const handleAction = async (tour: Tour, action: TourAction) => {
+  const mutateStatus = async (tour: Tour, status: TourStatusActionValue, label?: string) => {
     setPendingId(tour.id);
-    updateOptimistic({ ...tour, status: action.status });
+    updateOptimistic({ ...tour, status });
     try {
-      const response = await fetch("/api/tours/update", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tourId: tour.id, status: action.status })
-      });
-      if (!response.ok) {
-        throw new Error((await response.json().catch(() => null))?.error ?? "Update failed");
-      }
-      setAnnouncement(`Tour ${action.label.toLowerCase()}.`);
+      await updateTourStatusClient({ tourId: tour.id, status });
+      const readable = label ?? TOUR_STATUS_META[status].label.toLowerCase();
+      setAnnouncement(`Tour ${readable}.`);
     } catch (error) {
       console.error("[dashboard/tours] Failed to update tour", error);
-      // Revert optimistic change by refetching original tours array
       updateOptimistic(tour);
       setAnnouncement("Unable to update the tour right now.");
     } finally {
       setPendingId(null);
     }
+  };
+
+  const handleAction = async (tour: Tour, action: TourAction) => {
+    if (!isActionableStatus(action.status)) {
+      return;
+    }
+    await mutateStatus(tour, action.status, action.label.toLowerCase());
+  };
+
+  const handleStatusSelect = (tour: Tour, status: TourStatusActionValue) => {
+    void mutateStatus(tour, status);
   };
 
   if (optimisticTours.length === 0) {
@@ -73,6 +81,15 @@ export function DashboardTourList({ tours, userRole, localTimezone }: DashboardT
       {optimisticTours.map((tour) => {
         const statusMeta = TOUR_STATUS_META[tour.status];
         const actions = isLandlord ? landlordActionsFor(tour.status) : tenantActionsFor(tour.status);
+        const landlordStatusOptions = isLandlord
+          ? Array.from(
+              new Set(
+                actions
+                  .map((action) => action.status)
+                  .filter((status): status is TourStatusActionValue => isActionableStatus(status))
+              )
+            )
+          : [];
 
         return (
           <article
@@ -112,7 +129,7 @@ export function DashboardTourList({ tours, userRole, localTimezone }: DashboardT
               <div className="mt-4 flex flex-wrap gap-3">
                 {actions.map((action) => (
                   <Button
-                    key={action.status}
+                    key={`${tour.id}-${action.status}`}
                     variant={action.tone === "danger" ? "danger" : "primary"}
                     size="sm"
                     onClick={() => handleAction(tour, action)}
@@ -123,6 +140,15 @@ export function DashboardTourList({ tours, userRole, localTimezone }: DashboardT
                     {action.label}
                   </Button>
                 ))}
+                {isLandlord ? (
+                  <TourStatusMenu
+                    tourId={tour.id}
+                    currentStatus={tour.status}
+                    allowedStatuses={landlordStatusOptions}
+                    disabled={pendingId === tour.id}
+                    onSelect={(status) => handleStatusSelect(tour, status)}
+                  />
+                ) : null}
               </div>
             ) : (
               <p className="mt-4 text-sm text-text-muted">

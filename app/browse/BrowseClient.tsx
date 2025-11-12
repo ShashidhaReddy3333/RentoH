@@ -17,6 +17,7 @@ import { SupabaseConfigBanner } from "@/components/SupabaseConfigBanner";
 import { hasSupabaseEnv } from "@/lib/env";
 import PropertyGrid from "@/components/PropertyGrid";
 import EmptyState from "@/components/EmptyState";
+import { RecentlyViewedRail } from "@/components/recently-viewed/RecentlyViewedRail";
 import { buttonStyles } from "@/components/ui/button";
 import type { PaginatedResult, Property, PropertyFilters, PropertySort } from "@/lib/types";
 
@@ -321,6 +322,7 @@ export default function BrowseClient({
             loading={isLoadingMore}
           />
         )}
+        <RecentlyViewedRail />
       </div>
 
         <FiltersSheet

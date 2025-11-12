@@ -1,3 +1,4 @@
+import dynamic from "next/dynamic";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -13,8 +14,15 @@ import { PropertyAmenities } from "@/components/property/PropertyAmenities";
 import { PropertyKeyFacts } from "@/components/property/PropertyKeyFacts";
 import { PropertyContactCard } from "@/components/property/PropertyContactCard";
 import { PropertyLocationMap } from "@/components/property/PropertyLocationMap";
+import { RecentlyViewedTracker } from "@/components/recently-viewed/RecentlyViewedTracker";
+import type { RecentlyViewedProperty } from "@/components/recently-viewed/types";
 
 export const revalidate = 600;
+
+const RecentlyViewedRail = dynamic(
+  () => import("@/components/recently-viewed/RecentlyViewedRail").then((mod) => ({ default: mod.RecentlyViewedRail })),
+  { ssr: false, loading: () => null }
+);
 
 type PageParams = {
   params: { slug: string };
@@ -87,6 +95,17 @@ export default async function PropertyPage({ params }: PageParams) {
   const mapboxToken = env.NEXT_PUBLIC_MAPBOX_TOKEN ?? null;
   const amenities = property.amenities ?? [];
   const isFavorite = await isFavorited(property.id).catch(() => false);
+  const recentlyViewedPayload: RecentlyViewedProperty = {
+    id: property.id,
+    slug: property.slug ?? property.id,
+    title: property.title,
+    price: property.price,
+    city: property.city,
+    beds: property.beds,
+    baths: property.baths,
+    type: property.type,
+    image: property.images[0] ?? null
+  };
   
   // Check if user has already applied to this property
   let hasExistingApplication = false;
@@ -136,6 +155,8 @@ export default async function PropertyPage({ params }: PageParams) {
           />
         </div>
       </div>
+      <RecentlyViewedTracker property={recentlyViewedPayload} />
+      <RecentlyViewedRail className="border border-brand-outline/60 bg-white" />
     </main>
   );
 }

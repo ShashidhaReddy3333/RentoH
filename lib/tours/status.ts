@@ -8,6 +8,18 @@ import {
 
 import type { TourStatus } from "@/lib/types";
 
+export type TourStatusActionValue = Extract<TourStatus, "confirmed" | "completed" | "cancelled">;
+
+export const ACTIONABLE_TOUR_STATUSES: TourStatusActionValue[] = [
+  "confirmed",
+  "completed",
+  "cancelled"
+];
+
+export function isActionableStatus(status: TourStatus): status is TourStatusActionValue {
+  return ACTIONABLE_TOUR_STATUSES.includes(status as TourStatusActionValue);
+}
+
 type StatusMeta = {
   label: string;
   description: string;
@@ -71,9 +83,13 @@ export function landlordActionsFor(status: TourStatus): TourAction[] {
         { status: "cancelled", label: "Cancel tour", tone: "danger", icon: XCircleIcon }
       ];
     case "confirmed":
-    case "rescheduled":
       return [
         { status: "completed", label: "Mark completed", tone: "primary", icon: CheckBadgeIcon },
+        { status: "cancelled", label: "Cancel tour", tone: "danger", icon: XCircleIcon }
+      ];
+    case "rescheduled":
+      return [
+        { status: "confirmed", label: "Confirm new time", tone: "primary", icon: CheckCircleIcon },
         { status: "cancelled", label: "Cancel tour", tone: "danger", icon: XCircleIcon }
       ];
     default:

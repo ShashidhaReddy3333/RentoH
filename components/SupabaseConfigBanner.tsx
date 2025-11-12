@@ -25,9 +25,8 @@ export function SupabaseConfigBanner() {
         >
           Supabase quickstart
         </Link>
-        .
+        {" "}or hit <code>/api/health/db</code> to confirm connectivity.
       </p>
     </div>
   );
 }
-

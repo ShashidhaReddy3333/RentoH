@@ -20,6 +20,7 @@ import { listOwnedProperties } from "@/lib/data-access/properties";
 import { listUpcomingToursForLandlord, listUpcomingToursForTenant } from "@/lib/data-access/tours";
 import { hasSupabaseEnv } from "@/lib/env";
 import type { ApplicationSummary, Tour } from "@/lib/types";
+import { SupabaseHealthCard } from "@/components/dashboard/SupabaseHealthCard";
 
 export const metadata: Metadata = {
   title: "Dashboard - Rento",
@@ -113,6 +114,8 @@ async function TenantDashboard() {
         </p>
       </header>
 
+      <SupabaseHealthCard />
+
       <DashboardStats stats={stats} />
 
       <section className="grid gap-6 lg:grid-cols-2">
@@ -183,6 +186,8 @@ async function LandlordDashboard() {
           <ArrowRightIcon className="ml-2 h-5 w-5" aria-hidden="true" />
         </Link>
       </header>
+
+      <SupabaseHealthCard />
 
       <DashboardStats stats={stats} />
 
@@ -476,6 +481,5 @@ function formatRelativeDate(value: string) {
   if (days > 1) return `In ${days} days`;
   return `Past ${Math.abs(days)} days ago`;
 }
-
 
 

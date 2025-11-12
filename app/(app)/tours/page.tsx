@@ -5,6 +5,7 @@ import { getCurrentUser } from '@/lib/data-access/profile';
 import { hasSupabaseEnv } from '@/lib/env';
 import { SupabaseConfigBanner } from '@/components/SupabaseConfigBanner';
 import EmptyState from '@/components/EmptyState';
+import type { TourStatus } from '@/lib/types';
 
 export default async function ToursPage() {
   if (!hasSupabaseEnv) {
@@ -91,6 +92,19 @@ export default async function ToursPage() {
     return value ?? null;
   }
 
+  function toTourStatus(value: string | null | undefined): TourStatus {
+    switch (value) {
+      case 'requested':
+      case 'confirmed':
+      case 'completed':
+      case 'cancelled':
+      case 'rescheduled':
+        return value;
+      default:
+        return 'requested';
+    }
+  }
+
   const normalizedTours: ToursClientProps['tours'] = (tours ?? []).map((tourRow: unknown) => {
     const tour = tourRow as RawTourRow;
     const propertyRecord = firstOrNull(tour.property);
@@ -101,7 +115,7 @@ export default async function ToursPage() {
 
     return {
       id: tour.id,
-      status: tour.status ?? 'requested',
+      status: toTourStatus(tour.status),
       scheduled_at: tour.scheduled_at ?? new Date().toISOString(),
       notes: tour.notes ?? '',
       property: {

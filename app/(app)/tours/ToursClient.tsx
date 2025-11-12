@@ -19,8 +19,12 @@ import {
   TOUR_STATUS_META,
   landlordActionsFor,
   tenantActionsFor,
-  type TourAction
+  isActionableStatus,
+  type TourAction,
+  type TourStatusActionValue
 } from '@/lib/tours/status';
+import { TourStatusMenu } from '@/components/tours/TourStatusMenu';
+import { updateTourStatusClient } from '@/lib/tours/update-status';
 
 type ClientTour = {
   id: string;
@@ -64,7 +68,7 @@ const FILTERS: { value: FilterValue; label: string }[] = [
 ];
 
 const DIALOG_COPY: Record<
-  Exclude<TourStatus, 'requested' | 'rescheduled'>,
+  TourStatusActionValue,
   { title: string; body: string; cta: string; intent: 'primary' | 'danger' }
 > = {
   confirmed: {
@@ -91,7 +95,7 @@ type ConfirmDialogState =
   | {
       isOpen: true;
       tourId: string;
-      nextStatus: Exclude<TourStatus, 'requested' | 'rescheduled'>;
+      nextStatus: TourStatusActionValue;
       tourTitle: string;
       body: string;
       cta: string;
@@ -104,6 +108,7 @@ export default function ToursClient({ tours, userRole }: Props) {
   const [items, setItems] = useState<ClientTour[]>(tours);
   const [toast, setToast] = useState<{ message: string; tone: 'success' | 'error' } | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState>(null);
+  const [pendingTourId, setPendingTourId] = useState<string | null>(null);
   const [localTimezone] = useState(() => Intl.DateTimeFormat().resolvedOptions().timeZone);
   const isLandlord = userRole === 'landlord' || userRole === 'admin';
 
@@ -155,46 +160,26 @@ export default function ToursClient({ tours, userRole }: Props) {
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
-  const openConfirmDialog = (tour: ClientTour, action: TourAction) => {
-    if (action.status === 'confirmed') {
-      setConfirmDialog({
-        isOpen: true,
-        tourId: tour.id,
-        nextStatus: 'confirmed',
-        tourTitle: tour.property.title,
-        ...DIALOG_COPY.confirmed
-      });
-      return;
-    }
-    if (action.status === 'completed') {
-      setConfirmDialog({
-        isOpen: true,
-        tourId: tour.id,
-        nextStatus: 'completed',
-        tourTitle: tour.property.title,
-        ...DIALOG_COPY.completed
-      });
-      return;
-    }
+  const openStatusDialog = (tour: ClientTour, status: TourStatusActionValue) => {
     setConfirmDialog({
       isOpen: true,
       tourId: tour.id,
-      nextStatus: 'cancelled',
+      nextStatus: status,
       tourTitle: tour.property.title,
-      ...DIALOG_COPY.cancelled
+      ...DIALOG_COPY[status]
     });
   };
 
-  const updateTourStatus = async (tourId: string, status: ConfirmDialogState['nextStatus']) => {
+  const openConfirmDialog = (tour: ClientTour, action: TourAction) => {
+    if (isActionableStatus(action.status)) {
+      openStatusDialog(tour, action.status);
+    }
+  };
+
+  const updateTourStatus = async (tourId: string, status: TourStatusActionValue) => {
+    setPendingTourId(tourId);
     try {
-      const res = await fetch('/api/tours/update', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tourId, status })
-      });
-      if (!res.ok) {
-        throw new Error((await res.json().catch(() => null))?.error ?? 'Failed to update tour');
-      }
+      await updateTourStatusClient({ tourId, status });
       setItems((prev) => prev.map((tour) => (tour.id === tourId ? { ...tour, status } : tour)));
       const statusLabels: Record<string, string> = {
         confirmed: 'Tour confirmed',
@@ -207,6 +192,7 @@ export default function ToursClient({ tours, userRole }: Props) {
       setToast({ message: 'Unable to update tour right now.', tone: 'error' });
     } finally {
       setConfirmDialog(null);
+      setPendingTourId((current) => (current === tourId ? null : current));
     }
   };
 
@@ -347,7 +333,9 @@ export default function ToursClient({ tours, userRole }: Props) {
             <TourActions
               tour={tour}
               isLandlord={isLandlord}
+              isPending={pendingTourId === tour.id}
               onTriggerAction={(action) => openConfirmDialog(tour, action)}
+              onStatusIntent={(status) => openStatusDialog(tour, status)}
             />
           </Card>
         ))}
@@ -404,13 +392,26 @@ function StatusBadge({ status }: { status: TourStatus }) {
 function TourActions({
   tour,
   isLandlord,
-  onTriggerAction
+  isPending,
+  onTriggerAction,
+  onStatusIntent
 }: {
   tour: ClientTour;
   isLandlord: boolean;
+  isPending: boolean;
   onTriggerAction: (action: TourAction) => void;
+  onStatusIntent: (status: TourStatusActionValue) => void;
 }) {
   const actions = isLandlord ? landlordActionsFor(tour.status) : tenantActionsFor(tour.status);
+  const landlordStatusOptions = isLandlord
+    ? Array.from(
+        new Set(
+          actions
+            .map((action) => action.status)
+            .filter((status): status is TourStatusActionValue => isActionableStatus(status))
+        )
+      )
+    : [];
 
   if (actions.length === 0) {
     return (
@@ -422,18 +423,28 @@ function TourActions({
   }
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       {actions.map((action) => (
         <Button
-          key={action.status}
+          key={`${tour.id}-${action.status}`}
           variant={action.tone === 'danger' ? 'danger' : 'primary'}
           size="sm"
           onClick={() => onTriggerAction(action)}
+          disabled={isPending}
         >
           <action.icon className="h-4 w-4" aria-hidden="true" />
           {action.label}
         </Button>
       ))}
+      {isLandlord ? (
+        <TourStatusMenu
+          tourId={tour.id}
+          currentStatus={tour.status}
+          allowedStatuses={landlordStatusOptions}
+          disabled={isPending}
+          onSelect={onStatusIntent}
+        />
+      ) : null}
     </div>
   );
 }
