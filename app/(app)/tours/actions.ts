@@ -167,6 +167,172 @@ export async function requestTourAction(
 }
 
 /**
+ * Approve a tour request (landlord-only action)
+ */
+export async function approveTourAction(
+  _prev: TourRequestState,
+  formData: FormData
+): Promise<TourRequestState> {
+  try {
+    const tourId = String(formData.get("tourId") ?? "").trim();
+    const notesRaw = formData.get("notes");
+    const notes = typeof notesRaw === "string" ? notesRaw.slice(0, 500) : null;
+
+    if (!tourId) {
+      return { status: "validation-error", message: "Tour ID is required." };
+    }
+
+    if (!hasSupabaseEnv) {
+      return { status: "error", message: missingSupabaseMessage };
+    }
+
+    const supabase = createSupabaseServerClient();
+    if (!supabase) {
+      return { status: "error", message: "Service unavailable." };
+    }
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { status: "error", message: "Authentication required." };
+    }
+
+    // Verify user is the landlord for this tour
+    const { data: tour, error: fetchError } = await supabase
+      .from("tours")
+      .select("landlord_id, property_id, tenant_id, status")
+      .eq("id", tourId)
+      .single();
+
+    if (fetchError || !tour) {
+      return { status: "error", message: "Tour not found." };
+    }
+
+    if (tour.landlord_id !== user.id) {
+      return { status: "error", message: "Only the landlord can approve this tour." };
+    }
+
+    if (tour.status !== "requested") {
+      return { status: "error", message: "This tour has already been processed." };
+    }
+
+    // Update the tour to confirmed status
+    const updatePayload: Record<string, unknown> = {
+      status: "confirmed",
+      updated_at: new Date().toISOString()
+    };
+
+    if (notes) {
+      updatePayload['notes'] = notes;
+    }
+
+    const { error: updateError } = await supabase
+      .from("tours")
+      .update(updatePayload)
+      .eq("id", tourId);
+
+    if (updateError) {
+      console.error("[tours] Approve error:", updateError);
+      return { status: "error", message: "Failed to approve tour." };
+    }
+
+    console.log("[tours] Tour approved successfully:", { tourId });
+
+    revalidatePath("/tours");
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/tours");
+
+    return { status: "success" };
+  } catch (error) {
+    console.error("[tours] Unexpected error approving tour:", error);
+    const message = error instanceof Error ? error.message : "Unable to approve tour.";
+    return { status: "error", message };
+  }
+}
+
+/**
+ * Decline a tour request (landlord-only action)
+ */
+export async function declineTourAction(
+  _prev: TourRequestState,
+  formData: FormData
+): Promise<TourRequestState> {
+  try {
+    const tourId = String(formData.get("tourId") ?? "").trim();
+    const notesRaw = formData.get("notes");
+    const notes = typeof notesRaw === "string" ? notesRaw.slice(0, 500) : null;
+
+    if (!tourId) {
+      return { status: "validation-error", message: "Tour ID is required." };
+    }
+
+    if (!hasSupabaseEnv) {
+      return { status: "error", message: missingSupabaseMessage };
+    }
+
+    const supabase = createSupabaseServerClient();
+    if (!supabase) {
+      return { status: "error", message: "Service unavailable." };
+    }
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { status: "error", message: "Authentication required." };
+    }
+
+    // Verify user is the landlord for this tour
+    const { data: tour, error: fetchError } = await supabase
+      .from("tours")
+      .select("landlord_id, property_id, tenant_id, status")
+      .eq("id", tourId)
+      .single();
+
+    if (fetchError || !tour) {
+      return { status: "error", message: "Tour not found." };
+    }
+
+    if (tour.landlord_id !== user.id) {
+      return { status: "error", message: "Only the landlord can decline this tour." };
+    }
+
+    if (tour.status !== "requested") {
+      return { status: "error", message: "This tour has already been processed." };
+    }
+
+    // Update the tour to cancelled status
+    const updatePayload: Record<string, unknown> = {
+      status: "cancelled",
+      updated_at: new Date().toISOString()
+    };
+
+    if (notes) {
+      updatePayload['notes'] = notes;
+    }
+
+    const { error: updateError } = await supabase
+      .from("tours")
+      .update(updatePayload)
+      .eq("id", tourId);
+
+    if (updateError) {
+      console.error("[tours] Decline error:", updateError);
+      return { status: "error", message: "Failed to decline tour." };
+    }
+
+    console.log("[tours] Tour declined successfully:", { tourId });
+
+    revalidatePath("/tours");
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/tours");
+
+    return { status: "success" };
+  } catch (error) {
+    console.error("[tours] Unexpected error declining tour:", error);
+    const message = error instanceof Error ? error.message : "Unable to decline tour.";
+    return { status: "error", message };
+  }
+}
+
+/**
  * Reschedule a tour (landlord-only action)
  */
 export async function rescheduleTourAction(

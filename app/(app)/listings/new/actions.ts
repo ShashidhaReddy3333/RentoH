@@ -207,7 +207,8 @@ export async function saveDraftAction(formData: FormData): Promise<ListingFormSt
 
   const draftId = listingId ?? existingDraft?.id ?? randomUUID();
   const landlordSuffix = user.id?.slice(0, 8) ?? randomUUID().split("-")[0];
-  const draftSlug = existingDraft?.slug ?? `${createSlug(values.title)}-${landlordSuffix}-draft`;
+  const timestamp = Date.now().toString(36);
+  const draftSlug = existingDraft?.slug ?? `${createSlug(values.title)}-${timestamp}-${landlordSuffix}-draft`;
 
   const { error } = await supabase
     .from("properties")
@@ -275,7 +276,10 @@ export async function createListingAction(
 
     const values = parsed.data;
     const orderedImages = buildOrderedImages(values.images, coverKey);
-    const slug = `${createSlug(values.title)}-${randomUUID().split("-")[0]}`;
+    const baseSlug = createSlug(values.title);
+    const timestamp = Date.now().toString(36);
+    const randomSuffix = randomUUID().split("-")[0];
+    const slug = `${baseSlug}-${timestamp}-${randomSuffix}`;
 
     if (!hasSupabaseEnv) {
       if (env.NODE_ENV === "production") {
