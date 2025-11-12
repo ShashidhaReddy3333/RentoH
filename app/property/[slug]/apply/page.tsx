@@ -1,11 +1,48 @@
-import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
 import { PropertyApplicationForm } from "@/app/property/[slug]/apply/PropertyApplicationForm";
+import { getBySlugOrId } from "@/lib/data-access/properties";
+import { hasSupabaseEnv } from "@/lib/env";
+import { mockCurrentUser } from "@/lib/mock";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export default async function ApplyPage({ params }: { params: { slug: string } }) {
+  const identifier = params.slug;
+
+  if (!hasSupabaseEnv) {
+    const property = await getBySlugOrId(identifier);
+    if (!property) {
+      redirect("/browse");
+    }
+
+    const canonicalSlug = property.slug ?? null;
+    if (canonicalSlug && canonicalSlug !== identifier) {
+      redirect(`/property/${canonicalSlug}/apply`);
+    }
+
+    const landlordId = property.landlordId ?? "demo-landlord";
+
+    return (
+      <div className="mx-auto max-w-2xl px-4 py-8 space-y-6">
+        <div
+          role="status"
+          className="rounded-2xl border border-amber-200/80 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+        >
+          Applications are simulated in this preview environment because Supabase is not configured. Submit the form to
+          experience the full flow—no data will leave your browser.
+        </div>
+        <PropertyApplicationForm
+          propertyId={property.id}
+          landlordId={landlordId}
+          propertyTitle={property.title}
+          userId={mockCurrentUser.id}
+        />
+      </div>
+    );
+  }
+
   const supabase = createSupabaseServerClient();
   if (!supabase) {
     redirect("/auth/sign-in");
@@ -18,7 +55,6 @@ export default async function ApplyPage({ params }: { params: { slug: string } }
     redirect("/auth/sign-in");
   }
 
-  const identifier = params.slug;
   const column = UUID_PATTERN.test(identifier) ? "id" : "slug";
 
   const { data: property, error } = await supabase

@@ -5,7 +5,8 @@ import { notFound } from "next/navigation";
 import { getBySlugOrId } from "@/lib/data-access/properties";
 import { getCurrentUser } from "@/lib/data-access/profile";
 import { isFavorited } from "@/lib/data-access/favorites";
-import { env } from "@/lib/env";
+import { env, hasSupabaseEnv } from "@/lib/env";
+import { mockCurrentUser } from "@/lib/mock";
 import { PropertyGallery } from "@/components/property/PropertyGallery";
 import { PropertyHeadline } from "@/components/property/PropertyHeadline";
 import { PropertyHighlights } from "@/components/property/PropertyHighlights";
@@ -90,7 +91,7 @@ export default async function PropertyPage({ params }: PageParams) {
     notFound();
   }
 
-  const user = await getCurrentUser().catch(() => null);
+  const user = hasSupabaseEnv ? await getCurrentUser().catch(() => null) : mockCurrentUser;
   const isAuthenticated = Boolean(user);
   const mapboxToken = env.NEXT_PUBLIC_MAPBOX_TOKEN ?? null;
   const amenities = property.amenities ?? [];
@@ -109,7 +110,7 @@ export default async function PropertyPage({ params }: PageParams) {
   
   // Check if user has already applied to this property
   let hasExistingApplication = false;
-  if (user) {
+  if (user && hasSupabaseEnv) {
     const { createSupabaseServerClient } = await import('@/lib/supabase/server');
     const supabase = createSupabaseServerClient();
     if (supabase) {

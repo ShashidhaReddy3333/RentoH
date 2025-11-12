@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { getSupabaseClientWithUser } from "@/lib/supabase/auth";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/middleware/rate-limit";
+import { hasSupabaseEnv } from "@/lib/env";
 
 function extractMessage(obj: unknown): string | undefined {
   if (!obj) return undefined;
@@ -30,6 +31,20 @@ export async function POST(request: Request) {
 
   if (!propertyId || !Number.isFinite(monthlyIncome)) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+  }
+
+  if (!hasSupabaseEnv) {
+    console.info("[applications] Supabase unavailable; returning demo application response.");
+    return NextResponse.json(
+      {
+        application: {
+          id: `demo-application-${Date.now().toString(36)}`,
+          status: "submitted"
+        },
+        preview: true
+      },
+      { status: 201 }
+    );
   }
 
   const { supabase, user } = await getSupabaseClientWithUser();

@@ -61,12 +61,18 @@ vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 
 describe('Applications API', () => {
   beforeEach(() => {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://example.supabase.co';
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
+    process.env.BYPASS_SUPABASE_AUTH = '0';
     vi.resetModules();
     // Mock fetch for digest notifications
     vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, json: async () => ({ ok: true }) })) as any);
   });
 
   afterEach(() => {
+    delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+    delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    delete process.env.BYPASS_SUPABASE_AUTH;
     vi.unstubAllGlobals();
   });
 
@@ -103,6 +109,21 @@ describe('Applications API', () => {
       expect(res.status).toBe(201);
       const body = await readJson(res as any);
       expect(body?.application?.id).toBe('app-1');
+    });
+
+    it('returns a demo response when Supabase is disabled', async () => {
+      process.env.BYPASS_SUPABASE_AUTH = '1';
+      const { POST } = await import('@/app/api/applications/route');
+      const res = await POST(
+        new Request('http://localhost/api/applications', {
+          method: 'POST',
+          body: JSON.stringify({ propertyId: 'demo-prop', monthlyIncome: 4200, message: 'Demo' })
+        })
+      );
+      expect(res.status).toBe(201);
+      const body = await readJson(res as any);
+      expect(body?.preview).toBe(true);
+      expect(body?.application?.id).toMatch(/^demo-application-/);
     });
   });
 
