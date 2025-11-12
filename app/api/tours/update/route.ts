@@ -6,7 +6,7 @@ import { checkRateLimit, RATE_LIMITS } from "@/lib/middleware/rate-limit";
 
 const TourUpdateSchema = z.object({
   tourId: z.string().uuid("Invalid tour ID"),
-  status: z.enum(["requested", "confirmed", "rescheduled", "cancelled"], {
+  status: z.enum(["confirmed", "completed", "cancelled"], {
     errorMap: () => ({ message: "Invalid status" })
   }),
   scheduledAt: z.string().datetime("Invalid date format").optional(),
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate status transitions and permissions
-    const validLandlordStatuses = ["confirmed", "rescheduled", "cancelled"];
+    const validLandlordStatuses = ["confirmed", "completed", "cancelled"];
     const validTenantStatuses = ["cancelled"];
 
     if (isLandlord && !validLandlordStatuses.includes(payload.status)) {

@@ -5,7 +5,7 @@ import EmptyState from "@/components/EmptyState";
 import { buttonStyles } from "@/components/ui/button";
 import { listUpcomingToursForLandlord, listUpcomingToursForTenant } from "@/lib/data-access/tours";
 import { getCurrentUser } from "@/lib/data-access/profile";
-import { hasSupabaseEnv } from "@/lib/env";
+import { SupabaseConfigBanner } from "@/components/SupabaseConfigBanner";
 
 export const metadata: Metadata = {
   title: "Scheduled tours - Rento",
@@ -13,15 +13,6 @@ export const metadata: Metadata = {
 };
 
 export default async function ScheduledToursPage() {
-  if (!hasSupabaseEnv) {
-    return (
-      <EmptyState
-        title="Connect Supabase to see tours"
-        description="Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to load scheduled tours."
-      />
-    );
-  }
-
   const user = await getCurrentUser();
 
   if (!user) {
@@ -66,6 +57,7 @@ export default async function ScheduledToursPage() {
 
   return (
     <div className="space-y-6">
+      <SupabaseConfigBanner />
       <header className="space-y-2">
         <h1 className="text-3xl font-semibold text-brand-dark">Scheduled tours</h1>
         <p className="text-sm text-text-muted">

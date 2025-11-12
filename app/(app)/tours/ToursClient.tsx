@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -43,6 +43,7 @@ export default function ToursClient({ tours, userRole, userId }: Props) {
   // avoid unused-var lint in the client bundle.
   void userId;
   const [filter, setFilter] = useState('all');
+  const [items, setItems] = useState<Tour[]>(tours);
   const [localTimezone] = useState(() => Intl.DateTimeFormat().resolvedOptions().timeZone);
   const supabase = createSupabaseBrowserClient();
   
@@ -51,16 +52,43 @@ export default function ToursClient({ tours, userRole, userId }: Props) {
     return <div className="text-center py-8"><p className="text-red-500">Unable to load tours</p></div>;
   }
 
-  const filteredTours = tours.filter(tour => {
+  useEffect(() => { setItems(tours); }, [tours]);
+
+  function showToast(message: string, opts: { success?: boolean } = {}) {
+    const id = `rento-toast-${Date.now()}`;
+    const el = document.createElement('div');
+    el.id = id;
+    el.className = 'fixed bottom-6 right-6 z-50 rounded-md px-4 py-2 text-sm font-medium shadow-lg';
+    el.style.background = opts.success ? '#DCFCE7' : '#FEF3C7';
+    el.style.color = '#0f172a';
+    el.textContent = message;
+    document.body.appendChild(el);
+    setTimeout(() => {
+      el.style.transition = 'opacity 180ms ease';
+      el.style.opacity = '0';
+      setTimeout(() => el.remove(), 200);
+    }, 2500);
+  }
+
+  const filteredTours = useMemo(() => items.filter(tour => {
     if (filter === 'all') return true;
     return tour.status === filter;
-  });
+  }), [items, filter]);
 
   const updateTourStatus = async (id: string, status: string, note: string) => {
-    await supabase
-      .from('tours')
-      .update({ status, notes: note })
-      .eq('id', id);
+    const res = await fetch('/api/tours/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tourId: id, status, notes: note })
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      const msg = body?.error || body?.message || 'Failed to update tour';
+      showToast(msg);
+      return;
+    }
+    setItems((prev) => prev.map((t) => (t.id === id ? { ...t, status } : t)));
+    showToast(`Tour ${status}`, { success: true });
   };
 
   const handleDownloadICS = (tour: Tour) => {
@@ -186,6 +214,14 @@ export default function ToursClient({ tours, userRole, userId }: Props) {
                       Cancel
                     </Button>
                   </>
+                )}
+                {userRole === 'landlord' && tour.status === 'confirmed' && (
+                  <Button
+                    variant="secondary"
+                    onClick={() => updateTourStatus(tour.id, 'completed', 'Tour completed')}
+                  >
+                    Mark completed
+                  </Button>
                 )}
               </div>
             </div>
