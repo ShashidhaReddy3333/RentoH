@@ -104,7 +104,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </a>
           <Header />
           <main id="main-content" className="flex-1">
-            <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8 sm:gap-8 sm:px-6 sm:py-10">
+            <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8 pb-20 sm:gap-8 sm:px-6 sm:py-10 md:pb-10">
               <SupabaseConfigBanner />
               {children}
             </div>

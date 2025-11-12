@@ -13,24 +13,30 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
+          cache: 'pnpm'
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Build (production)
         env:
           NODE_ENV: production
           NEXT_TELEMETRY_DISABLED: 1
-        run: npm run build
+        run: pnpm build
 
       - name: Run bundle analysis and enforce budgets
         run: |
           # produce a JSON report and let the analysis tool return a non-zero exit code if budgets violated
-          npx nextjs-bundle-analysis --build-output .next --budget scripts/bundle-budget.json --format json
+          pnpm dlx nextjs-bundle-analysis --build-output .next --budget scripts/bundle-budget.json --format json
         continue-on-error: false
 
       - name: Upload analysis artifacts

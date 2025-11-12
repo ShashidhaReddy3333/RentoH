@@ -7,10 +7,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm ci
-      - run: npm run lint && npm run test
-      - run: NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 ANALYZE=false npm run build
-      - run: npx nextjs-bundle-analysis --build-output .next --budget scripts/bundle-budget.json
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint && pnpm test
+      - run: NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 ANALYZE=false pnpm build
+      - run: pnpm dlx nextjs-bundle-analysis --build-output .next --budget scripts/bundle-budget.json

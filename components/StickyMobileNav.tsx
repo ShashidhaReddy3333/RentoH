@@ -50,7 +50,7 @@ export default function StickyMobileNav() {
               <Link
                 href={{ pathname: item.href }}
                 aria-current={isActive ? "page" : undefined}
-                className="flex flex-col items-center gap-1 rounded-xl px-3 py-1 text-xs font-medium text-text-muted transition hover:text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+                className="flex flex-col items-center gap-1 rounded-xl px-4 py-2 text-xs font-medium text-text-muted transition hover:text-brand-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal focus-visible:ring-offset-2 focus-visible:ring-offset-white min-h-[44px] min-w-[44px] justify-center"
                 data-testid={`mobile-nav-${item.label.toLowerCase()}`}
               >
                 <Icon
