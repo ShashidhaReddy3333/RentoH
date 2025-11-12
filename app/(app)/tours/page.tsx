@@ -1,9 +1,25 @@
-import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { default as ToursClient } from '@/app/(app)/tours/ToursClient';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { getCurrentUser } from '@/lib/data-access/profile';
+import { hasSupabaseEnv } from '@/lib/env';
+import { SupabaseConfigBanner } from '@/components/SupabaseConfigBanner';
+import EmptyState from '@/components/EmptyState';
 
 export default async function ToursPage() {
+  if (!hasSupabaseEnv) {
+    return (
+      <div className="space-y-6">
+        <SupabaseConfigBanner />
+        <EmptyState
+          title="Supabase not configured"
+          description="Connect your Supabase project to review and manage real tour requests."
+          action={null}
+        />
+      </div>
+    );
+  }
+
   const supabase = createSupabaseServerClient();
   if (!supabase) {
     throw new Error('Supabase client not available');
@@ -108,8 +124,15 @@ export default async function ToursPage() {
   });
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <ToursClient tours={normalizedTours} userRole={currentUser.role || 'tenant'} userId={currentUser.id} />
+    <div className="space-y-6">
+      <SupabaseConfigBanner />
+      <div className="container mx-auto px-4 py-8">
+        <ToursClient
+          tours={normalizedTours}
+          userRole={currentUser.role || 'tenant'}
+          userId={currentUser.id}
+        />
+      </div>
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/middleware/rate-limit";
+import type { TourStatus } from "@/lib/types";
 
 const TourUpdateSchema = z.object({
   tourId: z.string().uuid("Invalid tour ID"),
@@ -80,21 +81,29 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Not authorized" }, { status: 403 });
     }
 
-    // Validate status transitions and permissions
-    const validLandlordStatuses = ["confirmed", "completed", "cancelled"];
-    const validTenantStatuses = ["cancelled"];
+    const currentStatus = (tour.status ?? "requested") as TourStatus;
+    const landlordTransitions: Record<TourStatus, TourStatus[]> = {
+      requested: ["confirmed", "cancelled"],
+      confirmed: ["completed", "cancelled"],
+      rescheduled: ["confirmed", "cancelled"],
+      completed: [],
+      cancelled: []
+    };
+    const tenantTransitions: Record<TourStatus, TourStatus[]> = {
+      requested: ["cancelled"],
+      confirmed: ["cancelled"],
+      rescheduled: ["cancelled"],
+      completed: [],
+      cancelled: []
+    };
 
-    if (isLandlord && !validLandlordStatuses.includes(payload.status)) {
+    const allowedTransitions = isLandlord ? landlordTransitions : tenantTransitions;
+    if (!allowedTransitions[currentStatus]?.includes(payload.status)) {
       return NextResponse.json(
-        { error: `Landlords cannot set status to ${payload.status}` },
+        {
+          error: `Cannot change a ${currentStatus} tour to ${payload.status}`
+        },
         { status: 400 }
-      );
-    }
-
-    if (isTenant && !validTenantStatuses.includes(payload.status)) {
-      return NextResponse.json(
-        { error: "Tenants can only cancel tours" },
-        { status: 403 }
       );
     }
 
@@ -103,6 +112,9 @@ export async function POST(request: NextRequest) {
       status: payload.status,
       updated_at: new Date().toISOString()
     };
+    if (payload.status === "completed") {
+      updateData["completed_at"] = new Date().toISOString();
+    }
 
     if (payload.scheduledAt) {
       // Validate that the new date is in the future

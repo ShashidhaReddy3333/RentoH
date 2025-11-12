@@ -7,6 +7,7 @@ type SupabaseTourRow = {
   property_id: string;
   status: TourStatus | null;
   scheduled_at: string | null;
+  timezone?: string | null;
   property: SupabasePropertyRow | null;
   landlord_id: string;
   tenant_id: string;
@@ -36,6 +37,7 @@ async function listUpcomingTours(role: Exclude<UserRole, "guest">, limit: number
         property_id,
         status,
         scheduled_at,
+        timezone,
         landlord_id,
         tenant_id,
         property:properties (
@@ -62,7 +64,10 @@ function mapTourFromSupabase(row: SupabaseTourRow): Tour {
     id: row.id,
     propertyId: row.property_id,
     propertyTitle: property?.title ?? "Property",
+     propertySlug: property?.slug,
+     propertyImage: property?.images?.[0] ?? null,
     scheduledAt: row.scheduled_at ?? new Date().toISOString(),
+     timezone: row.timezone ?? undefined,
     city: property?.city,
     status: row.status ?? "requested",
     landlordId: row.landlord_id,

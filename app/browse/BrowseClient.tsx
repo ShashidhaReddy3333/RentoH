@@ -31,6 +31,13 @@ const MapPane = dynamic(() => import("@/components/MapPane"), {
     />
   )
 });
+const ComparisonDrawer = dynamic(
+  () =>
+    import("@/components/comparison/ComparisonDrawer").then((mod) => ({
+      default: mod.ComparisonDrawer
+    })),
+  { ssr: false }
+);
 
 type BrowseClientProps = {
   initialProperties: Property[];
@@ -194,7 +201,8 @@ export default function BrowseClient({
   const totalLoaded = properties.length;
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[360px_1fr] lg:gap-10">
+    <>
+      <div className="grid gap-6 lg:grid-cols-[360px_1fr] lg:gap-10">
       <div className="hidden lg:block">
         <FiltersContent
           idPrefix="filters-desktop"
@@ -315,15 +323,17 @@ export default function BrowseClient({
         )}
       </div>
 
-      <FiltersSheet
-        open={isSheetOpen}
-        onOpenChange={setIsSheetOpen}
-        values={filters}
-        onChange={setFilters}
-        onApply={handleApplyFilters}
-        onClear={handleClearFilters}
-      />
-    </div>
+        <FiltersSheet
+          open={isSheetOpen}
+          onOpenChange={setIsSheetOpen}
+          values={filters}
+          onChange={setFilters}
+          onApply={handleApplyFilters}
+          onClear={handleClearFilters}
+        />
+      </div>
+      <ComparisonDrawer />
+    </>
   );
 }
 

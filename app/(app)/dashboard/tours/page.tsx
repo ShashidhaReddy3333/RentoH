@@ -6,6 +6,7 @@ import { buttonStyles } from "@/components/ui/button";
 import { listUpcomingToursForLandlord, listUpcomingToursForTenant } from "@/lib/data-access/tours";
 import { getCurrentUser } from "@/lib/data-access/profile";
 import { SupabaseConfigBanner } from "@/components/SupabaseConfigBanner";
+import { DashboardTourList } from "@/components/tours/DashboardTourList";
 
 export const metadata: Metadata = {
   title: "Scheduled tours - Rento",
@@ -33,6 +34,7 @@ export default async function ScheduledToursPage() {
     user.role === "landlord"
       ? await listUpcomingToursForLandlord(20)
       : await listUpcomingToursForTenant(20);
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
 
   if (tours.length === 0) {
     return (
@@ -63,38 +65,11 @@ export default async function ScheduledToursPage() {
         <p className="text-sm text-text-muted">
           {user.role === "landlord"
             ? "Review who is touring your properties and prepare any required documents."
-            : "Here are the tours you have booked with landlords."
-          }
+            : "Here are the tours you have booked with landlords."}
         </p>
       </header>
 
-      <ul className="space-y-4">
-        {tours.map((tour) => (
-          <li key={tour.id} className="rounded-3xl border border-black/5 bg-white p-6 shadow-soft">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h2 className="text-lg font-semibold text-brand-dark">{tour.propertyTitle}</h2>
-                {tour.city ? <p className="text-sm text-text-muted">{tour.city}</p> : null}
-              </div>
-              <span className="rounded-full bg-brand-teal/10 px-4 py-1 text-sm font-semibold text-brand-teal">
-                {formatScheduledDate(tour.scheduledAt)}
-              </span>
-            </div>
-            <div className="mt-4 text-sm text-text-muted capitalize">{tour.status} tour</div>
-          </li>
-        ))}
-      </ul>
+      <DashboardTourList tours={tours} userRole={user.role} localTimezone={timezone} />
     </div>
   );
-}
-
-function formatScheduledDate(value: string) {
-  try {
-    return new Date(value).toLocaleString(undefined, {
-      dateStyle: "medium",
-      timeStyle: "short"
-    });
-  } catch {
-    return value;
-  }
 }

@@ -1,20 +1,33 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { createSupabaseBrowserClient } from '@/lib/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { formatInTimeZone } from 'date-fns-tz';
 import Image from 'next/image';
 import Link from 'next/link';
-import { createTourCalendarEvent, generateICS, generateGoogleCalendarUrl } from '@/lib/ics';
-import { CheckCircleIcon, XCircleIcon, ClockIcon } from '@heroicons/react/24/outline';
+import { formatInTimeZone } from 'date-fns-tz';
+import {
+  ArrowDownTrayIcon,
+  CalendarIcon,
+  ClockIcon,
+  EnvelopeIcon
+} from '@heroicons/react/24/outline';
 
-interface Tour {
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import type { TourStatus, UserRole } from '@/lib/types';
+import { createTourCalendarEvent, generateICS, generateGoogleCalendarUrl } from '@/lib/ics';
+import {
+  TOUR_STATUS_META,
+  landlordActionsFor,
+  tenantActionsFor,
+  type TourAction
+} from '@/lib/tours/status';
+
+type ClientTour = {
   id: string;
-  status: string;
+  status: TourStatus;
   scheduled_at: string;
-  notes: string;
+  timezone?: string | null;
+  notes?: string | null;
   property: {
     id: string;
     title: string;
@@ -31,86 +44,96 @@ interface Tour {
     email: string;
     avatar_url: string;
   };
-}
+};
+
+type FilterValue = 'all' | TourStatus;
 
 interface Props {
-  tours: Tour[];
-  userRole: string;
+  tours: ClientTour[];
+  userRole: UserRole;
   userId: string;
 }
 
-export default function ToursClient({ tours, userRole }: Props) {
-  const [filter, setFilter] = useState('all');
-  const [items, setItems] = useState<Tour[]>(tours);
-  const [localTimezone] = useState(() => Intl.DateTimeFormat().resolvedOptions().timeZone);
-  const [confirmDialog, setConfirmDialog] = useState<{
-    isOpen: boolean;
-    tourId: string;
-    status: string;
-    tourTitle: string;
-  } | null>(null);
-  const supabase = createSupabaseBrowserClient();
+const FILTERS: { value: FilterValue; label: string }[] = [
+  { value: 'all', label: 'All' },
+  { value: 'requested', label: 'Requested' },
+  { value: 'confirmed', label: 'Confirmed' },
+  { value: 'rescheduled', label: 'Rescheduled' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'cancelled', label: 'Cancelled' }
+];
 
-  useEffect(() => { setItems(tours); }, [tours]);
-
-  function showToast(message: string, opts: { success?: boolean } = {}) {
-    const id = `rento-toast-${Date.now()}`;
-    const el = document.createElement('div');
-    el.id = id;
-    el.className = 'fixed bottom-6 right-6 z-50 rounded-md px-4 py-2 text-sm font-medium shadow-lg';
-    el.style.background = opts.success ? '#DCFCE7' : '#FEF3C7';
-    el.style.color = '#0f172a';
-    el.textContent = message;
-    document.body.appendChild(el);
-    setTimeout(() => {
-      el.style.transition = 'opacity 180ms ease';
-      el.style.opacity = '0';
-      setTimeout(() => el.remove(), 200);
-    }, 2500);
+const DIALOG_COPY: Record<
+  Exclude<TourStatus, 'requested' | 'rescheduled'>,
+  { title: string; body: string; cta: string; intent: 'primary' | 'danger' }
+> = {
+  confirmed: {
+    title: 'Confirm tour',
+    body: 'Confirm this date and notify the renter instantly?',
+    cta: 'Confirm tour',
+    intent: 'primary'
+  },
+  completed: {
+    title: 'Mark as completed',
+    body: 'Mark this tour as completed? This helps keep your pipeline accurate.',
+    cta: 'Mark completed',
+    intent: 'primary'
+  },
+  cancelled: {
+    title: 'Cancel tour',
+    body: 'Are you sure you want to cancel this tour? The other party will be notified.',
+    cta: 'Cancel tour',
+    intent: 'danger'
   }
+};
 
-  const filteredTours = useMemo(() => items.filter(tour => {
-    if (filter === 'all') return true;
-    return tour.status === filter;
-  }), [items, filter]);
-
-  if (!supabase) {
-    console.error('[ToursClient] Supabase client not available');
-    return <div className="text-center py-8"><p className="text-red-500">Unable to load tours</p></div>;
-  }
-
-  const updateTourStatus = async (id: string, status: string, note?: string) => {
-    const res = await fetch('/api/tours/update', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tourId: id, status, notes: note || '' })
-    });
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      const msg = body?.error || body?.message || 'Failed to update tour';
-      showToast(msg);
-      return;
+type ConfirmDialogState =
+  | {
+      isOpen: true;
+      tourId: string;
+      nextStatus: Exclude<TourStatus, 'requested' | 'rescheduled'>;
+      tourTitle: string;
+      body: string;
+      cta: string;
+      intent: 'primary' | 'danger';
     }
-    setItems((prev) => prev.map((t) => (t.id === id ? { ...t, status } : t)));
-    const statusLabels: Record<string, string> = {
-      confirmed: 'confirmed',
-      completed: 'marked as completed',
-      cancelled: 'cancelled'
-    };
-    showToast(`Tour ${statusLabels[status] || status}`, { success: true });
-    setConfirmDialog(null);
-  };
+  | null;
 
-  const openConfirmDialog = (tourId: string, status: string, tourTitle: string) => {
-    setConfirmDialog({ isOpen: true, tourId, status, tourTitle });
-  };
+export default function ToursClient({ tours, userRole }: Props) {
+  const [filter, setFilter] = useState<FilterValue>('all');
+  const [items, setItems] = useState<ClientTour[]>(tours);
+  const [toast, setToast] = useState<{ message: string; tone: 'success' | 'error' } | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState>(null);
+  const [localTimezone] = useState(() => Intl.DateTimeFormat().resolvedOptions().timeZone);
+  const isLandlord = userRole === 'landlord' || userRole === 'admin';
 
-  const handleDownloadICS = (tour: Tour) => {
+  useEffect(() => {
+    setItems(tours);
+  }, [tours]);
+
+  useEffect(() => {
+    if (!toast) return;
+    const id = window.setTimeout(() => setToast(null), 2800);
+    return () => window.clearTimeout(id);
+  }, [toast]);
+
+  const statusCounts = useMemo(() => {
+    return items.reduce<Record<TourStatus, number>>((acc, tour) => {
+      acc[tour.status] = (acc[tour.status] ?? 0) + 1;
+      return acc;
+    }, {} as Record<TourStatus, number>);
+  }, [items]);
+
+  const filteredTours = useMemo(
+    () => items.filter((tour) => (filter === 'all' ? true : tour.status === filter)),
+    [items, filter]
+  );
+
+  const handleDownloadICS = (tour: ClientTour) => {
     const event = createTourCalendarEvent({
       property: tour.property,
-      scheduled_at: new Date(tour.scheduled_at),
+      scheduled_at: new Date(tour.scheduled_at)
     });
-
     const icsContent = generateICS(event);
     const blob = new Blob([icsContent], { type: 'text/calendar' });
     const url = URL.createObjectURL(blob);
@@ -123,219 +146,294 @@ export default function ToursClient({ tours, userRole }: Props) {
     URL.revokeObjectURL(url);
   };
 
-  const handleGoogleCalendar = (tour: Tour) => {
+  const handleGoogleCalendar = (tour: ClientTour) => {
     const event = createTourCalendarEvent({
       property: tour.property,
-      scheduled_at: new Date(tour.scheduled_at),
+      scheduled_at: new Date(tour.scheduled_at)
     });
-
     const url = generateGoogleCalendarUrl(event);
-    window.open(url, '_blank');
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
-  const statusColors: Record<string, string> = {
-    requested: 'bg-blue-100 text-blue-800',
-    confirmed: 'bg-green-100 text-green-800',
-    completed: 'bg-gray-100 text-gray-800',
-    cancelled: 'bg-red-100 text-red-800',
+  const openConfirmDialog = (tour: ClientTour, action: TourAction) => {
+    if (action.status === 'confirmed') {
+      setConfirmDialog({
+        isOpen: true,
+        tourId: tour.id,
+        nextStatus: 'confirmed',
+        tourTitle: tour.property.title,
+        ...DIALOG_COPY.confirmed
+      });
+      return;
+    }
+    if (action.status === 'completed') {
+      setConfirmDialog({
+        isOpen: true,
+        tourId: tour.id,
+        nextStatus: 'completed',
+        tourTitle: tour.property.title,
+        ...DIALOG_COPY.completed
+      });
+      return;
+    }
+    setConfirmDialog({
+      isOpen: true,
+      tourId: tour.id,
+      nextStatus: 'cancelled',
+      tourTitle: tour.property.title,
+      ...DIALOG_COPY.cancelled
+    });
+  };
+
+  const updateTourStatus = async (tourId: string, status: ConfirmDialogState['nextStatus']) => {
+    try {
+      const res = await fetch('/api/tours/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tourId, status })
+      });
+      if (!res.ok) {
+        throw new Error((await res.json().catch(() => null))?.error ?? 'Failed to update tour');
+      }
+      setItems((prev) => prev.map((tour) => (tour.id === tourId ? { ...tour, status } : tour)));
+      const statusLabels: Record<string, string> = {
+        confirmed: 'Tour confirmed',
+        completed: 'Tour marked completed',
+        cancelled: 'Tour cancelled'
+      };
+      setToast({ message: statusLabels[status] ?? 'Status updated', tone: 'success' });
+    } catch (error) {
+      console.error('[ToursClient] Failed to update tour', error);
+      setToast({ message: 'Unable to update tour right now.', tone: 'error' });
+    } finally {
+      setConfirmDialog(null);
+    }
   };
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Property Tours</h1>
-        <div className="space-x-2">
-          <Button
-            variant={filter === 'all' ? 'primary' : 'secondary'}
-            onClick={() => setFilter('all')}
-          >
-            All
-          </Button>
-          {Object.keys(statusColors).map(status => (
-            <Button
-              key={status}
-              variant={filter === status ? 'primary' : 'secondary'}
-              onClick={() => setFilter(status)}
-            >
-              {status.charAt(0).toUpperCase() + status.slice(1)}
-            </Button>
-          ))}
+    <div className="space-y-6">
+      <div className="rounded-3xl border border-brand-outline/60 bg-white p-4 shadow-sm sm:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-semibold text-brand-dark">Property tours</h1>
+            <p className="text-sm text-text-muted">
+              Times display in your local timezone ({localTimezone}).
+            </p>
+          </div>
+          <div className="text-sm font-medium text-text-muted" role="status" aria-live="polite">
+            Showing {filteredTours.length} of {items.length} tours
+          </div>
+        </div>
+        <div className="mt-4 overflow-x-auto">
+          <div className="inline-flex min-w-full gap-2">
+            {FILTERS.map((option) => {
+              const count =
+                option.value === 'all'
+                  ? items.length
+                  : option.value in statusCounts
+                    ? statusCounts[option.value as TourStatus] ?? 0
+                    : 0;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setFilter(option.value)}
+                  className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/40 ${
+                    filter === option.value
+                      ? 'bg-brand-primary text-white shadow-sm'
+                      : 'bg-brand-light text-brand-dark hover:bg-brand-primaryMuted'
+                  }`}
+                  aria-pressed={filter === option.value}
+                >
+                  {option.label}
+                  <span className="text-xs font-semibold">{count}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
+      {toast && (
+        <div
+          role="status"
+          aria-live="polite"
+          className={`rounded-2xl border px-4 py-3 text-sm font-medium shadow-md ${
+            toast.tone === 'success'
+              ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+              : 'border-amber-200 bg-amber-50 text-amber-800'
+          }`}
+        >
+          {toast.message}
+        </div>
+      )}
+
       <div className="space-y-4">
         {filteredTours.map((tour) => (
-          <Card key={tour.id} className="p-6">
-            <div className="flex justify-between">
-              <div className="flex space-x-4">
-                <div className="relative w-24 h-24">
-                  <Image
-                    src={tour.property.images[0] || '/images/placeholder.jpg'}
-                    alt={tour.property.title}
-                    fill
-                    className="object-cover rounded-lg"
-                  />
+          <Card key={tour.id} className="space-y-4 p-4 shadow-soft sm:p-6">
+            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+              <div className="flex flex-1 gap-4">
+                <div className="relative h-28 w-36 overflow-hidden rounded-2xl bg-neutral-100">
+                  {tour.property.images[0] ? (
+                    <Image
+                      src={tour.property.images[0]}
+                      alt={tour.property.title}
+                      fill
+                      sizes="200px"
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-xs text-text-muted">
+                      No photo
+                    </div>
+                  )}
                 </div>
-                <div>
-                  <h3 className="font-semibold text-lg">
-                    <Link href={`/property/${tour.property.id}`}>
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Link
+                      href={`/property/${tour.property.id}`}
+                      className="text-lg font-semibold text-brand-dark hover:text-brand-primary"
+                    >
                       {tour.property.title}
                     </Link>
-                  </h3>
-                  <p className="text-sm text-gray-500">{tour.property.address}</p>
-                  <p className="text-sm text-gray-500">
-                    {formatInTimeZone(
-                      new Date(tour.scheduled_at),
-                      localTimezone,
-                      'PPP p'
-                    )}
-                  </p>
-                  <p className="text-xs text-gray-400">
-                    {localTimezone !== 'UTC' && `(${localTimezone})`}
-                  </p>
-                  <div className={`inline-block px-2 py-1 rounded-full text-sm mt-2 ${statusColors[tour.status]}`}>
-                    {tour.status.charAt(0).toUpperCase() + tour.status.slice(1)}
+                    <StatusBadge status={tour.status} />
                   </div>
+                  <p className="text-sm text-text-muted">{tour.property.address}</p>
+                  <p className="text-sm font-medium text-brand-dark">
+                    {formatInTimeZone(new Date(tour.scheduled_at), localTimezone, 'PPP • p')}
+                  </p>
+                  {tour.notes ? (
+                    <p className="text-sm text-text-muted">
+                      <span className="font-semibold text-brand-dark">Notes:</span> {tour.notes}
+                    </p>
+                  ) : null}
                 </div>
               </div>
-
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => handleDownloadICS(tour)}
-                  aria-label="Download calendar event"
-                >
-                  Download ICS
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => handleGoogleCalendar(tour)}
-                  aria-label="Add to Google Calendar"
-                >
-                  Google Calendar
-                </Button>
-
-                {userRole === 'landlord' && (
-                  <>
-                    {tour.status === 'requested' && (
-                      <>
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          onClick={() => openConfirmDialog(tour.id, 'confirmed', tour.property.title)}
-                          aria-label="Confirm tour"
-                        >
-                          <CheckCircleIcon className="h-4 w-4 mr-1" aria-hidden="true" />
-                          Confirm
-                        </Button>
-                        <Button
-                          variant="danger"
-                          size="sm"
-                          onClick={() => openConfirmDialog(tour.id, 'cancelled', tour.property.title)}
-                          aria-label="Cancel tour"
-                        >
-                          <XCircleIcon className="h-4 w-4 mr-1" aria-hidden="true" />
-                          Cancel
-                        </Button>
-                      </>
-                    )}
-                    {tour.status === 'confirmed' && (
-                      <>
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          onClick={() => openConfirmDialog(tour.id, 'completed', tour.property.title)}
-                          aria-label="Mark tour as completed"
-                        >
-                          <CheckCircleIcon className="h-4 w-4 mr-1" aria-hidden="true" />
-                          Complete
-                        </Button>
-                        <Button
-                          variant="danger"
-                          size="sm"
-                          onClick={() => openConfirmDialog(tour.id, 'cancelled', tour.property.title)}
-                          aria-label="Cancel tour"
-                        >
-                          <XCircleIcon className="h-4 w-4 mr-1" aria-hidden="true" />
-                          Cancel
-                        </Button>
-                      </>
-                    )}
-                    {(tour.status === 'completed' || tour.status === 'cancelled') && (
-                      <span className="inline-flex items-center gap-1 text-sm text-text-muted px-3 py-2">
-                        <ClockIcon className="h-4 w-4" aria-hidden="true" />
-                        No actions available
-                      </span>
-                    )}
-                  </>
-                )}
+              <div className="space-y-2 md:text-right">
+                <p className="text-sm text-text-muted">
+                  {isLandlord ? 'Touring with' : 'Hosted by'}
+                  <span className="ml-1 font-semibold text-brand-dark">
+                    {isLandlord ? tour.tenant.full_name : tour.landlord.full_name}
+                  </span>
+                </p>
+                <div className="flex flex-wrap gap-2 md:justify-end">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() =>
+                      (window.location.href = `mailto:${isLandlord ? tour.tenant.email : tour.landlord.email}`)
+                    }
+                    aria-label="Send email"
+                  >
+                    <EnvelopeIcon className="h-4 w-4" aria-hidden="true" />
+                    Email
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => handleDownloadICS(tour)}
+                  >
+                    <ArrowDownTrayIcon className="h-4 w-4" aria-hidden="true" />
+                    ICS
+                  </Button>
+                  <Button variant="secondary" size="sm" onClick={() => handleGoogleCalendar(tour)}>
+                    <CalendarIcon className="h-4 w-4" aria-hidden="true" />
+                    Calendar
+                  </Button>
+                </div>
               </div>
             </div>
 
-            {tour.notes && (
-              <div className="mt-4 pt-4 border-t">
-                <p className="text-sm text-gray-600">{tour.notes}</p>
-              </div>
-            )}
+            <TourActions
+              tour={tour}
+              isLandlord={isLandlord}
+              onTriggerAction={(action) => openConfirmDialog(tour, action)}
+            />
           </Card>
         ))}
 
         {filteredTours.length === 0 && (
-          <div className="text-center py-8">
-            <p className="text-gray-500">No tours found</p>
-          </div>
+          <Card className="p-6 text-center text-sm text-text-muted">
+            <p>No tours match this filter yet.</p>
+          </Card>
         )}
       </div>
 
-      {/* Confirmation Dialog */}
       {confirmDialog?.isOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          onClick={() => setConfirmDialog(null)}
+          className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4"
           role="dialog"
           aria-modal="true"
-          aria-labelledby="dialog-title"
         >
-          <div
-            className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 id="dialog-title" className="mb-4 text-xl font-semibold text-brand-dark">
-              {confirmDialog.status === 'confirmed' && 'Confirm Tour'}
-              {confirmDialog.status === 'completed' && 'Complete Tour'}
-              {confirmDialog.status === 'cancelled' && 'Cancel Tour'}
-            </h2>
-            <p className="mb-6 text-sm text-text-muted">
-              {confirmDialog.status === 'confirmed' &&
-                `Are you sure you want to confirm the tour for "${confirmDialog.tourTitle}"? The tenant will be notified.`}
-              {confirmDialog.status === 'completed' &&
-                `Mark the tour for "${confirmDialog.tourTitle}" as completed? This action indicates the tour has taken place.`}
-              {confirmDialog.status === 'cancelled' &&
-                `Are you sure you want to cancel the tour for "${confirmDialog.tourTitle}"? The tenant will be notified.`}
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+            <h2 className="text-xl font-semibold text-brand-dark">{confirmDialog.body}</h2>
+            <p className="mt-2 text-sm text-text-muted">
+              Listing: <span className="font-medium text-brand-dark">{confirmDialog.tourTitle}</span>
             </p>
-            <div className="flex justify-end gap-3">
-              <Button
-                variant="secondary"
-                onClick={() => setConfirmDialog(null)}
-                aria-label="Cancel action"
-              >
-                Cancel
+            <div className="mt-6 flex justify-end gap-3">
+              <Button variant="secondary" onClick={() => setConfirmDialog(null)}>
+                Keep tour
               </Button>
               <Button
-                variant={confirmDialog.status === 'cancelled' ? 'danger' : 'primary'}
-                onClick={() => updateTourStatus(confirmDialog.tourId, confirmDialog.status)}
-                aria-label={`Confirm ${confirmDialog.status}`}
+                variant={confirmDialog.intent === 'danger' ? 'danger' : 'primary'}
+                onClick={() => updateTourStatus(confirmDialog.tourId, confirmDialog.nextStatus)}
               >
-                {confirmDialog.status === 'confirmed' && 'Confirm Tour'}
-                {confirmDialog.status === 'completed' && 'Mark Completed'}
-                {confirmDialog.status === 'cancelled' && 'Cancel Tour'}
+                {confirmDialog.cta}
               </Button>
             </div>
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function StatusBadge({ status }: { status: TourStatus }) {
+  const meta = TOUR_STATUS_META[status];
+  const Icon = meta.icon;
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-inset ${meta.badgeClass}`}
+    >
+      <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+      {meta.label}
+    </span>
+  );
+}
+
+function TourActions({
+  tour,
+  isLandlord,
+  onTriggerAction
+}: {
+  tour: ClientTour;
+  isLandlord: boolean;
+  onTriggerAction: (action: TourAction) => void;
+}) {
+  const actions = isLandlord ? landlordActionsFor(tour.status) : tenantActionsFor(tour.status);
+
+  if (actions.length === 0) {
+    return (
+      <p className="inline-flex items-center gap-2 rounded-full bg-brand-light px-3 py-1 text-sm text-text-muted">
+        <ClockIcon className="h-4 w-4" aria-hidden="true" />
+        No further actions available
+      </p>
+    );
+  }
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      {actions.map((action) => (
+        <Button
+          key={action.status}
+          variant={action.tone === 'danger' ? 'danger' : 'primary'}
+          size="sm"
+          onClick={() => onTriggerAction(action)}
+        >
+          <action.icon className="h-4 w-4" aria-hidden="true" />
+          {action.label}
+        </Button>
+      ))}
     </div>
   );
 }

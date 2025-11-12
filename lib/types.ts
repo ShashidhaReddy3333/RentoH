@@ -108,17 +108,20 @@ export type PaginatedResult<TItem> = {
 
 export type UserRole = "tenant" | "landlord" | "admin" | "guest";
 
-export type TourStatus = "requested" | "confirmed" | "completed" | "cancelled";
+export type TourStatus = "requested" | "confirmed" | "completed" | "cancelled" | "rescheduled";
 
 export type Tour = {
   id: string;
   propertyId: string;
   propertyTitle: string;
+  propertySlug?: string;
+  propertyImage?: string | null;
   scheduledAt: string;
   city?: string;
   status: TourStatus;
   landlordId?: string;
   tenantId?: string;
+  timezone?: string;
   notes?: string;
 };
 
