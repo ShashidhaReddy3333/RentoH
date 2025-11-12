@@ -21,6 +21,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   if (!id || typeof id !== "string") {
     return NextResponse.json({ error: "Missing or invalid id" }, { status: 400 });
   }
+  const origin = new URL(request.url).origin;
 
   let body: unknown;
   try {
@@ -97,6 +98,15 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     const msg = extractMessage(updErr) ?? "Failed to update application";
     return NextResponse.json({ error: msg }, { status: 500 });
   }
+
+  // Notify tenant about status update
+  try {
+    await fetch(`${origin}/api/digest`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: appRow.tenant_id, reason: "application_update" })
+    });
+  } catch {}
 
   revalidatePath("/applications");
   revalidatePath(`/applications/${id}`);

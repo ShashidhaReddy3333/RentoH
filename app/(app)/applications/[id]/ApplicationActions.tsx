@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import { CheckCircleIcon, XCircleIcon, EyeIcon } from '@heroicons/react/24/outline';
 import { buttonStyles } from '@/components/ui/button';
-import { updateApplicationStatus } from './actions';
 
 type ApplicationActionsProps = {
   applicationId: string;
@@ -29,6 +29,7 @@ function showToast(message: string, opts: { success?: boolean } = {}) {
 export default function ApplicationActions({ applicationId, currentStatus }: ApplicationActionsProps) {
   const [isPending, startTransition] = useTransition();
   const [busyAction, setBusyAction] = useState<string | null>(null);
+  const router = useRouter();
 
   const handleStatusChange = (newStatus: string) => {
     if (isPending) return;
@@ -36,13 +37,18 @@ export default function ApplicationActions({ applicationId, currentStatus }: App
     setBusyAction(newStatus);
     startTransition(async () => {
       try {
-        const result = await updateApplicationStatus(applicationId, newStatus);
-        
-        if (result.success) {
-          showToast(`Application ${newStatus}`, { success: true });
-          // Page will revalidate automatically due to server action
+        const res = await fetch(`/api/applications/${applicationId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: newStatus })
+        });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          const msg = body?.error || body?.message || 'Failed to update application';
+          showToast(msg);
         } else {
-          showToast(result.error || 'Failed to update application');
+          showToast(`Application ${newStatus}`, { success: true });
+          router.refresh();
         }
       } catch (error) {
         console.error('Error updating application:', error);
