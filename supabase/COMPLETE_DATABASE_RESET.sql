@@ -112,7 +112,13 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   phone text,
   avatar_url text,
   bio text,
-  verification_status text DEFAULT 'unverified' CHECK (verification_status IN ('unverified', 'pending', 'verified')),
+  city text,
+  address text,
+  contact_method text CHECK (contact_method IN ('email', 'phone', 'chat')),
+  dob text,
+  verification_status text DEFAULT 'pending' CHECK (verification_status IN ('verified', 'pending', 'unverified')),
+  prefs jsonb NOT NULL DEFAULT '{}'::jsonb,
+  notifications jsonb NOT NULL DEFAULT '{"newMatches":true,"messages":true,"applicationUpdates":true}'::jsonb,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
