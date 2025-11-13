@@ -14,6 +14,8 @@ import { TimePicker } from "@/components/ui/TimePicker";
 import { requestTourAction } from "@/app/(app)/tours/actions";
 import { initialTourRequestState, type TourRequestState } from "@/app/(app)/tours/types";
 
+const CSRF_COOKIE = "rento_csrf";
+
 type PropertyContactCardProps = {
   propertyId: string;
   propertyTitle: string;
@@ -50,11 +52,12 @@ export function PropertyContactCard({
   
   // Handle missing landlordId gracefully
   const hasLandlord = Boolean(landlordId);
+
   const readCsrfToken = () => {
     if (typeof document === "undefined") {
       return undefined;
     }
-    const value = document.cookie.match(/csrf-token=([^;]+)/)?.[1];
+    const value = document.cookie.match(new RegExp(`${CSRF_COOKIE}=([^;]+)`))?.[1];
     return value ? decodeURIComponent(value) : undefined;
   };
 

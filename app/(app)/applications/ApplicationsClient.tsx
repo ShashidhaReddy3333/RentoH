@@ -8,6 +8,8 @@ import { formatDistance } from 'date-fns';
 import Image from 'next/image';
 import Link from 'next/link';
 
+const FALLBACK_PROPERTY_IMAGE = "/images/listings/home-1.jpg";
+
 interface Application {
   id: string;
   status: string;
@@ -182,7 +184,7 @@ export default function ApplicationsClient({ applications, userRole }: Props) {
               <div className="flex space-x-4">
                 <div className="relative w-24 h-24">
                   <Image
-                    src={app.property.images[0] || '/images/placeholder.jpg'}
+                    src={app.property.images[0] || FALLBACK_PROPERTY_IMAGE}
                     alt={app.property.title}
                     fill
                     className="object-cover rounded-lg"

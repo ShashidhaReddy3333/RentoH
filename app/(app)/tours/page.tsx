@@ -7,6 +7,8 @@ import { SupabaseConfigBanner } from '@/components/SupabaseConfigBanner';
 import EmptyState from '@/components/EmptyState';
 import type { TourStatus } from '@/lib/types';
 
+const FALLBACK_PROPERTY_IMAGE = "/images/listings/home-1.jpg";
+
 export default async function ToursPage() {
   if (!hasSupabaseEnv) {
     return (
@@ -111,7 +113,9 @@ export default async function ToursPage() {
     const landlordRecord = firstOrNull(tour.landlord);
     const tenantRecord = firstOrNull(tour.tenant);
 
-    const propertyImages = propertyRecord?.images?.filter((image): image is string => typeof image === 'string') ?? [];
+    const propertyImages =
+      propertyRecord?.images?.filter((image): image is string => typeof image === 'string') ?? [];
+    const images = propertyImages.length > 0 ? propertyImages : [FALLBACK_PROPERTY_IMAGE];
 
     return {
       id: tour.id,
@@ -122,7 +126,7 @@ export default async function ToursPage() {
         id: propertyRecord?.id ?? '',
         title: propertyRecord?.title ?? 'Property',
         address: propertyRecord?.address ?? '',
-        images: propertyImages.length > 0 ? propertyImages : ['']
+        images
       },
       landlord: {
         full_name: landlordRecord?.full_name ?? '',

@@ -94,7 +94,7 @@ async function TenantDashboard() {
     },
     {
       title: "Tours requested",
-      value: tourCounts.requested + tourCounts.rescheduled,
+      value: tours.length,
       change: tourChange,
       icon: <CalendarIcon className="h-6 w-6 text-brand-green" aria-hidden="true" />,
       href: "/tours"

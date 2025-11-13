@@ -27,7 +27,7 @@ type ListApplicationOptions = {
   statuses?: ApplicationStatus[];
 };
 
-const DEFAULT_ACTIVE_APPLICATION_STATUSES: ApplicationStatus[] = ["submitted", "reviewing"];
+const DEFAULT_APPLICATION_STATUSES: ApplicationStatus[] = [];
 
 export async function listApplicationsForTenant(
   limit = 5,
@@ -46,7 +46,7 @@ export async function listApplicationsForLandlord(
 async function listApplications(
   role: Exclude<UserRole, "guest">,
   limit: number,
-  { statuses = DEFAULT_ACTIVE_APPLICATION_STATUSES }: ListApplicationOptions
+  { statuses = DEFAULT_APPLICATION_STATUSES }: ListApplicationOptions
 ): Promise<ApplicationSummary[]> {
   const { supabase, user } = await getSupabaseClientWithUser();
   if (!supabase || !user) {

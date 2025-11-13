@@ -4,10 +4,12 @@ import { cookies } from "next/headers";
 import { markThreadAsRead } from "@/lib/data-access/messages";
 import type { Message } from "@/lib/types";
 
+const CSRF_COOKIE = "rento_csrf";
+
 export async function sendMessageAction(threadId: string, text: string): Promise<Message> {
   // Get CSRF token from cookies
   const cookieStore = cookies();
-  const csrfToken = cookieStore.get('csrf-token')?.value;
+  const csrfToken = cookieStore.get(CSRF_COOKIE)?.value;
 
   // Call the API route instead of directly accessing Supabase
   const origin = process.env['NEXT_PUBLIC_SITE_URL'] || 'http://localhost:3000';

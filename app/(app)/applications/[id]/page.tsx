@@ -9,6 +9,8 @@ import { Card } from '@/components/ui/card';
 import ApplicationActions from './ApplicationActions';
 import { normalizeApplicationStatus } from '@/lib/application-status';
 
+const FALLBACK_PROPERTY_IMAGE = "/images/listings/home-1.jpg";
+
 export default async function ApplicationDetailPage({ params }: { params: { id: string } }) {
   const supabase = createSupabaseServerClient();
   
@@ -79,6 +81,9 @@ export default async function ApplicationDetailPage({ params }: { params: { id: 
   const property = Array.isArray(application.property) ? application.property[0] : application.property;
   const applicant = Array.isArray(application.applicant) ? application.applicant[0] : application.applicant;
   const landlord = Array.isArray(application.landlord) ? application.landlord[0] : application.landlord;
+  const propertyImages =
+    (property?.images ?? []).filter((image: string | null): image is string => typeof image === "string" && image.length > 0);
+  const coverImage = propertyImages[0] ?? FALLBACK_PROPERTY_IMAGE;
 
   const statusColors: Record<string, string> = {
     submitted: 'bg-blue-100 text-blue-800',
@@ -125,16 +130,14 @@ export default async function ApplicationDetailPage({ params }: { params: { id: 
             <h2 className="text-lg font-semibold mb-3 text-brand-dark">Property</h2>
             <Link href={`/property/${propertySlug}`} className="block">
               <div className="flex gap-4 p-4 rounded-lg border border-black/5 hover:border-brand-teal/40 transition">
-                {property?.images && property.images.length > 0 && (
-                  <div className="relative w-32 h-24 flex-shrink-0">
-                    <Image
-                      src={property.images[0] || '/images/placeholder.jpg'}
-                      alt={property.title || 'Property'}
-                      fill
-                      className="object-cover rounded-lg"
-                    />
-                  </div>
-                )}
+                <div className="relative w-32 h-24 flex-shrink-0">
+                  <Image
+                    src={coverImage}
+                    alt={property?.title || 'Property'}
+                    fill
+                    className="object-cover rounded-lg"
+                  />
+                </div>
                 <div className="flex-1">
                   <h3 className="font-semibold text-brand-dark">{property?.title}</h3>
                   <p className="text-sm text-text-muted">{property?.address}</p>
