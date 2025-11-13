@@ -55,6 +55,7 @@ type ListingFormProps = {
   loadDraft?: () => Promise<ListingFormState & { data?: Record<string, unknown> }>;
   onSubmit: (values: ListingFormValues) => Promise<ListingFormState>;
   onAutoSave?: (values: ListingFormValues) => Promise<ListingFormState>;
+  onSaveDraft?: (values: ListingFormValues) => Promise<ListingFormState | undefined>;
   onSuccess?: (result: ListingFormState) => void;
 };
 
@@ -286,9 +287,11 @@ export default function ListingForm({
   loadDraft,
   onSubmit,
   onAutoSave,
+  onSaveDraft,
   onSuccess
 }: ListingFormProps) {
   const [submitting, setSubmitting] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
   const [toast, setToast] = useState<Toast>(null);
   const [autoSaveState, setAutoSaveState] = useState<ListingFormState>({ status: "idle" });
   const [serverState, setServerState] = useState<ListingFormState>({ status: "idle" });
@@ -433,6 +436,29 @@ export default function ListingForm({
     [clearErrors, onSubmit]
   );
 
+  const handleDraftSubmit = useCallback(
+    async (rawValues: ListingFormFieldValues) => {
+      if (!onSaveDraft) {
+        return;
+      }
+      const parsed = listingFormSchema.parse(rawValues);
+      setSavingDraft(true);
+      setToast(null);
+      try {
+        const result = await onSaveDraft(parsed);
+        if (result) {
+          setServerState(result);
+        }
+      } catch (error) {
+        console.error("[ListingForm] Failed to save draft", error);
+        setToast({ tone: "error", message: "Unable to save draft. Try again." });
+      } finally {
+        setSavingDraft(false);
+      }
+    },
+    [onSaveDraft]
+  );
+
   const handleError = useCallback(() => {
     const firstError = findFirstError(errors);
 
@@ -462,7 +488,8 @@ export default function ListingForm({
     }
   }, [errors, setFocus]);
 
-  const submitButtonDisabled = submitting;
+  const submitButtonDisabled = submitting || savingDraft;
+  const saveDraftDisabled = submitting || savingDraft || !onSaveDraft;
 
   const autoSaveMessage =
     autoSaveState.status === "auto-saved"
@@ -718,15 +745,28 @@ export default function ListingForm({
         <p className="text-sm text-neutral-600">
           Fields marked with <span className="text-brand-primary">*</span> are required.
         </p>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          {mode === "create" && onSaveDraft ? (
+            <Button
+              type="button"
+              variant="secondary"
+              size="lg"
+              className="min-w-[160px] focus:ring-2 focus:ring-brand-primary/40"
+              disabled={saveDraftDisabled}
+              aria-disabled={saveDraftDisabled}
+              onClick={() => handleSubmit(handleDraftSubmit, handleError)()}
+            >
+              {savingDraft ? "Saving..." : "Save as Draft"}
+            </Button>
+          ) : null}
           <Button
             type="submit"
             size="lg"
             className="min-w-[160px] focus:ring-2 focus:ring-brand-primary/40"
-            disabled={submitButtonDisabled || submitting}
-            aria-disabled={submitButtonDisabled || submitting}
+            disabled={submitButtonDisabled}
+            aria-disabled={submitButtonDisabled}
           >
-            {submitting ? "Saving..." : mode === "create" ? "Publish Listing" : "Save Changes"}
+            {submitting ? "Publishing..." : mode === "create" ? "Publish Listing" : "Save Changes"}
           </Button>
         </div>
       </div>
