@@ -6,7 +6,7 @@
         "dev": "next dev",
         "build": "next build",
         "start": "next start",
-        "lint": "eslint .",
+        "lint": "eslint --ext .ts,.tsx,.js,.jsx app components design-system lib tests __tests__ scripts types middleware.ts next.config.js tailwind.config.ts vitest.config.ts",
         "typecheck": "tsc --noEmit",
         "test": "vitest run",
         "e2e": "cross-env BYPASS_SUPABASE_AUTH=1 playwright test",

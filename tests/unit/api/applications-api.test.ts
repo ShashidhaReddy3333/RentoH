@@ -1,10 +1,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import type { NextRequest } from "next/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Utility to parse NextResponse
-async function readJson(res: Response) {
-  const data = (await res.json()) as unknown;
+async function readJson<T = any>(res: Response) {
+  const data = (await res.json()) as T;
   return data;
+}
+
+function makeNextRequest(url: string, init?: RequestInit): NextRequest {
+  const request = new Request(url, init);
+  (request as any).nextUrl = new URL(url);
+  return request as unknown as NextRequest;
 }
 
 function makeSupabaseStub(options: {
@@ -61,18 +68,18 @@ vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 
 describe('Applications API', () => {
   beforeEach(() => {
-    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://example.supabase.co';
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
-    process.env.BYPASS_SUPABASE_AUTH = '0';
+    process.env["NEXT_PUBLIC_SUPABASE_URL"] = 'https://example.supabase.co';
+    process.env["NEXT_PUBLIC_SUPABASE_ANON_KEY"] = 'test-anon-key';
+    process.env["BYPASS_SUPABASE_AUTH"] = '0';
     vi.resetModules();
     // Mock fetch for digest notifications
     vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, json: async () => ({ ok: true }) })) as any);
   });
 
   afterEach(() => {
-    delete process.env.NEXT_PUBLIC_SUPABASE_URL;
-    delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    delete process.env.BYPASS_SUPABASE_AUTH;
+    delete process.env["NEXT_PUBLIC_SUPABASE_URL"];
+    delete process.env["NEXT_PUBLIC_SUPABASE_ANON_KEY"];
+    delete process.env["BYPASS_SUPABASE_AUTH"];
     vi.unstubAllGlobals();
   });
 
@@ -82,7 +89,7 @@ describe('Applications API', () => {
       const { POST } = await import('@/app/api/applications/route');
       const res = await POST(new Request('http://localhost/api/applications', { method: 'POST', body: JSON.stringify({}) }));
       expect(res.status).toBe(400);
-      const body = await readJson(res as any);
+      const body = await readJson(res);
       expect(body.error).toBeDefined();
     });
 
@@ -107,12 +114,12 @@ describe('Applications API', () => {
       const { POST } = await import('@/app/api/applications/route');
       const res = await POST(new Request('http://localhost/api/applications', { method: 'POST', body: JSON.stringify({ propertyId: 'p1', monthlyIncome: 5000, message: 'Interested' }) }));
       expect(res.status).toBe(201);
-      const body = await readJson(res as any);
+      const body = await readJson(res);
       expect(body?.application?.id).toBe('app-1');
     });
 
     it('returns a demo response when Supabase is disabled', async () => {
-      process.env.BYPASS_SUPABASE_AUTH = '1';
+      process.env["BYPASS_SUPABASE_AUTH"] = '1';
       const { POST } = await import('@/app/api/applications/route');
       const res = await POST(
         new Request('http://localhost/api/applications', {
@@ -121,7 +128,7 @@ describe('Applications API', () => {
         })
       );
       expect(res.status).toBe(201);
-      const body = await readJson(res as any);
+      const body = await readJson(res);
       expect(body?.preview).toBe(true);
       expect(body?.application?.id).toMatch(/^demo-application-/);
     });
@@ -131,7 +138,7 @@ describe('Applications API', () => {
     it('returns 401 if not authenticated', async () => {
       vi.doMock('@/lib/supabase/auth', () => ({ getSupabaseClientWithUser: () => ({ supabase: {}, user: null }) }));
       const { PATCH } = await import('@/app/api/applications/[id]/route');
-      const res = await PATCH(new Request('http://localhost/api/applications/app-1', { method: 'PATCH', body: JSON.stringify({ status: 'reviewing' }) }), { params: { id: 'app-1' } });
+      const res = await PATCH(makeNextRequest('http://localhost/api/applications/app-1', { method: 'PATCH', body: JSON.stringify({ status: 'reviewing' }) }), { params: { id: 'app-1' } });
       expect(res.status).toBe(401);
     });
 
@@ -139,7 +146,7 @@ describe('Applications API', () => {
       const supabase = makeSupabaseStub({ application: { id: 'app-1', status: 'submitted', tenant_id: 't1', landlord_id: 'landlord-123' } });
       vi.doMock('@/lib/supabase/auth', () => ({ getSupabaseClientWithUser: () => ({ supabase, user: { id: 'not-landlord' } }) }));
       const { PATCH } = await import('@/app/api/applications/[id]/route');
-      const res = await PATCH(new Request('http://localhost/api/applications/app-1', { method: 'PATCH', body: JSON.stringify({ status: 'reviewing' }) }), { params: { id: 'app-1' } });
+      const res = await PATCH(makeNextRequest('http://localhost/api/applications/app-1', { method: 'PATCH', body: JSON.stringify({ status: 'reviewing' }) }), { params: { id: 'app-1' } });
       expect(res.status).toBe(403);
     });
 
@@ -147,7 +154,7 @@ describe('Applications API', () => {
       const supabase = makeSupabaseStub({ application: { id: 'app-1', status: 'submitted', tenant_id: 't1', landlord_id: 'l1' } });
       vi.doMock('@/lib/supabase/auth', () => ({ getSupabaseClientWithUser: () => ({ supabase, user: { id: 'l1' } }) }));
       const { PATCH } = await import('@/app/api/applications/[id]/route');
-      const res = await PATCH(new Request('http://localhost/api/applications/app-1', { method: 'PATCH', body: JSON.stringify({ status: 'interview' }) }), { params: { id: 'app-1' } });
+      const res = await PATCH(makeNextRequest('http://localhost/api/applications/app-1', { method: 'PATCH', body: JSON.stringify({ status: 'interview' }) }), { params: { id: 'app-1' } });
       expect(res.status).toBe(400);
     });
 
@@ -155,9 +162,9 @@ describe('Applications API', () => {
       const supabase = makeSupabaseStub({ application: { id: 'app-1', status: 'submitted', tenant_id: 't1', landlord_id: 'l1' }, updateError: null });
       vi.doMock('@/lib/supabase/auth', () => ({ getSupabaseClientWithUser: () => ({ supabase, user: { id: 'l1' } }) }));
       const { PATCH } = await import('@/app/api/applications/[id]/route');
-      const res = await PATCH(new Request('http://localhost/api/applications/app-1', { method: 'PATCH', body: JSON.stringify({ status: 'reviewing' }) }), { params: { id: 'app-1' } });
+      const res = await PATCH(makeNextRequest('http://localhost/api/applications/app-1', { method: 'PATCH', body: JSON.stringify({ status: 'reviewing' }) }), { params: { id: 'app-1' } });
       expect(res.status).toBe(200);
-      const body = await readJson(res as any);
+      const body = await readJson(res);
       expect(body.status).toBe('reviewing');
     });
   });
