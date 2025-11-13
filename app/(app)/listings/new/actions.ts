@@ -394,6 +394,7 @@ export async function createListingAction(
       clearPersistedDraft();
 
       revalidatePath("/dashboard");
+      revalidatePath("/dashboard/listings");
       revalidatePath("/browse");
       revalidatePath(`/property/${resolvedSlug}`);
       revalidatePath(`/property/${listingId}`);
@@ -434,6 +435,7 @@ export async function createListingAction(
     clearPersistedDraft();
 
     revalidatePath("/dashboard");
+    revalidatePath("/dashboard/listings");
     revalidatePath("/browse");
     revalidatePath(`/property/${slug}`);
 

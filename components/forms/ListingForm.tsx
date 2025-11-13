@@ -85,6 +85,7 @@ function resolvePropertyType(value?: string | null): PropertyTypeValue {
 const amenitiesOptions = [
   { value: "laundry", label: "In-suite laundry" },
   { value: "gym", label: "Gym" },
+  { value: "furnished", label: "Furnished" },
   { value: "pool", label: "Pool" },
   { value: "ac", label: "Air conditioning" },
   { value: "balcony", label: "Balcony" },

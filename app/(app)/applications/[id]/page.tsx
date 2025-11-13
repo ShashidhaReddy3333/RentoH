@@ -8,6 +8,7 @@ import Image from 'next/image';
 import { Card } from '@/components/ui/card';
 import ApplicationActions from './ApplicationActions';
 import { normalizeApplicationStatus } from '@/lib/application-status';
+import { resolveImageUrls } from '@/lib/data-access/properties';
 
 const FALLBACK_PROPERTY_IMAGE = "/images/listings/home-1.jpg";
 
@@ -83,7 +84,8 @@ export default async function ApplicationDetailPage({ params }: { params: { id: 
   const landlord = Array.isArray(application.landlord) ? application.landlord[0] : application.landlord;
   const propertyImages =
     (property?.images ?? []).filter((image: string | null): image is string => typeof image === "string" && image.length > 0);
-  const coverImage = propertyImages[0] ?? FALLBACK_PROPERTY_IMAGE;
+  const resolvedImages = propertyImages.length > 0 ? resolveImageUrls(propertyImages) : [FALLBACK_PROPERTY_IMAGE];
+  const coverImage = resolvedImages[0] ?? FALLBACK_PROPERTY_IMAGE;
 
   const statusColors: Record<string, string> = {
     submitted: 'bg-blue-100 text-blue-800',

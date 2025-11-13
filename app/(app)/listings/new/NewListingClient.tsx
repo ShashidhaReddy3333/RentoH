@@ -100,7 +100,7 @@ export default function NewListingClient({
       if (result.status === "success") {
         if (mode === "create") {
           draftListingIdRef.current = undefined;
-          router.push("/dashboard?toast=listing-created");
+          router.replace("/dashboard/listings?toast=listing-created");
         } else {
           router.refresh();
         }
