@@ -17,7 +17,11 @@ import { listApplicationsForLandlord, listApplicationsForTenant } from "@/lib/da
 import { listThreads } from "@/lib/data-access/messages";
 import { getCurrentUser, getProfile } from "@/lib/data-access/profile";
 import { listOwnedProperties } from "@/lib/data-access/properties";
-import { listUpcomingToursForLandlord, listUpcomingToursForTenant } from "@/lib/data-access/tours";
+import {
+  countTourRequestsForTenant,
+  listUpcomingToursForLandlord,
+  listUpcomingToursForTenant
+} from "@/lib/data-access/tours";
 import { hasSupabaseEnv } from "@/lib/env";
 import type { ApplicationSummary, Tour } from "@/lib/types";
 import { SupabaseHealthCard } from "@/components/dashboard/SupabaseHealthCard";
@@ -64,12 +68,13 @@ export default async function DashboardPage() {
 }
 
 async function TenantDashboard() {
-  const [profile, threads, favorites, tours, applications] = await Promise.all([
+  const [profile, threads, favorites, tours, applications, totalTourRequests] = await Promise.all([
     getProfile(),
     listThreads(),
     listFavoriteProperties(3),
     listUpcomingToursForTenant(3),
-    listApplicationsForTenant(3)
+    listApplicationsForTenant(3),
+    countTourRequestsForTenant()
   ]);
 
   const unreadMessages = threads.reduce((total, thread) => total + thread.unreadCount, 0);
@@ -94,7 +99,7 @@ async function TenantDashboard() {
     },
     {
       title: "Tours requested",
-      value: tours.length,
+      value: totalTourRequests,
       change: tourChange,
       icon: <CalendarIcon className="h-6 w-6 text-brand-green" aria-hidden="true" />,
       href: "/tours"

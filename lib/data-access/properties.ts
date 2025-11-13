@@ -154,8 +154,8 @@ async function fetchManyFromSupabase(
   }
 
   if (filters.availableFrom) {
-    // select properties available on or after the requested date
-    query = query.gte("available_from", filters.availableFrom);
+    // select properties available on or before the requested date to include already-available listings
+    query = query.lte("available_from", filters.availableFrom);
   }
 
   // amenities: expect array of strings; match any of them

@@ -1,4 +1,5 @@
 // Removed unused imports: hasSupabaseEnv, mockMessages, mockThreads
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseClientWithUser } from "@/lib/supabase/auth";
 import type { Message, MessageThread } from "@/lib/types";
 
@@ -62,7 +63,9 @@ export async function listThreads(): Promise<MessageThread[]> {
     return [];
   }
 
-  return data.map((row) => mapThreadFromSupabase(row, user.id));
+  const unreadMap = await loadUnreadCounts(supabase, data.map((row) => row.id), user.id);
+
+  return data.map((row) => mapThreadFromSupabase(row, user.id, unreadMap[row.id]));
 }
 
 export async function getThreadMessages(threadId: string): Promise<Message[]> {
@@ -132,17 +135,18 @@ export async function hasUnreadThreads(): Promise<boolean> {
 
   const { data, error } = await supabase
     .from("message_threads")
-    .select("unread_count")
-    .or(`tenant_id.eq.${user.id},landlord_id.eq.${user.id}`)
-    .gt("unread_count", 0)
-    .limit(1);
+    .select("id")
+    .or(`tenant_id.eq.${user.id},landlord_id.eq.${user.id}`);
 
-  if (error) {
-    console.error("[messages] Failed to check unread threads", error);
+  if (error || !data || data.length === 0) {
+    if (error) {
+      console.error("[messages] Failed to check unread threads", error);
+    }
     return false;
   }
 
-  return Boolean(data && data.some((row) => (row.unread_count ?? 0) > 0));
+  const unreadMap = await loadUnreadCounts(supabase, data.map((row) => row.id), user.id);
+  return Object.values(unreadMap).some((count) => count > 0);
 }
 
 export async function markThreadAsRead(threadId: string): Promise<void> {
@@ -172,7 +176,11 @@ export async function markThreadAsRead(threadId: string): Promise<void> {
     .or(`tenant_id.eq.${user.id},landlord_id.eq.${user.id}`);
 }
 
-function mapThreadFromSupabase(record: SupabaseThreadRow, currentUserId: string): MessageThread {
+function mapThreadFromSupabase(
+  record: SupabaseThreadRow,
+  currentUserId: string,
+  unreadOverride?: number
+): MessageThread {
   const tenantProfile = Array.isArray(record.tenant_profile)
     ? record.tenant_profile[0] ?? null
     : record.tenant_profile;
@@ -193,7 +201,8 @@ function mapThreadFromSupabase(record: SupabaseThreadRow, currentUserId: string)
     otherPartyName: otherName,
     otherPartyAvatar: otherProfile?.avatar_url ?? undefined,
     lastMessage: record.last_message ?? undefined,
-    unreadCount: Number.isFinite(record.unread_count) ? Number(record.unread_count) : 0,
+    unreadCount:
+      unreadOverride ?? (Number.isFinite(record.unread_count) ? Number(record.unread_count) : 0),
     updatedAt: record.updated_at ?? new Date().toISOString()
   };
 }
@@ -207,4 +216,35 @@ function mapMessageFromSupabase(record: SupabaseMessageRow): Message {
     createdAt: record.created_at ?? new Date().toISOString(),
     readAt: record.read_at
   };
+}
+
+type UnreadCountMap = Record<string, number>;
+type UnreadCountRow = { thread_id: string | null };
+
+async function loadUnreadCounts(
+  supabase: SupabaseClient,
+  threadIds: string[],
+  currentUserId: string
+): Promise<UnreadCountMap> {
+  if (!threadIds.length) {
+    return {};
+  }
+
+  const { data, error } = await supabase
+    .from("messages")
+    .select("thread_id")
+    .in("thread_id", threadIds)
+    .is("read_at", null)
+    .neq("sender_id", currentUserId);
+
+  if (error || !data) {
+    console.error("[messages] Failed to load unread counts", error);
+    return {};
+  }
+
+  return (data as UnreadCountRow[]).reduce<UnreadCountMap>((acc, row) => {
+    if (!row.thread_id) return acc;
+    acc[row.thread_id] = (acc[row.thread_id] ?? 0) + 1;
+    return acc;
+  }, {});
 }

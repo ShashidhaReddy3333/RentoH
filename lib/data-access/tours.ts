@@ -22,6 +22,10 @@ export async function listUpcomingToursForLandlord(limit = 3): Promise<Tour[]> {
   return listUpcomingTours("landlord", limit);
 }
 
+export async function countTourRequestsForTenant(): Promise<number> {
+  return countToursByRole("tenant");
+}
+
 async function listUpcomingTours(role: Exclude<UserRole, "guest">, limit: number): Promise<Tour[]> {
   const { supabase, user } = await getSupabaseClientWithUser();
   if (!supabase || !user) {
@@ -56,6 +60,26 @@ async function listUpcomingTours(role: Exclude<UserRole, "guest">, limit: number
   }
 
   return (data as unknown as SupabaseTourRow[]).map(mapTourFromSupabase);
+}
+
+async function countToursByRole(role: "tenant" | "landlord"): Promise<number> {
+  const { supabase, user } = await getSupabaseClientWithUser();
+  if (!supabase || !user) {
+    return 0;
+  }
+
+  const column = role === "tenant" ? "tenant_id" : "landlord_id";
+  const { count, error } = await supabase
+    .from("tours")
+    .select("id", { count: "exact", head: true })
+    .eq(column, user.id);
+
+  if (error) {
+    console.error("[tours] Failed to count tours", error);
+    return 0;
+  }
+
+  return count ?? 0;
 }
 
 function mapTourFromSupabase(row: SupabaseTourRow): Tour {
