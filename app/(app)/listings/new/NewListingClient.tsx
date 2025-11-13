@@ -100,7 +100,7 @@ export default function NewListingClient({
       if (result.status === "success") {
         if (mode === "create") {
           draftListingIdRef.current = undefined;
-          router.replace("/dashboard?toast=listing-created");
+          router.replace("/dashboard");
         } else {
           router.refresh();
         }
@@ -108,19 +108,6 @@ export default function NewListingClient({
       return result;
     },
     [listingId, mode, router]
-  );
-
-  const handleAutoSave = useCallback(
-    async (values: ListingFormValues) => {
-      if (!isCreateMode) return { status: "idle" } as ListingFormState;
-      const targetListingId = listingId ?? draftListingIdRef.current;
-      const result = await saveDraftAction(valuesToFormData(values, targetListingId));
-      if (result.listingId) {
-        draftListingIdRef.current = result.listingId;
-      }
-      return result;
-    },
-    [isCreateMode, listingId]
   );
 
   const loadDraft = useCallback(async () => {
@@ -142,7 +129,7 @@ export default function NewListingClient({
         draftListingIdRef.current = result.listingId;
       }
       if (result.status === "auto-saved" || result.status === "success") {
-        router.replace("/dashboard?toast=listing-drafted");
+        router.replace("/dashboard");
       }
       return result;
     },
@@ -156,7 +143,7 @@ export default function NewListingClient({
       initialImages={initialImages}
       loadDraft={isCreateMode ? loadDraft : undefined}
       onSubmit={handleSubmit}
-      onAutoSave={isCreateMode ? handleAutoSave : undefined}
+      onAutoSave={undefined}
       onSaveDraft={isCreateMode ? handleSaveDraft : undefined}
     />
   );

@@ -10,7 +10,6 @@ import { ChatBubbleLeftRightIcon } from "@heroicons/react/24/outline";
 import ChatThread from "@/components/ChatThread";
 import ConversationItem from "@/components/messages/ConversationItem";
 import Composer from "@/components/messages/Composer";
-import DealPanel from "@/components/messages/DealPanel";
 import ChatHeader from "@/components/messages/ChatHeader";
 import EmptyState from "@/components/EmptyState";
 import Chip from "@/components/messages/Chip";
@@ -190,58 +189,16 @@ export default function MessagesClient({
     />
   );
 
-  const listingTags = activeThread
-    ? [activeThread.subject, activeThread.propertyTitle].filter(
-        (value): value is string => Boolean(value && value.trim())
-      )
-    : [];
-
-  const dealPanelListing = activeThread
-    ? {
-        title: activeThread.propertyTitle ?? "Listing",
-        price: undefined,
-        availableFrom: undefined,
-        tags: listingTags,
-        imageUrl: undefined,
-        linkUrl: activeThread.propertyId ? `/property/${activeThread.propertyId}` : undefined
-      }
-    : undefined;
-
-  const propertyApplicationRoute = activeThread?.propertyId
-    ? (`/property/${activeThread.propertyId}/apply` as Route)
-    : undefined;
-
-  const handleStartApplication = useCallback(() => {
-    if (!propertyApplicationRoute) return;
-    router.push(propertyApplicationRoute);
-  }, [propertyApplicationRoute, router]);
-
   const headerStatusText = threadLoading ? "Loading conversation..." : statusText;
-
-  const dealPanelApplicant = activeThread
-    ? {
-        name: activeThread.otherPartyName,
-        initials: computeInitials(activeThread.otherPartyName),
-        memberSince: formatDistanceToNowStrict(new Date(activeThread.updatedAt), { addSuffix: true }),
-        actions: propertyApplicationRoute
-          ? [
-              {
-                label: "Start application",
-                variant: "primary" as const,
-                onClick: handleStartApplication
-              }
-            ]
-          : undefined
-      }
-    : undefined;
 
   if (threads.length === 0) {
     return renderEmptyState();
   }
 
   return (
-    <div className="flex h-full w-full bg-brand-light/40">
-      <aside
+    <div className="flex h-full w-full justify-center bg-brand-light/40">
+      <div className="flex h-full w-full max-w-5xl">
+        <aside
         className="hidden h-full w-[360px] shrink-0 overflow-y-auto border-r border-brand-outline/60 bg-white/90 p-4 backdrop-blur md:block"
         aria-labelledby={conversationHeadingId}
         aria-label="Conversations"
@@ -298,7 +255,7 @@ export default function MessagesClient({
         </ul>
       </aside>
 
-      <main className="flex min-w-0 flex-1 flex-col">
+        <main className="flex min-w-0 flex-1 flex-col">
         <div className="border-b border-brand-outline/60 bg-white px-4 py-3 md:hidden">
           <label className="block text-xs font-medium text-neutral-500">
             Conversation
@@ -342,14 +299,8 @@ export default function MessagesClient({
             <p>Select a conversation to get started.</p>
           </div>
         )}
-      </main>
-
-      <DealPanel
-        listing={dealPanelListing}
-        applicant={dealPanelApplicant}
-        labels={listingTags}
-        notes={activeThread?.lastMessage}
-      />
+        </main>
+      </div>
     </div>
   );
 }
