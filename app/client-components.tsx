@@ -23,10 +23,6 @@ export function HeroSection() {
   return (
     <section className="grid gap-10 rounded-3xl bg-gradient-to-br from-brand-blue/10 via-brand-teal/10 to-brand-green/10 px-6 py-12 shadow-soft sm:px-10">
       <div className="space-y-6 text-center sm:text-left">
-        <span className="inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 text-sm font-semibold text-brand-teal shadow-soft">
-          New
-          <span className="text-brand-dark">Supabase-ready rental toolkit</span>
-        </span>
         <h1 className="text-4xl font-extrabold text-brand-dark sm:text-5xl">
           Find your next place with Rento
         </h1>
