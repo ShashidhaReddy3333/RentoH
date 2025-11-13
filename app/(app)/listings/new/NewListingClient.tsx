@@ -88,6 +88,10 @@ export default function NewListingClient({
   const router = useRouter();
   const isCreateMode = mode === "create";
   const draftListingIdRef = useRef<string | undefined>(listingId);
+  const redirectToDashboard = useCallback(() => {
+    router.replace("/dashboard");
+    router.refresh();
+  }, [router]);
 
   const handleSubmit = useCallback(
     async (values: ListingFormValues) => {
@@ -100,14 +104,12 @@ export default function NewListingClient({
       if (result.status === "success") {
         if (mode === "create") {
           draftListingIdRef.current = undefined;
-          router.replace("/dashboard");
-        } else {
-          router.refresh();
         }
+        redirectToDashboard();
       }
       return result;
     },
-    [listingId, mode, router]
+    [listingId, mode, redirectToDashboard]
   );
 
   const loadDraft = useCallback(async () => {
@@ -129,11 +131,11 @@ export default function NewListingClient({
         draftListingIdRef.current = result.listingId;
       }
       if (result.status === "auto-saved" || result.status === "success") {
-        router.replace("/dashboard");
+        redirectToDashboard();
       }
       return result;
     },
-    [isCreateMode, listingId, router]
+    [isCreateMode, listingId, redirectToDashboard]
   );
 
   return (
