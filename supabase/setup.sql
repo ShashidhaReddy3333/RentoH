@@ -235,7 +235,6 @@ DROP POLICY IF EXISTS properties_delete ON public.properties;
 CREATE POLICY properties_read_public ON public.properties
   FOR SELECT USING (
     status = 'active'
-    AND (verified IS TRUE OR is_verified IS TRUE)
   );
 
 CREATE POLICY properties_read_owner ON public.properties
