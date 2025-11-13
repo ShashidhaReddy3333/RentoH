@@ -51,11 +51,13 @@ export default function MessagesClient({
   const [currentThreadId, setCurrentThreadId] = useState<string | undefined>(activeThreadId);
   const [search, setSearch] = useState("");
   const [statusText, setStatusText] = useState<string | undefined>(undefined);
+  const [threadLoading, setThreadLoading] = useState(false);
   const conversationHeadingId = "messages-conversations-heading";
   const searchInputId = "messages-conversations-search";
 
   useEffect(() => {
     setMessages(initialMessages);
+    setThreadLoading(false);
   }, [initialMessages]);
 
   useEffect(() => {
@@ -115,11 +117,16 @@ export default function MessagesClient({
 
   const handleSelectThread = useCallback(
     async (threadId: string) => {
+      if (threadId === currentThreadId && !threadLoading) {
+        return;
+      }
+      setThreadLoading(true);
+      setStatusText(undefined);
       setCurrentThreadId(threadId);
       const next = new URLSearchParams(params?.toString() ?? "");
       next.set("t", threadId);
       router.push(`${pathname}?${next.toString()}` as Route, { scroll: false });
-      
+
       // Mark the thread as read when it's opened
       try {
         await markThreadAsReadAction(threadId);
@@ -127,7 +134,7 @@ export default function MessagesClient({
         console.error("[messages] Failed to mark thread as read", error);
       }
     },
-    [params, pathname, router]
+    [currentThreadId, params, pathname, router, threadLoading]
   );
 
   const handleSend = useCallback(
@@ -208,6 +215,8 @@ export default function MessagesClient({
     if (!propertyApplicationRoute) return;
     router.push(propertyApplicationRoute);
   }, [propertyApplicationRoute, router]);
+
+  const headerStatusText = threadLoading ? "Loading conversation..." : statusText;
 
   const dealPanelApplicant = activeThread
     ? {
@@ -313,15 +322,16 @@ export default function MessagesClient({
               listingTitle={activeThread.propertyTitle}
               listingUrl={activeThread.propertyId ? `/property/${activeThread.propertyId}` : undefined}
               initials={computeInitials(activeThread.otherPartyName)}
-              statusText={statusText}
+              statusText={headerStatusText}
             />
             <ChatThread
               messages={messages}
               currentUserId={currentUserId}
               threadId={activeThread.id}
               onStatusChange={setStatusText}
+              loading={threadLoading}
             />
-            <Composer onSend={handleSend} disabled={!currentThreadId} />
+            <Composer onSend={handleSend} disabled={!currentThreadId || threadLoading} />
           </>
         ) : (
           <div

@@ -7,6 +7,7 @@ import type { RealtimePresenceState } from "@supabase/supabase-js";
 
 import Bubble from "@/components/messages/Bubble";
 import DayDivider from "@/components/messages/DayDivider";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { Message } from "@/lib/types";
 import type { ThreadPresence } from "@/lib/realtime/thread-presence";
 import { setupThreadPresence } from "@/lib/realtime/thread-presence";
@@ -152,6 +153,9 @@ export default function ChatThread({
     }, []);
   }, [messages]);
 
+  const showTypingIndicator = typingUsers.size > 0 && !loading;
+  const showEmptyState = !loading && groupedMessages.length === 0;
+
   return (
     <div
       ref={scrollRef}
@@ -162,7 +166,11 @@ export default function ChatThread({
       data-testid="chat-thread"
     >
       {loading ? (
-        <p className="text-sm text-neutral-500">Loading messages...</p>
+        <ChatThreadSkeleton />
+      ) : showEmptyState ? (
+        <p className="text-sm text-neutral-500" role="status">
+          No messages yet.
+        </p>
       ) : (
         groupedMessages.map((group) => (
           <section key={group.date.toISOString()} aria-label={group.day}>
@@ -197,7 +205,7 @@ export default function ChatThread({
           </section>
         ))
       )}
-      {typingUsers.size > 0 ? (
+      {showTypingIndicator ? (
         <TypingIndicator
           message={
             typingUsers.size === 1 ? "Someone is typing..." : "Multiple people are typing..."
@@ -232,6 +240,22 @@ function TypingIndicator({ message }: { message: string }) {
   );
 }
 
+function ChatThreadSkeleton() {
+  const placeholders = Array.from({ length: 4 }, (_, index) => index);
+  return (
+    <div className="space-y-4" role="status" aria-live="polite" aria-label="Loading messages">
+      {placeholders.map((index) => (
+        <div
+          // eslint-disable-next-line react/no-array-index-key
+          key={index}
+          className={`flex ${index % 2 === 0 ? "justify-start" : "justify-end"}`}
+        >
+          <Skeleton className="h-16 w-3/4 max-w-[320px] rounded-2xl" />
+        </div>
+      ))}
+    </div>
+  );
+}
 
 
 

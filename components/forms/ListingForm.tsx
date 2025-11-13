@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import ListingImageUploader from "@/components/ListingImageUploader";
 import { Button } from "@/components/ui/button";
 import { InputField } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { ListingFormState } from "@/app/(app)/listings/new/types";
 import { listingFormSchema } from "@/lib/validation/listingSchema";
 import type { ListingFormInput, ListingFormValues } from "@/lib/validation/listingSchema";
@@ -318,15 +319,21 @@ export default function ListingForm({
 
   const isCreateMode = mode === "create";
   const initialDraftLoaded = useRef(false);
+  const shouldLoadDraft = isCreateMode && Boolean(loadDraft);
+  const [isInitializing, setIsInitializing] = useState<boolean>(shouldLoadDraft);
 
   useEffect(() => {
     reset(defaults, { keepDirty: false });
   }, [defaults, reset]);
 
   useEffect(() => {
-    if (!isCreateMode || !loadDraft) return;
+    if (!shouldLoadDraft || !loadDraft) {
+      setIsInitializing(false);
+      return;
+    }
     const loadDraftFn = loadDraft;
     let cancelled = false;
+    setIsInitializing(true);
     async function load() {
       try {
         const result = await loadDraftFn();
@@ -339,13 +346,17 @@ export default function ListingForm({
         }
       } catch (error) {
         console.error("[ListingForm] Failed to load draft", error);
+      } finally {
+        if (!cancelled) {
+          setIsInitializing(false);
+        }
       }
     }
     void load();
     return () => {
       cancelled = true;
     };
-  }, [defaults, isCreateMode, loadDraft, reset]);
+  }, [defaults, loadDraft, reset, shouldLoadDraft]);
 
   const runAutoSave = useCallback(
     async (values: ListingFormFieldValues) => {
@@ -467,6 +478,15 @@ export default function ListingForm({
   const amenitiesRegister = register("amenities");
   const petsRegister = register("pets");
   const smokingRegister = register("smoking");
+
+  if (isInitializing) {
+    return (
+      <div role="status" aria-live="polite" className="space-y-4">
+        <span className="sr-only">Loading your saved listing details...</span>
+        <ListingFormSkeleton />
+      </div>
+    );
+  }
 
   return (
     <form
@@ -710,5 +730,48 @@ export default function ListingForm({
         </div>
       </div>
     </form>
+  );
+}
+
+function ListingFormSkeleton() {
+  const fieldRows = Array.from({ length: 3 }, (_, index) => index);
+  return (
+    <div className="space-y-6 rounded-3xl border border-brand-outline/60 bg-white/80 p-6 shadow-sm">
+      <div className="space-y-2">
+        <Skeleton className="h-6 w-48" />
+        <Skeleton className="h-4 w-80" />
+      </div>
+      <div className="grid gap-4 md:grid-cols-2">
+        {fieldRows.map((index) => (
+          <div key={`primary-${index}`} className="space-y-2">
+            <Skeleton className="h-4 w-1/2" />
+            <Skeleton className="h-10 w-full rounded-xl" />
+          </div>
+        ))}
+      </div>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {fieldRows.map((index) => (
+          <div key={`secondary-${index}`} className="space-y-2">
+            <Skeleton className="h-4 w-1/3" />
+            <Skeleton className="h-10 w-full rounded-xl" />
+          </div>
+        ))}
+      </div>
+      <div className="space-y-3">
+        <Skeleton className="h-4 w-1/3" />
+        <Skeleton className="h-24 w-full rounded-2xl" />
+      </div>
+      <div className="space-y-3">
+        <Skeleton className="h-4 w-1/4" />
+        <Skeleton className="h-48 w-full rounded-2xl" />
+      </div>
+      <div className="flex flex-col gap-4 border-t border-brand-outline/40 pt-4 sm:flex-row sm:items-center sm:justify-between">
+        <Skeleton className="h-4 w-56" />
+        <div className="flex gap-3">
+          <Skeleton className="h-11 w-36 rounded-full" />
+          <Skeleton className="h-11 w-36 rounded-full" />
+        </div>
+      </div>
+    </div>
   );
 }

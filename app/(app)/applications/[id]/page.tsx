@@ -136,6 +136,8 @@ export default async function ApplicationDetailPage({ params }: { params: { id: 
                     alt={property?.title || 'Property'}
                     fill
                     className="object-cover rounded-lg"
+                    sizes="(max-width: 640px) 70vw, 128px"
+                    priority
                   />
                 </div>
                 <div className="flex-1">
@@ -164,6 +166,7 @@ export default async function ApplicationDetailPage({ params }: { params: { id: 
                         alt={applicant.full_name || 'Applicant'}
                         fill
                         className="object-cover rounded-full"
+                        sizes="48px"
                       />
                     </div>
                   )}
@@ -200,6 +203,7 @@ export default async function ApplicationDetailPage({ params }: { params: { id: 
                         alt={landlord.full_name || 'Landlord'}
                         fill
                         className="object-cover rounded-full"
+                        sizes="48px"
                       />
                     </div>
                   )}

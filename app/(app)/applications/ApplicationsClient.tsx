@@ -178,16 +178,21 @@ export default function ApplicationsClient({ applications, userRole }: Props) {
       </div>
 
       <div className="space-y-4">
-        {filteredApplications.map((app) => (
-          <Card key={app.id} className="p-6">
+        {filteredApplications.map((app, index) => {
+          const propertyImage = app.property.images[0] || FALLBACK_PROPERTY_IMAGE;
+          const prioritizeImage = index < 2;
+          return (
+            <Card key={app.id} className="p-6">
             <div className="flex justify-between">
               <div className="flex space-x-4">
                 <div className="relative w-24 h-24">
                   <Image
-                    src={app.property.images[0] || FALLBACK_PROPERTY_IMAGE}
+                    src={propertyImage}
                     alt={app.property.title}
                     fill
+                    sizes="96px"
                     className="object-cover rounded-lg"
+                    priority={prioritizeImage}
                   />
                 </div>
                 <div>
@@ -259,8 +264,9 @@ export default function ApplicationsClient({ applications, userRole }: Props) {
                 </div>
               </div>
             )}
-          </Card>
-        ))}
+            </Card>
+          );
+        })}
 
         {filteredApplications.length === 0 && (
           <div className="text-center py-8">
