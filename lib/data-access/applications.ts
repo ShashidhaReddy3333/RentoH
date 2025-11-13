@@ -1,5 +1,10 @@
-import { PROPERTY_COLUMNS, type SupabasePropertyRow, mapPropertyFromSupabaseRow } from "@/lib/data-access/properties";
+import {
+  PROPERTY_COLUMNS,
+  type SupabasePropertyRow,
+  mapPropertyFromSupabaseRow
+} from "@/lib/data-access/properties";
 import { getSupabaseClientWithUser } from "@/lib/supabase/auth";
+import { normalizeApplicationStatus } from "@/lib/application-status";
 import type { ApplicationStatus, ApplicationSummary, UserRole } from "@/lib/types";
 
 type SupabaseApplicationRow = {
@@ -9,6 +14,8 @@ type SupabaseApplicationRow = {
   landlord_id: string;
   status: ApplicationStatus | null;
   submitted_at: string | null;
+  reviewed_at?: string | null;
+  decision_at?: string | null;
   property: SupabasePropertyRow | null;
   applicant: {
     full_name: string | null;
@@ -16,22 +23,37 @@ type SupabaseApplicationRow = {
   } | null;
 };
 
-export async function listApplicationsForTenant(limit = 5): Promise<ApplicationSummary[]> {
-  return listApplications("tenant", limit);
+type ListApplicationOptions = {
+  statuses?: ApplicationStatus[];
+};
+
+const DEFAULT_ACTIVE_APPLICATION_STATUSES: ApplicationStatus[] = ["submitted", "reviewing"];
+
+export async function listApplicationsForTenant(
+  limit = 5,
+  options: ListApplicationOptions = {}
+): Promise<ApplicationSummary[]> {
+  return listApplications("tenant", limit, options);
 }
 
-export async function listApplicationsForLandlord(limit = 5): Promise<ApplicationSummary[]> {
-  return listApplications("landlord", limit);
+export async function listApplicationsForLandlord(
+  limit = 5,
+  options: ListApplicationOptions = {}
+): Promise<ApplicationSummary[]> {
+  return listApplications("landlord", limit, options);
 }
 
-async function listApplications(role: Exclude<UserRole, "guest">, limit: number): Promise<ApplicationSummary[]> {
+async function listApplications(
+  role: Exclude<UserRole, "guest">,
+  limit: number,
+  { statuses = DEFAULT_ACTIVE_APPLICATION_STATUSES }: ListApplicationOptions
+): Promise<ApplicationSummary[]> {
   const { supabase, user } = await getSupabaseClientWithUser();
   if (!supabase || !user) {
     return [];
   }
 
-  const column = role === "tenant" ? "tenant_id" : "landlord_id";
-  const { data, error } = await supabase
+  const query = supabase
     .from("applications")
     .select(
       `
@@ -41,6 +63,8 @@ async function listApplications(role: Exclude<UserRole, "guest">, limit: number)
         landlord_id,
         status,
         submitted_at,
+        reviewed_at,
+        decision_at,
         property:properties (
           ${PROPERTY_COLUMNS}
         ),
@@ -50,9 +74,21 @@ async function listApplications(role: Exclude<UserRole, "guest">, limit: number)
         )
       `
     )
-    .eq(column, user.id)
     .order("submitted_at", { ascending: false })
     .limit(limit);
+
+  if (role === "tenant") {
+    query.eq("tenant_id", user.id);
+  } else {
+    query.eq("properties.landlord_id", user.id);
+  }
+
+  if (statuses?.length) {
+    const expandedStatuses = expandStatusesForQuery(statuses);
+    query.in("status", expandedStatuses);
+  }
+
+  const { data, error } = await query;
 
   if (error || !data) {
     console.error("[applications] Failed to load applications", error);
@@ -64,6 +100,8 @@ async function listApplications(role: Exclude<UserRole, "guest">, limit: number)
 
 function mapApplicationFromSupabase(row: SupabaseApplicationRow): ApplicationSummary {
   const property = row.property ? mapPropertyFromSupabaseRow(row.property) : null;
+  const normalizedStatus = normalizeApplicationStatus(row.status);
+  const summaryStatus = normalizedStatus as ApplicationStatus;
   return {
     id: row.id,
     propertyId: row.property_id,
@@ -73,8 +111,20 @@ function mapApplicationFromSupabase(row: SupabaseApplicationRow): ApplicationSum
       row.applicant?.email ??
       (row.tenant_id ? `Applicant ${row.tenant_id.slice(0, 4)}` : "Applicant"),
     propertyTitle: property?.title ?? "Property",
-    status: row.status ?? "submitted",
+    status: summaryStatus,
     submittedAt: row.submitted_at ?? new Date().toISOString()
   };
 }
 
+function expandStatusesForQuery(statuses: ApplicationStatus[]): ApplicationStatus[] {
+  const expanded = new Set<ApplicationStatus>();
+  statuses.forEach((status) => {
+    if (status === "accepted") {
+      expanded.add("accepted");
+      expanded.add("approved");
+    } else {
+      expanded.add(status);
+    }
+  });
+  return Array.from(expanded);
+}

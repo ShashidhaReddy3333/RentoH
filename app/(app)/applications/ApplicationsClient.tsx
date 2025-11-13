@@ -119,27 +119,36 @@ export default function ApplicationsClient({ applications, userRole }: Props) {
     return <div className="text-center py-8"><p className="text-red-500">Unable to load applications</p></div>;
   }
 
-  const updateApplicationStatus = async (id: string, status: string, _note: string) => {
-    const res = await fetch(`/api/applications/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status })
-    });
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      const msg = body?.error || body?.message || 'Failed to update application';
-      showToast(msg);
-      return;
+  const updateApplicationStatus = async (id: string, status: string, note: string) => {
+    try {
+      const res = await fetch(`/api/applications/${id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status, note })
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        const msg = body?.error || body?.message || 'Failed to update application';
+        showToast(msg);
+        return;
+      }
+      const data = await res.json().catch(() => null);
+      setApps((prev) =>
+        prev.map((a) => (a.id === id ? { ...a, status: data?.status ?? status } : a))
+      );
+      const readable = (data?.status ?? status).replace(/^\w/, (c: string) => c.toUpperCase());
+      showToast(`Application ${readable}`, { success: true });
+    } catch (error) {
+      console.error('[applications] Failed to update status', error);
+      showToast('Unable to update application right now.');
     }
-    setApps((prev) => prev.map((a) => a.id === id ? { ...a, status } : a));
-    showToast(`Application ${status}`, { success: true });
   };
 
   const statusColors: Record<string, string> = {
     submitted: 'bg-blue-100 text-blue-800',
     reviewing: 'bg-yellow-100 text-yellow-800',
     interview: 'bg-purple-100 text-purple-800',
-    approved: 'bg-green-100 text-green-800',
+    accepted: 'bg-green-100 text-green-800',
     rejected: 'bg-red-100 text-red-800',
   };
 
@@ -197,12 +206,12 @@ export default function ApplicationsClient({ applications, userRole }: Props) {
 
               {userRole === 'landlord' && (
                 <div className="space-x-2">
-                  {app.status !== 'approved' && (
+                  {app.status !== 'accepted' && (
                     <Button
                       variant="primary"
-                      onClick={() => updateApplicationStatus(app.id, 'approved', 'Application approved')}
+                      onClick={() => updateApplicationStatus(app.id, 'accepted', 'Application accepted')}
                     >
-                      Approve
+                      Accept
                     </Button>
                   )}
                   {app.status !== 'rejected' && (

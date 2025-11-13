@@ -130,6 +130,7 @@ export type ApplicationStatus =
   | "submitted"
   | "reviewing"
   | "interview"
+  | "accepted"
   | "approved"
   | "rejected";
 

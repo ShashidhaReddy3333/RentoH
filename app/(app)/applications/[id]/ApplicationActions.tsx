@@ -37,7 +37,7 @@ export default function ApplicationActions({ applicationId, currentStatus }: App
     setBusyAction(newStatus);
     startTransition(async () => {
       try {
-        const res = await fetch(`/api/applications/${applicationId}`, {
+        const res = await fetch(`/api/applications/${applicationId}/status`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ status: newStatus })
@@ -47,7 +47,9 @@ export default function ApplicationActions({ applicationId, currentStatus }: App
           const msg = body?.error || body?.message || 'Failed to update application';
           showToast(msg);
         } else {
-          showToast(`Application ${newStatus}`, { success: true });
+          const data = await res.json().catch(() => null);
+          const readable = (data?.status ?? newStatus).replace(/^\w/, (c: string) => c.toUpperCase());
+          showToast(`Application ${readable}`, { success: true });
           router.refresh();
         }
       } catch (error) {
@@ -64,14 +66,14 @@ export default function ApplicationActions({ applicationId, currentStatus }: App
 
     if (currentStatus === 'submitted') {
       actions.push({ status: 'reviewing', label: 'Mark as Reviewing', icon: EyeIcon, variant: 'ghost' });
-      actions.push({ status: 'approved', label: 'Approve', icon: CheckCircleIcon, variant: 'primary' });
+      actions.push({ status: 'accepted', label: 'Accept', icon: CheckCircleIcon, variant: 'primary' });
       actions.push({ status: 'rejected', label: 'Reject', icon: XCircleIcon, variant: 'danger' });
     } else if (currentStatus === 'reviewing') {
       actions.push({ status: 'interview', label: 'Schedule Interview', icon: EyeIcon, variant: 'secondary' });
-      actions.push({ status: 'approved', label: 'Approve', icon: CheckCircleIcon, variant: 'primary' });
+      actions.push({ status: 'accepted', label: 'Accept', icon: CheckCircleIcon, variant: 'primary' });
       actions.push({ status: 'rejected', label: 'Reject', icon: XCircleIcon, variant: 'danger' });
     } else if (currentStatus === 'interview') {
-      actions.push({ status: 'approved', label: 'Approve', icon: CheckCircleIcon, variant: 'primary' });
+      actions.push({ status: 'accepted', label: 'Accept', icon: CheckCircleIcon, variant: 'primary' });
       actions.push({ status: 'rejected', label: 'Reject', icon: XCircleIcon, variant: 'danger' });
     }
 

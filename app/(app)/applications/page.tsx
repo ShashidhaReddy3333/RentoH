@@ -1,6 +1,7 @@
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { default as ApplicationsClient } from '@/app/(app)/applications/ApplicationsClient';
+import { normalizeApplicationStatus } from '@/lib/application-status';
 
 export default async function ApplicationsPage() {
   const supabase = createSupabaseServerClient();
@@ -100,14 +101,16 @@ export default async function ApplicationsPage() {
     const images = propertyRecord?.images?.filter((image): image is string => typeof image === 'string') ?? [];
     const timelineSource = Array.isArray(application.timeline) ? application.timeline : [];
     const timeline = timelineSource.map((entry) => ({
-      status: entry?.status ?? "updated",
+      status: entry?.status ? normalizeApplicationStatus(entry.status) : "updated",
       timestamp: entry?.timestamp ?? new Date().toISOString(),
       note: entry?.note ?? ""
     }));
 
+    const normalizedStatus = normalizeApplicationStatus(application.status ?? 'submitted');
+
     return {
       id: application.id,
-      status: application.status ?? "submitted",
+      status: normalizedStatus,
       submitted_at: application.submitted_at ?? application.created_at ?? new Date().toISOString(),
       message: application.message ?? "",
       monthly_income: application.monthly_income ?? 0,

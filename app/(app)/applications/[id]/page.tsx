@@ -7,6 +7,7 @@ import Image from 'next/image';
 
 import { Card } from '@/components/ui/card';
 import ApplicationActions from './ApplicationActions';
+import { normalizeApplicationStatus } from '@/lib/application-status';
 
 export default async function ApplicationDetailPage({ params }: { params: { id: string } }) {
   const supabase = createSupabaseServerClient();
@@ -83,7 +84,7 @@ export default async function ApplicationDetailPage({ params }: { params: { id: 
     submitted: 'bg-blue-100 text-blue-800',
     reviewing: 'bg-yellow-100 text-yellow-800',
     interview: 'bg-purple-100 text-purple-800',
-    approved: 'bg-green-100 text-green-800',
+    accepted: 'bg-green-100 text-green-800',
     rejected: 'bg-red-100 text-red-800',
   };
 
@@ -110,8 +111,12 @@ export default async function ApplicationDetailPage({ params }: { params: { id: 
                 Submitted {formatDistance(new Date(application.submitted_at || application.created_at), new Date(), { addSuffix: true })}
               </p>
             </div>
-            <span className={`px-3 py-1 rounded-full text-sm font-semibold ${statusColors[application.status || 'submitted']}`}>
-              {(application.status || 'submitted').charAt(0).toUpperCase() + (application.status || 'submitted').slice(1)}
+            <span
+              className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                statusColors[getStatusKey(application.status)] ?? statusColors.submitted
+              }`}
+            >
+              {formatStatusLabel(application.status)}
             </span>
           </div>
 
@@ -231,14 +236,12 @@ export default async function ApplicationDetailPage({ params }: { params: { id: 
               <div className="space-y-3">
                 {application.timeline.map((event: { status?: string; timestamp?: string; note?: string }, index: number) => (
                   <div key={index} className="flex items-start gap-3">
-                    <div className={`w-2 h-2 rounded-full mt-2 ${
-                      event.status === 'approved' ? 'bg-green-500' :
-                      event.status === 'rejected' ? 'bg-red-500' :
-                      'bg-blue-500'
-                    }`} />
+                    <div
+                      className={`w-2 h-2 rounded-full mt-2 ${getTimelineDotColor(event.status)}`}
+                    />
                     <div className="flex-1">
                       <p className="text-sm font-medium text-brand-dark">
-                        {event.status ? event.status.charAt(0).toUpperCase() + event.status.slice(1) : 'Updated'}
+                        {event.status ? formatStatusLabel(event.status) : 'Updated'}
                       </p>
                       {event.timestamp && (
                         <p className="text-xs text-text-muted">
@@ -269,4 +272,24 @@ export default async function ApplicationDetailPage({ params }: { params: { id: 
       </div>
     </div>
   );
+}
+
+function getStatusKey(status?: string | null) {
+  return normalizeApplicationStatus(status ?? 'submitted');
+}
+
+function formatStatusLabel(status?: string | null) {
+  const normalized = getStatusKey(status);
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+}
+
+function getTimelineDotColor(status?: string | null) {
+  const normalized = getStatusKey(status);
+  if (normalized === 'accepted') {
+    return 'bg-green-500';
+  }
+  if (normalized === 'rejected') {
+    return 'bg-red-500';
+  }
+  return 'bg-blue-500';
 }

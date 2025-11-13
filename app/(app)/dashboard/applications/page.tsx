@@ -41,8 +41,8 @@ export default async function ApplicationsPage() {
 
   const applications =
     user.role === "landlord"
-      ? await listApplicationsForLandlord(25)
-      : await listApplicationsForTenant(25);
+      ? await listApplicationsForLandlord(25, { statuses: [] })
+      : await listApplicationsForTenant(25, { statuses: [] });
 
   if (applications.length === 0) {
     return (
