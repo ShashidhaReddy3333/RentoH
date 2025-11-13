@@ -113,7 +113,7 @@ export default async function ApplicationDetailPage({ params }: { params: { id: 
             </div>
             <span
               className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                statusColors[getStatusKey(application.status)] ?? statusColors.submitted
+                statusColors[getStatusKey(application.status)] ?? statusColors["submitted"]
               }`}
             >
               {formatStatusLabel(application.status)}

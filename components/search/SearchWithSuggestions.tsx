@@ -82,32 +82,41 @@ export function SearchWithSuggestions() {
   return (
     <div ref={containerRef} className="relative w-full">
       <form onSubmit={handleSubmit} className="relative">
-        <div className="relative flex items-center">
-          <MagnifyingGlassIcon
-            className="pointer-events-none absolute left-4 h-5 w-5 text-text-muted"
-            aria-hidden="true"
-          />
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onFocus={() => setShowSuggestions(true)}
-            placeholder="Search by city or neighborhood..."
-            className="w-full rounded-2xl border border-brand-outline/60 bg-white py-3.5 pl-12 pr-12 text-sm text-textc shadow-sm transition placeholder:text-text-muted focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/40 focus:ring-offset-2"
-            aria-label="Search for properties by city or neighborhood"
-            aria-controls={showSuggestions ? "search-suggestions" : undefined}
-            aria-autocomplete="list"
-          />
-          {query && (
-            <button
-              type="button"
-              onClick={() => setQuery("")}
-              className="absolute right-4 inline-flex h-6 w-6 items-center justify-center rounded-full text-text-muted transition hover:bg-surface-muted hover:text-brand-dark"
-              aria-label="Clear search"
-            >
-              <XMarkIcon className="h-4 w-4" aria-hidden="true" />
-            </button>
-          )}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative flex-1">
+            <MagnifyingGlassIcon
+              className="pointer-events-none absolute left-4 h-5 w-5 text-text-muted"
+              aria-hidden="true"
+            />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onFocus={() => setShowSuggestions(true)}
+              placeholder="Search by city or neighborhood..."
+              className="w-full rounded-2xl border border-brand-outline/60 bg-white py-3.5 pl-12 pr-14 text-sm text-textc shadow-sm transition placeholder:text-text-muted focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/40 focus:ring-offset-2"
+              aria-label="Search for properties by city or neighborhood"
+              aria-controls={showSuggestions ? "search-suggestions" : undefined}
+              aria-autocomplete="list"
+            />
+            {query && (
+              <button
+                type="button"
+                onClick={() => setQuery("")}
+                className="absolute right-14 inline-flex h-6 w-6 items-center justify-center rounded-full text-text-muted transition hover:bg-surface-muted hover:text-brand-dark"
+                aria-label="Clear search"
+              >
+                <XMarkIcon className="h-4 w-4" aria-hidden="true" />
+              </button>
+            )}
+          </div>
+          <button
+            type="submit"
+            data-testid="search-submit"
+            className="w-full rounded-2xl bg-brand-primary px-4 py-3 text-center text-sm font-semibold text-white shadow-sm transition hover:bg-brand-primaryStrong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/40 focus-visible:ring-offset-2 sm:w-auto"
+          >
+            Search
+          </button>
         </div>
       </form>
 

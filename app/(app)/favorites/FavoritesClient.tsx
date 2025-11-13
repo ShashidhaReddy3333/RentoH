@@ -1,21 +1,46 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 
 import EmptyState from "@/components/EmptyState";
 import PropertyCard from "@/components/PropertyCard";
 import { buttonStyles } from "@/components/ui/button";
-import { useFavorites } from "@/lib/hooks/useFavorites";
+import type { Property } from "@/lib/types";
 
-export default function FavoritesClient() {
-  const { favorites, loading, error, refresh } = useFavorites();
+type FavoritesClientProps = {
+  initialFavorites: Property[];
+};
 
-  const handleToggleFavorite = useCallback((isSaved: boolean) => {
-    // Refresh the favorites list when a favorite is toggled
-    if (!isSaved) {
-      // If unfavorited, refresh to remove from list
-      setTimeout(() => refresh(), 500);
+export default function FavoritesClient({ initialFavorites }: FavoritesClientProps) {
+  const [favorites, setFavorites] = useState<Property[]>(initialFavorites);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/favorites/list");
+      if (!res.ok) {
+        const payload = await res.json().catch(() => ({}));
+        throw new Error(payload?.error || "Failed to load favorites");
+      }
+      const data = await res.json();
+      setFavorites(data.favorites || []);
+    } catch (err) {
+      console.error("[favorites] Refresh failed", err);
+      setError(err instanceof Error ? err.message : "Failed to load favorites");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const handleToggleFavorite = useCallback((isSaved: boolean, propertyId?: string) => {
+    if (!isSaved && propertyId) {
+      setFavorites((prev) => prev.filter((property) => property.id !== propertyId));
+    } else {
+      void refresh();
     }
   }, [refresh]);
 
@@ -44,7 +69,7 @@ export default function FavoritesClient() {
         description={error}
         action={
           <button
-            onClick={refresh}
+            onClick={() => refresh()}
             className={buttonStyles({ variant: "primary", size: "md" })}
           >
             Try again
@@ -82,7 +107,7 @@ export default function FavoritesClient() {
           <div key={property.id} className="h-full">
             <PropertyCard 
               property={property} 
-              onToggleFavorite={handleToggleFavorite}
+              onToggleFavorite={(isSaved) => handleToggleFavorite(isSaved, property.id)}
             />
           </div>
         ))}

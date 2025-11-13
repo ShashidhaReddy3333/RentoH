@@ -20,13 +20,98 @@ BEGIN
     RAISE NOTICE '✓ Updated status check constraint for tours table';
 END $$;
 
+-- Ensure timezone column exists
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'tours'
+          AND column_name = 'timezone'
+    ) THEN
+        ALTER TABLE public.tours
+        ADD COLUMN timezone text NOT NULL DEFAULT 'UTC';
+        RAISE NOTICE '✓ Added timezone column to tours table';
+    ELSE
+        RAISE NOTICE '→ timezone column already exists';
+    END IF;
+END $$;
+
+-- Ensure cancelled_reason column exists
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'tours'
+          AND column_name = 'cancelled_reason'
+    ) THEN
+        ALTER TABLE public.tours
+        ADD COLUMN cancelled_reason text;
+        RAISE NOTICE '✓ Added cancelled_reason column to tours table';
+    ELSE
+        RAISE NOTICE '→ cancelled_reason column already exists';
+    END IF;
+END $$;
+
+-- Ensure cancelled_by column exists
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'tours'
+          AND column_name = 'cancelled_by'
+    ) THEN
+        ALTER TABLE public.tours
+        ADD COLUMN cancelled_by uuid REFERENCES public.profiles(id);
+        RAISE NOTICE '✓ Added cancelled_by column to tours table';
+    ELSE
+        RAISE NOTICE '→ cancelled_by column already exists';
+    END IF;
+END $$;
+
+-- Ensure completed_at column exists
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'tours'
+          AND column_name = 'completed_at'
+    ) THEN
+        ALTER TABLE public.tours
+        ADD COLUMN completed_at timestamptz;
+        RAISE NOTICE '✓ Added completed_at column to tours table';
+    ELSE
+        RAISE NOTICE '→ completed_at column already exists';
+    END IF;
+END $$;
+
+-- Ensure updated_at column exists
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'tours'
+          AND column_name = 'updated_at'
+    ) THEN
+        ALTER TABLE public.tours
+        ADD COLUMN updated_at timestamptz NOT NULL DEFAULT now();
+        RAISE NOTICE '✓ Added updated_at column to tours table';
+    ELSE
+        RAISE NOTICE '→ updated_at column already exists';
+    END IF;
+END $$;
+
 -- Verify the tours table structure
 DO $$
 DECLARE
     missing_columns TEXT[] := ARRAY[]::TEXT[];
     expected_columns TEXT[] := ARRAY[
         'id', 'property_id', 'tenant_id', 'landlord_id', 'scheduled_at', 
-        'status', 'notes', 'created_at'
+        'status', 'timezone', 'notes', 'cancelled_reason', 'cancelled_by', 'completed_at', 'created_at', 'updated_at'
     ];
     col TEXT;
 BEGIN

@@ -7,7 +7,7 @@ import type { TourStatus } from "@/lib/types";
 
 const TourUpdateSchema = z.object({
   tourId: z.string().uuid("Invalid tour ID"),
-  status: z.enum(["confirmed", "completed", "cancelled"], {
+  status: z.enum(["confirmed", "completed", "cancelled", "rescheduled"], {
     errorMap: () => ({ message: "Invalid status" })
   }),
   scheduledAt: z.string().datetime("Invalid date format").optional(),
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
     // Fetch the tour and verify permissions
     const { data: tour, error: fetchError } = await supabase
       .from("tours")
-      .select("landlord_id, tenant_id, status, scheduled_at")
+      .select("landlord_id, tenant_id, property_id, status, scheduled_at, timezone")
       .eq("id", payload.tourId)
       .single();
 
@@ -83,8 +83,8 @@ export async function POST(request: NextRequest) {
 
     const currentStatus = (tour.status ?? "requested") as TourStatus;
     const landlordTransitions: Record<TourStatus, TourStatus[]> = {
-      requested: ["confirmed", "cancelled"],
-      confirmed: ["completed", "cancelled"],
+      requested: ["confirmed", "cancelled", "rescheduled"],
+      confirmed: ["completed", "cancelled", "rescheduled"],
       rescheduled: ["confirmed", "cancelled"],
       completed: [],
       cancelled: []
@@ -107,6 +107,40 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (payload.status === "rescheduled" && !payload.scheduledAt) {
+      return NextResponse.json(
+        { error: "Provide a new time when rescheduling a tour." },
+        { status: 400 }
+      );
+    }
+
+    if (payload.scheduledAt) {
+      const newDate = new Date(payload.scheduledAt);
+      if (newDate <= new Date()) {
+        return NextResponse.json(
+          { error: "Tour date must be in the future" },
+          { status: 400 }
+        );
+      }
+
+      const { data: conflicts, error: conflictError } = await supabase
+        .from("tours")
+        .select("id")
+        .eq("property_id", tour.property_id)
+        .eq("scheduled_at", payload.scheduledAt)
+        .neq("id", payload.tourId)
+        .in("status", ["requested", "confirmed", "rescheduled"]);
+
+      if (conflictError) {
+        console.error("[tours] Conflict check failed", conflictError);
+      } else if (conflicts && conflicts.length > 0) {
+        return NextResponse.json(
+          { error: "This time slot is already booked. Please choose another time." },
+          { status: 409 }
+        );
+      }
+    }
+
     // Build update payload
     const updateData: Record<string, unknown> = {
       status: payload.status,
@@ -117,27 +151,25 @@ export async function POST(request: NextRequest) {
     }
 
     if (payload.scheduledAt) {
-      // Validate that the new date is in the future
-      const newDate = new Date(payload.scheduledAt);
-      if (newDate <= new Date()) {
-        return NextResponse.json(
-          { error: "Tour date must be in the future" },
-          { status: 400 }
-        );
-      }
-      updateData['scheduled_at'] = payload.scheduledAt;
+      updateData["scheduled_at"] = payload.scheduledAt;
     }
 
     if (payload.timezone) {
-      updateData['timezone'] = payload.timezone;
+      updateData["timezone"] = payload.timezone;
+    } else if (payload.scheduledAt && tour.timezone) {
+      updateData["timezone"] = tour.timezone;
     }
 
     if (payload.notes !== undefined) {
-      updateData['notes'] = payload.notes;
+      updateData["notes"] = payload.notes;
     }
 
     if (payload.cancelledReason) {
-      updateData['cancelled_reason'] = payload.cancelledReason;
+      updateData["cancelled_reason"] = payload.cancelledReason;
+    }
+
+    if (payload.status === "cancelled") {
+      updateData["cancelled_by"] = user.id;
     }
 
     // Update the tour
@@ -174,6 +206,7 @@ export async function POST(request: NextRequest) {
 
     revalidatePath("/tours");
     revalidatePath("/dashboard");
+    revalidatePath("/dashboard/tours");
 
     return NextResponse.json({ success: true });
   } catch (error) {

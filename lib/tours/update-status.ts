@@ -7,6 +7,8 @@ export type TourStatusUpdatePayload = {
   status: TourStatusActionValue;
   notes?: string;
   cancelledReason?: string;
+  scheduledAt?: string;
+  timezone?: string;
 };
 
 function extractErrorMessage(input: unknown): string | undefined {

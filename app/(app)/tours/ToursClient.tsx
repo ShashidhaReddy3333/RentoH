@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { formatInTimeZone } from 'date-fns-tz';
 import {
   ArrowDownTrayIcon,
   CalendarIcon,
@@ -75,6 +74,12 @@ const DIALOG_COPY: Record<
     title: 'Confirm tour',
     body: 'Confirm this date and notify the renter instantly?',
     cta: 'Confirm tour',
+    intent: 'primary'
+  },
+  rescheduled: {
+    title: 'Confirm new time',
+    body: 'Confirm the updated time and notify the other party?',
+    cta: 'Confirm new slot',
     intent: 'primary'
   },
   completed: {
@@ -286,7 +291,7 @@ export default function ToursClient({ tours, userRole }: Props) {
                   </div>
                   <p className="text-sm text-text-muted">{tour.property.address}</p>
                   <p className="text-sm font-medium text-brand-dark">
-                    {formatInTimeZone(new Date(tour.scheduled_at), localTimezone, 'PPP • p')}
+                    {formatTourDate(tour.scheduled_at, localTimezone)}
                   </p>
                   {tour.notes ? (
                     <p className="text-sm text-text-muted">
@@ -447,4 +452,12 @@ function TourActions({
       ) : null}
     </div>
   );
+}
+
+function formatTourDate(value: string, timeZone: string) {
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone
+  }).format(new Date(value));
 }

@@ -32,6 +32,7 @@ export async function requestTourAction(
     const date = String(formData.get("date") ?? "").trim();
     const time = String(formData.get("time") ?? "").trim();
     const notesRaw = formData.get("notes");
+    const timezone = String(formData.get("timezone") ?? "").trim() || "UTC";
     const notes = typeof notesRaw === "string" ? notesRaw.slice(0, 500) : null;
 
     console.log("[tours] Request received:", { propertyId, landlordId, date, time, hasNotes: !!notes });
@@ -100,6 +101,7 @@ export async function requestTourAction(
         scheduled_at: scheduledAt,
         status: "requested"
       };
+      payload["timezone"] = timezone;
       if (withNotes && notes != null) {
         payload["notes"] = notes;
       }

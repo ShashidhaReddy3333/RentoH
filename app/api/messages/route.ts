@@ -17,6 +17,11 @@ const MessagePayload = z.object({
   body: z.string().min(1, "Message body cannot be empty").max(2000, "Message body too long")
 });
 
+const ThreadPayload = z.object({
+  propertyId: z.string().uuid("Invalid property ID"),
+  landlordId: z.string().uuid("Invalid landlord ID")
+});
+
 export async function POST(request: NextRequest) {
   try {
     // Parse request body first for validation
@@ -58,8 +63,38 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const supabase = createSupabaseServerClient();
+    if (!supabase) {
+      return NextResponse.json(
+        { error: "Service unavailable", code: "SERVICE_UNAVAILABLE" },
+        { status: 503 }
+      );
+    }
+
+    const {
+      data: { session }
+    } = await supabase.auth.getSession();
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: "Authentication required", code: "UNAUTHORIZED" },
+        { status: 401 }
+      );
+    }
+
+    const rawPayload = requestBody as Record<string, unknown>;
+    const hasThreadId = typeof rawPayload?.["threadId"] === "string";
+
+    if (!hasThreadId) {
+      return await createConversation({
+        payload: rawPayload,
+        supabase,
+        userId: session.user.id,
+        request
+      });
+    }
+
     // Validate payload schema with Zod
-    const parseResult = MessagePayload.safeParse(requestBody);
+    const parseResult = MessagePayload.safeParse(rawPayload);
     if (!parseResult.success) {
       return NextResponse.json(
         { 
@@ -71,23 +106,6 @@ export async function POST(request: NextRequest) {
       );
     }
     const payload = parseResult.data;
-
-    // Create Supabase server client and get session
-    const supabase = createSupabaseServerClient();
-    if (!supabase) {
-      return NextResponse.json(
-        { error: "Service unavailable", code: "SERVICE_UNAVAILABLE" },
-        { status: 503 }
-      );
-    }
-
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user) {
-      return NextResponse.json(
-        { error: "Authentication required", code: "UNAUTHORIZED" },
-        { status: 401 }
-      );
-    }
 
     const userId = session.user.id;
 
@@ -270,4 +288,94 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     return handleAuthError(error);
   }
+}
+
+type ConversationArgs = {
+  payload: Record<string, unknown>;
+  supabase: NonNullable<ReturnType<typeof createSupabaseServerClient>>;
+  userId: string;
+  request: NextRequest;
+};
+
+async function createConversation({ payload, supabase, userId, request }: ConversationArgs) {
+  const parseResult = ThreadPayload.safeParse(payload);
+  if (!parseResult.success) {
+    return NextResponse.json(
+      {
+        error: "Invalid request payload",
+        code: "VALIDATION_ERROR",
+        details: parseResult.error.flatten().fieldErrors
+      },
+      { status: 400 }
+    );
+  }
+
+  const { propertyId, landlordId } = parseResult.data;
+
+  if (landlordId === userId) {
+    return NextResponse.json(
+      { error: "You already manage this property." },
+      { status: 400 }
+    );
+  }
+
+  const { data: property, error: propertyError } = await supabase
+    .from("properties")
+    .select("id, landlord_id, title")
+    .eq("id", propertyId)
+    .single();
+
+  if (propertyError || !property) {
+    return NextResponse.json({ error: "Property not found" }, { status: 404 });
+  }
+
+  if (property.landlord_id !== landlordId) {
+    return NextResponse.json({ error: "Landlord mismatch for this property" }, { status: 400 });
+  }
+
+  const { data: existing } = await supabase
+    .from("message_threads")
+    .select("id")
+    .eq("property_id", propertyId)
+    .eq("tenant_id", userId)
+    .eq("landlord_id", landlordId)
+    .maybeSingle();
+
+  if (existing?.id) {
+    return NextResponse.json({ threadId: existing.id, created: false }, { status: 200 });
+  }
+
+  const subject = property.title ? `Inquiry about ${property.title}` : "Listing inquiry";
+  const { data: thread, error: threadError } = await supabase
+    .from("message_threads")
+    .insert({
+      property_id: propertyId,
+      tenant_id: userId,
+      landlord_id: landlordId,
+      subject,
+      last_message: "Conversation started"
+    })
+    .select("id")
+    .single();
+
+  if (threadError || !thread) {
+    console.error("[messages] Failed to create thread", threadError);
+    return NextResponse.json(
+      { error: "Unable to start conversation at the moment." },
+      { status: 500 }
+    );
+  }
+
+  try {
+    const origin = process.env["NEXT_PUBLIC_SITE_URL"] || request.nextUrl.origin;
+    await fetch(`${origin}/api/digest`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: landlordId, reason: "message_thread_created" })
+    });
+  } catch (error) {
+    console.error("[messages] Failed to notify landlord", error);
+  }
+
+  return NextResponse.json({ threadId: thread.id, created: true }, { status: 201 });
 }

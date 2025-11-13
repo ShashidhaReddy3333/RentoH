@@ -74,6 +74,8 @@ async function TenantDashboard() {
 
   const unreadMessages = threads.reduce((total, thread) => total + thread.unreadCount, 0);
   const primaryName = profile?.name?.split(" ")[0] ?? "there";
+  const tourCounts = summarizeTours(tours);
+  const tourChange = formatTourSummary(tourCounts);
 
   const stats = [
     {
@@ -91,9 +93,9 @@ async function TenantDashboard() {
       href: "/applications"
     },
     {
-      title: "Tours booked",
-      value: tours.length,
-      change: tours[0] ? formatRelativeDate(tours[0].scheduledAt) : undefined,
+      title: "Tours requested",
+      value: tourCounts.requested + tourCounts.rescheduled,
+      change: tourChange,
       icon: <CalendarIcon className="h-6 w-6 text-brand-green" aria-hidden="true" />,
       href: "/tours"
     },
@@ -141,6 +143,8 @@ async function LandlordDashboard() {
 
   const unreadMessages = threads.reduce((total, thread) => total + thread.unreadCount, 0);
   const primaryName = profile?.name?.split(" ")[0] ?? "there";
+  const tourCounts = summarizeTours(tours);
+  const tourChange = formatTourSummary(tourCounts);
   const activeListings = ownedProperties.filter((property) => property.status !== "draft");
   const draftListings = ownedProperties.filter((property) => property.status === "draft");
 
@@ -161,8 +165,8 @@ async function LandlordDashboard() {
     },
     {
       title: "Upcoming tours",
-      value: tours.length,
-      change: tours[0] ? formatRelativeDate(tours[0].scheduledAt) : undefined,
+      value: tourCounts.confirmed,
+      change: tourChange,
       icon: <CalendarIcon className="h-6 w-6 text-brand-green" aria-hidden="true" />,
       href: "/tours"
     },
@@ -466,20 +470,31 @@ function formatDateTime(value: string) {
   }).format(date);
 }
 
-function formatRelativeDate(value: string) {
-  const date = new Date(value);
-  const now = new Date();
-  const diff = date.getTime() - now.getTime();
-  const days = Math.round(diff / (1000 * 60 * 60 * 24));
+type TourCounts = Record<Tour["status"], number> & {
+  requested: number;
+  confirmed: number;
+  rescheduled: number;
+  completed: number;
+  cancelled: number;
+};
 
-  if (Number.isNaN(days)) {
-    return undefined;
-  }
-
-  if (days === 0) return "Today";
-  if (days === 1) return "Tomorrow";
-  if (days > 1) return `In ${days} days`;
-  return `Past ${Math.abs(days)} days ago`;
+function summarizeTours(tours: Tour[]): TourCounts {
+  return tours.reduce<TourCounts>(
+    (acc, tour) => {
+      acc[tour.status] = (acc[tour.status] ?? 0) + 1;
+      return acc;
+    },
+    { requested: 0, confirmed: 0, rescheduled: 0, completed: 0, cancelled: 0 }
+  );
 }
 
-
+function formatTourSummary(counts: TourCounts) {
+  const parts: string[] = [];
+  if (counts.confirmed) {
+    parts.push(`${counts.confirmed} confirmed`);
+  }
+  if (counts.completed) {
+    parts.push(`${counts.completed} completed`);
+  }
+  return parts.length ? parts.join(" · ") : undefined;
+}

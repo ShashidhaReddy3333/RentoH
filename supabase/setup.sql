@@ -137,10 +137,15 @@ CREATE TABLE IF NOT EXISTS public.applications (
   property_id uuid NOT NULL REFERENCES public.properties(id) ON DELETE CASCADE,
   tenant_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   landlord_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
-  status text NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'submitted', 'reviewing', 'interview', 'approved', 'rejected')),
+  status text NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'submitted', 'reviewing', 'interview', 'accepted', 'approved', 'rejected')),
   submitted_at timestamptz,
+  reviewed_at timestamptz,
+  decision_at timestamptz,
   message text,
+  notes text,
   monthly_income integer,
+  timeline jsonb NOT NULL DEFAULT '[]'::jsonb,
+  updated_at timestamptz NOT NULL DEFAULT now(),
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
@@ -148,20 +153,44 @@ CREATE INDEX IF NOT EXISTS idx_applications_property ON public.applications(prop
 CREATE INDEX IF NOT EXISTS idx_applications_tenant ON public.applications(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_applications_landlord ON public.applications(landlord_id);
 
+ALTER TABLE public.applications
+  ADD COLUMN IF NOT EXISTS reviewed_at timestamptz,
+  ADD COLUMN IF NOT EXISTS decision_at timestamptz,
+  ADD COLUMN IF NOT EXISTS notes text,
+  ADD COLUMN IF NOT EXISTS timeline jsonb DEFAULT '[]'::jsonb,
+  ADD COLUMN IF NOT EXISTS updated_at timestamptz DEFAULT now();
+
+UPDATE public.applications
+SET status = 'accepted'
+WHERE status = 'approved';
+
 CREATE TABLE IF NOT EXISTS public.tours (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   property_id uuid NOT NULL REFERENCES public.properties(id) ON DELETE CASCADE,
   tenant_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   landlord_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   scheduled_at timestamptz NOT NULL,
-  status text NOT NULL DEFAULT 'requested' CHECK (status IN ('requested', 'confirmed', 'completed', 'cancelled')),
+  status text NOT NULL DEFAULT 'requested' CHECK (status IN ('requested', 'confirmed', 'completed', 'cancelled', 'rescheduled')),
   notes text,
+  timezone text NOT NULL DEFAULT 'UTC',
+  cancelled_reason text,
+  cancelled_by uuid REFERENCES public.profiles(id),
+  completed_at timestamptz,
+  updated_at timestamptz NOT NULL DEFAULT now(),
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
 CREATE INDEX IF NOT EXISTS idx_tours_property ON public.tours(property_id);
 CREATE INDEX IF NOT EXISTS idx_tours_tenant ON public.tours(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_tours_landlord ON public.tours(landlord_id);
+CREATE INDEX IF NOT EXISTS idx_tours_schedule ON public.tours(property_id, scheduled_at);
+
+ALTER TABLE public.tours
+  ADD COLUMN IF NOT EXISTS timezone text DEFAULT 'UTC',
+  ADD COLUMN IF NOT EXISTS cancelled_reason text,
+  ADD COLUMN IF NOT EXISTS cancelled_by uuid REFERENCES public.profiles(id),
+  ADD COLUMN IF NOT EXISTS completed_at timestamptz,
+  ADD COLUMN IF NOT EXISTS updated_at timestamptz DEFAULT now();
 
 CREATE TABLE IF NOT EXISTS public.user_preferences (
   user_id uuid PRIMARY KEY REFERENCES public.profiles(id) ON DELETE CASCADE,
@@ -294,6 +323,8 @@ CREATE POLICY saved_write_del ON public.saved_properties
 DROP POLICY IF EXISTS apps_read_self ON public.applications;
 DROP POLICY IF EXISTS apps_read_landlord ON public.applications;
 DROP POLICY IF EXISTS apps_insert ON public.applications;
+DROP POLICY IF EXISTS apps_update ON public.applications;
+DROP POLICY IF EXISTS apps_delete_self ON public.applications;
 
 CREATE POLICY apps_read_self ON public.applications
   FOR SELECT USING (auth.uid() = tenant_id);
@@ -309,10 +340,29 @@ CREATE POLICY apps_read_landlord ON public.applications
 CREATE POLICY apps_insert ON public.applications
   FOR INSERT WITH CHECK (auth.uid() = tenant_id);
 
+CREATE POLICY apps_update ON public.applications
+  FOR UPDATE USING (
+    EXISTS (
+      SELECT 1 FROM public.properties p
+      WHERE p.id = property_id AND p.landlord_id = auth.uid()
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.properties p
+      WHERE p.id = property_id AND p.landlord_id = auth.uid()
+    )
+  );
+
+CREATE POLICY apps_delete_self ON public.applications
+  FOR DELETE USING (auth.uid() = tenant_id);
+
 -- Tours policies
 DROP POLICY IF EXISTS tours_read_self ON public.tours;
 DROP POLICY IF EXISTS tours_read_landlord ON public.tours;
 DROP POLICY IF EXISTS tours_insert ON public.tours;
+DROP POLICY IF EXISTS tours_update ON public.tours;
+DROP POLICY IF EXISTS tours_delete_self ON public.tours;
 
 CREATE POLICY tours_read_self ON public.tours
   FOR SELECT USING (auth.uid() = tenant_id);
@@ -327,6 +377,28 @@ CREATE POLICY tours_read_landlord ON public.tours
 
 CREATE POLICY tours_insert ON public.tours
   FOR INSERT WITH CHECK (auth.uid() = tenant_id);
+
+CREATE POLICY tours_update ON public.tours
+  FOR UPDATE USING (
+    auth.uid() = tenant_id OR EXISTS (
+      SELECT 1 FROM public.properties p
+      WHERE p.id = property_id AND p.landlord_id = auth.uid()
+    )
+  )
+  WITH CHECK (
+    auth.uid() = tenant_id OR EXISTS (
+      SELECT 1 FROM public.properties p
+      WHERE p.id = property_id AND p.landlord_id = auth.uid()
+    )
+  );
+
+CREATE POLICY tours_delete_self ON public.tours
+  FOR DELETE USING (
+    auth.uid() = tenant_id OR EXISTS (
+      SELECT 1 FROM public.properties p
+      WHERE p.id = property_id AND p.landlord_id = auth.uid()
+    )
+  );
 
 -- User preferences policies
 DROP POLICY IF EXISTS prefs_read ON public.user_preferences;
@@ -385,6 +457,90 @@ CREATE POLICY storage_listings_delete ON storage.objects
     bucket_id = 'listings'
     AND split_part(name, '/', 1) = auth.uid()::text
   );
+
+-- Rate limiting and booking enforcement
+CREATE OR REPLACE FUNCTION public.prevent_duplicate_applications()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM public.applications a
+    WHERE a.tenant_id = NEW.tenant_id
+      AND a.property_id = NEW.property_id
+  ) THEN
+    RAISE EXCEPTION 'duplicate_application' USING MESSAGE = 'Multiple applications are not allowed for this property.';
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS prevent_duplicate_applications_trg ON public.applications;
+CREATE TRIGGER prevent_duplicate_applications_trg
+  BEFORE INSERT ON public.applications
+  FOR EACH ROW EXECUTE FUNCTION public.prevent_duplicate_applications();
+
+CREATE OR REPLACE FUNCTION public.enforce_message_rate_limit()
+RETURNS TRIGGER AS $$
+DECLARE
+  recent_count integer;
+BEGIN
+  SELECT COUNT(*) INTO recent_count
+  FROM public.messages m
+  WHERE m.sender_id = NEW.sender_id
+    AND m.created_at >= now() - interval '60 seconds';
+
+  IF recent_count >= 3 THEN
+    RAISE EXCEPTION 'message_rate_limit' USING MESSAGE = 'Too many messages sent in a single minute.';
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS message_rate_limit_trg ON public.messages;
+CREATE TRIGGER message_rate_limit_trg
+  BEFORE INSERT ON public.messages
+  FOR EACH ROW EXECUTE FUNCTION public.enforce_message_rate_limit();
+
+CREATE OR REPLACE FUNCTION public.ensure_tour_slot_available()
+RETURNS TRIGGER AS $$
+DECLARE
+  conflict_count integer;
+  active_count integer;
+BEGIN
+  IF NEW.status IN ('cancelled', 'completed') THEN
+    RETURN NEW;
+  END IF;
+
+  SELECT COUNT(*) INTO conflict_count
+  FROM public.tours t
+  WHERE t.property_id = NEW.property_id
+    AND t.scheduled_at = NEW.scheduled_at
+    AND t.status IN ('requested', 'confirmed', 'rescheduled')
+    AND (TG_OP = 'INSERT' OR t.id <> NEW.id);
+
+  IF conflict_count > 0 THEN
+    RAISE EXCEPTION 'tour_slot_conflict' USING MESSAGE = 'Tour slot conflict: this time is already booked.';
+  END IF;
+
+  SELECT COUNT(*) INTO active_count
+  FROM public.tours t
+  WHERE t.tenant_id = NEW.tenant_id
+    AND t.status IN ('requested', 'confirmed', 'rescheduled')
+    AND t.scheduled_at >= now()
+    AND (TG_OP = 'INSERT' OR t.id <> NEW.id);
+
+  IF active_count >= 3 THEN
+    RAISE EXCEPTION 'tour_rate_limit' USING MESSAGE = 'Too many upcoming tours. Please wait before scheduling another.';
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS prevent_tour_double_booking_trg ON public.tours;
+CREATE TRIGGER prevent_tour_double_booking_trg
+  BEFORE INSERT OR UPDATE OF scheduled_at, status ON public.tours
+  FOR EACH ROW EXECUTE FUNCTION public.ensure_tour_slot_available();
 
 -- Trigger on auth.users for automatic profile creation
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;

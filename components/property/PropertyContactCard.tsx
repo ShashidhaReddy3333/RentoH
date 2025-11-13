@@ -2,15 +2,15 @@
 
 import Link from "next/link";
 import type { Route } from "next";
+import { useRouter } from "next/navigation";
 import { CalendarIcon, EnvelopeIcon, PhoneIcon } from "@heroicons/react/24/outline";
 import clsx from "clsx";
-import { useTransition, useState } from "react";
+import { useTransition, useState, useMemo } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 
 import { buttonStyles } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TimePicker } from "@/components/ui/TimePicker";
-import { createThreadForProperty } from "@/app/(app)/messages/create-thread-action";
 import { requestTourAction } from "@/app/(app)/tours/actions";
 import { initialTourRequestState, type TourRequestState } from "@/app/(app)/tours/types";
 
@@ -33,18 +33,30 @@ export function PropertyContactCard({
   currentUserId,
   hasExistingApplication = false
 }: PropertyContactCardProps) {
+  const router = useRouter();
   const [isMessagePending, startMessageTransition] = useTransition();
   const [isTourPending, startTourTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [showTourForm, setShowTourForm] = useState(false);
   const [tourFormValues, setTourFormValues] = useState({ date: "", time: "", notes: "" });
   const [tourState, setTourState] = useState<TourRequestState>(initialTourRequestState);
+  const viewerTimezone = useMemo(
+    () => Intl.DateTimeFormat().resolvedOptions().timeZone ?? "UTC",
+    []
+  );
   const applyTarget = propertySlug ?? propertyId;
   const isSelfLandlord = Boolean(landlordId && currentUserId && landlordId === currentUserId);
   const applyHref = `/property/${applyTarget}/apply` as Route;
   
   // Handle missing landlordId gracefully
   const hasLandlord = Boolean(landlordId);
+  const readCsrfToken = () => {
+    if (typeof document === "undefined") {
+      return undefined;
+    }
+    const value = document.cookie.match(/csrf-token=([^;]+)/)?.[1];
+    return value ? decodeURIComponent(value) : undefined;
+  };
 
   const handleMessageClick = () => {
     if (!isAuthenticated) {
@@ -58,13 +70,37 @@ export function PropertyContactCard({
       return;
     }
 
+    if (!landlordId) {
+      setError("Messaging is unavailable for this listing.");
+      return;
+    }
+
     setError(null);
     startMessageTransition(async () => {
-      const result = await createThreadForProperty(propertyId);
-      if (result?.error) {
-        setError(result.error);
+      try {
+        const csrfToken = readCsrfToken();
+        const payload: Record<string, string> = {
+          propertyId,
+          landlordId
+        };
+        if (csrfToken) {
+          payload["csrf"] = csrfToken;
+        }
+        const res = await fetch("/api/messages", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json().catch(() => null);
+        if (!res.ok || !data?.threadId) {
+          setError(data?.error ?? "Unable to start conversation right now.");
+          return;
+        }
+        router.push(`/messages?t=${data.threadId}`);
+      } catch (fetchError) {
+        console.error("[property] Failed to create conversation", fetchError);
+        setError("Unable to start conversation right now.");
       }
-      // On success, the server action redirects to messages
     });
   };
 
@@ -111,6 +147,7 @@ export function PropertyContactCard({
     if (propertySlug) {
       payload.set("propertySlug", propertySlug);
     }
+    payload.set("timezone", viewerTimezone);
 
     startTourTransition(async () => {
       const result = await requestTourAction(initialTourRequestState, payload);
@@ -319,4 +356,3 @@ export function PropertyContactCard({
     </section>
   );
 }
-

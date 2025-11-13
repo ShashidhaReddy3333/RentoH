@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/data-access/profile";
 import { SupabaseConfigBanner } from "@/components/SupabaseConfigBanner";
 import FavoritesClient from "./FavoritesClient";
+import { listFavoriteProperties } from "@/lib/data-access/favorites";
 
 export const metadata: Metadata = {
   title: "Saved homes - Rento",
@@ -15,11 +16,12 @@ export default async function FavoritesPage() {
   if (!user) {
     redirect("/auth/sign-in?redirect=/favorites");
   }
+  const favorites = await listFavoriteProperties(60);
 
   return (
     <div className="space-y-6">
       <SupabaseConfigBanner />
-      <FavoritesClient />
+      <FavoritesClient initialFavorites={favorites} />
     </div>
   );
 }

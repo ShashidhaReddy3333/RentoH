@@ -2,7 +2,6 @@
 
 import { useOptimistic, useState } from "react";
 import Image from "next/image";
-import { formatInTimeZone } from "date-fns-tz";
 import { CheckIcon } from "@heroicons/react/24/outline";
 
 import { Button } from "@/components/ui/button";
@@ -112,7 +111,7 @@ export function DashboardTourList({ tours, userRole, localTimezone }: DashboardT
                 <div className="space-y-2">
                   <h2 className="text-lg font-semibold text-brand-dark">{tour.propertyTitle}</h2>
                   <p className="text-sm text-text-muted">
-                    {formatInTimeZone(new Date(tour.scheduledAt), localTimezone, "PP • p")}{" "}
+                    {formatTourDate(tour.scheduledAt, localTimezone)}{" "}
                     <span className="text-xs">(local: {localTimezone})</span>
                   </p>
                   {tour.notes ? (
@@ -175,4 +174,12 @@ function StatusBadge({ status }: { status: TourStatus }) {
       {status === "completed" && <CheckIcon className="h-4 w-4 text-emerald-600" aria-hidden="true" />}
     </span>
   );
+}
+
+function formatTourDate(value: string, timeZone: string) {
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone
+  }).format(new Date(value));
 }

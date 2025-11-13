@@ -8,7 +8,7 @@ import {
 
 import type { TourStatus } from "@/lib/types";
 
-export type TourStatusActionValue = Extract<TourStatus, "confirmed" | "completed" | "cancelled">;
+export type TourStatusActionValue = Extract<TourStatus, "confirmed" | "completed" | "cancelled" | "rescheduled">;
 
 export const ACTIONABLE_TOUR_STATUSES: TourStatusActionValue[] = [
   "confirmed",

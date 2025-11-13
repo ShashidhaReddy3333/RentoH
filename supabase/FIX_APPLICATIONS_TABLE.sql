@@ -62,6 +62,74 @@ BEGIN
     END IF;
 END $$;
 
+-- Add reviewed_at column if it doesn't exist
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' 
+        AND table_name = 'applications' 
+        AND column_name = 'reviewed_at'
+    ) THEN
+        ALTER TABLE public.applications 
+        ADD COLUMN reviewed_at timestamptz;
+        RAISE NOTICE '✓ Added reviewed_at column to applications table';
+    ELSE
+        RAISE NOTICE '→ reviewed_at column already exists';
+    END IF;
+END $$;
+
+-- Add decision_at column if it doesn't exist
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' 
+        AND table_name = 'applications' 
+        AND column_name = 'decision_at'
+    ) THEN
+        ALTER TABLE public.applications 
+        ADD COLUMN decision_at timestamptz;
+        RAISE NOTICE '✓ Added decision_at column to applications table';
+    ELSE
+        RAISE NOTICE '→ decision_at column already exists';
+    END IF;
+END $$;
+
+-- Add notes column if it doesn't exist
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' 
+        AND table_name = 'applications' 
+        AND column_name = 'notes'
+    ) THEN
+        ALTER TABLE public.applications 
+        ADD COLUMN notes text;
+        RAISE NOTICE '✓ Added notes column to applications table';
+    ELSE
+        RAISE NOTICE '→ notes column already exists';
+    END IF;
+END $$;
+
+-- Add timeline column if it doesn't exist
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' 
+        AND table_name = 'applications' 
+        AND column_name = 'timeline'
+    ) THEN
+        ALTER TABLE public.applications 
+        ADD COLUMN timeline jsonb NOT NULL DEFAULT '[]'::jsonb;
+        RAISE NOTICE '✓ Added timeline column to applications table';
+    ELSE
+        RAISE NOTICE '→ timeline column already exists';
+    END IF;
+END $$;
+
 -- Ensure status column has correct constraints
 DO $$ 
 BEGIN
@@ -72,7 +140,7 @@ BEGIN
     -- Add updated constraint
     ALTER TABLE public.applications 
     ADD CONSTRAINT applications_status_check 
-    CHECK (status IN ('draft', 'submitted', 'reviewing', 'interview', 'approved', 'rejected'));
+    CHECK (status IN ('draft', 'submitted', 'reviewing', 'interview', 'accepted', 'approved', 'rejected'));
     
     RAISE NOTICE '✓ Updated status check constraint for applications table';
 END $$;
@@ -83,7 +151,8 @@ DECLARE
     missing_columns TEXT[] := ARRAY[]::TEXT[];
     expected_columns TEXT[] := ARRAY[
         'id', 'property_id', 'tenant_id', 'landlord_id', 'status', 
-        'submitted_at', 'message', 'monthly_income', 'created_at'
+        'submitted_at', 'reviewed_at', 'decision_at',
+        'message', 'notes', 'monthly_income', 'timeline', 'created_at'
     ];
     col TEXT;
 BEGIN
