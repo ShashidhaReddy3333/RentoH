@@ -89,7 +89,11 @@ export default function NewListingClient({
   const isCreateMode = mode === "create";
   const draftListingIdRef = useRef<string | undefined>(listingId);
   const redirectToDashboard = useCallback(() => {
-    router.replace("/dashboard");
+    if (typeof window !== "undefined") {
+      window.location.assign("/dashboard");
+    } else {
+      router.replace("/dashboard");
+    }
   }, [router]);
 
   const handleSubmit = useCallback(
