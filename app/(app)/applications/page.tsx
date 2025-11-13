@@ -2,6 +2,7 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { default as ApplicationsClient } from '@/app/(app)/applications/ApplicationsClient';
 import { normalizeApplicationStatus } from '@/lib/application-status';
+import { resolveImageUrls } from '@/lib/data-access/properties';
 
 const FALLBACK_PROPERTY_IMAGE = "/images/listings/home-1.jpg";
 
@@ -101,8 +102,9 @@ export default async function ApplicationsPage() {
     const landlordRecord = firstOrNull(application.landlord);
 
     const propertyImages =
-      propertyRecord?.images?.filter((image): image is string => typeof image === 'string') ?? [];
-    const images = propertyImages.length > 0 ? propertyImages : [FALLBACK_PROPERTY_IMAGE];
+      propertyRecord?.images?.filter((image): image is string => typeof image === 'string' && image.length > 0) ?? [];
+    const images =
+      propertyImages.length > 0 ? resolveImageUrls(propertyImages) : [FALLBACK_PROPERTY_IMAGE];
     const timelineSource = Array.isArray(application.timeline) ? application.timeline : [];
     const timeline = timelineSource.map((entry) => ({
       status: entry?.status ? normalizeApplicationStatus(entry.status) : "updated",

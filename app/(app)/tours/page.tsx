@@ -3,6 +3,7 @@ import { default as ToursClient } from '@/app/(app)/tours/ToursClient';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { getCurrentUser } from '@/lib/data-access/profile';
 import { hasSupabaseEnv } from '@/lib/env';
+import { resolveImageUrls } from '@/lib/data-access/properties';
 import { SupabaseConfigBanner } from '@/components/SupabaseConfigBanner';
 import EmptyState from '@/components/EmptyState';
 import type { TourStatus } from '@/lib/types';
@@ -114,8 +115,9 @@ export default async function ToursPage() {
     const tenantRecord = firstOrNull(tour.tenant);
 
     const propertyImages =
-      propertyRecord?.images?.filter((image): image is string => typeof image === 'string') ?? [];
-    const images = propertyImages.length > 0 ? propertyImages : [FALLBACK_PROPERTY_IMAGE];
+      propertyRecord?.images?.filter((image): image is string => typeof image === 'string' && image.length > 0) ?? [];
+    const images =
+      propertyImages.length > 0 ? resolveImageUrls(propertyImages) : [FALLBACK_PROPERTY_IMAGE];
 
     return {
       id: tour.id,

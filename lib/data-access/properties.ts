@@ -532,7 +532,7 @@ function encodeStorageKey(path: string): string {
     .join("/");
 }
 
-function buildPublicStorageUrl(path: string): string | null {
+export function buildPublicStorageUrl(path: string): string | null {
   const baseUrl = env.NEXT_PUBLIC_SUPABASE_URL;
   if (!baseUrl) {
     return null;
@@ -544,7 +544,7 @@ function buildPublicStorageUrl(path: string): string | null {
   return `${baseUrl}/storage/v1/object/public/${bucket}/${encodedPath}`;
 }
 
-function resolveImageUrls(paths: string[]): string[] {
+export function resolveImageUrls(paths: string[]): string[] {
   return paths
     .map((rawPath) => (typeof rawPath === "string" ? rawPath.trim() : ""))
     .filter((path): path is string => path.length > 0)
