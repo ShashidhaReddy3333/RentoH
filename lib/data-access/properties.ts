@@ -118,7 +118,7 @@ async function fetchManyFromSupabase(
   let query = supabase
     .from("properties")
     .select(PROPERTY_COLUMNS, { count: "exact" })
-    .eq("status", "active");
+    .or("status.eq.active,status.is.null");
 
   if (filters.city) {
     query = query.ilike("city", `%${filters.city}%`);
@@ -215,12 +215,6 @@ export async function getMany(
 
   try {
     const result = await fetchManyFromSupabase(normalizedFilters, sort, page);
-    if (result.items.length === 0 && env.NODE_ENV !== "production") {
-      console.warn("[properties] Supabase returned no listings; falling back to mock data for previews.");
-      const filtered = applyFilters(mockProperties, normalizedFilters);
-      const sorted = applySort(filtered, sort);
-      return paginate(sorted, page);
-    }
     return result;
   } catch (error) {
     console.error("[properties] Supabase query failed", error);
