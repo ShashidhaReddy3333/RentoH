@@ -72,14 +72,15 @@ export default function MessagesClient({
     }
   }, [currentThreadId, threads]);
 
-  // Mark the active thread as read when it changes
+  // Mark the current thread as read whenever it changes
   useEffect(() => {
-    if (activeThreadId) {
-      markThreadAsReadAction(activeThreadId).catch((error) => {
-        console.error("[messages] Failed to mark initial thread as read", error);
-      });
+    if (!currentThreadId) {
+      return;
     }
-  }, [activeThreadId]);
+    markThreadAsReadAction(currentThreadId).catch((error) => {
+      console.error("[messages] Failed to mark thread as read", error);
+    });
+  }, [currentThreadId]);
 
   // Subscribe to realtime message updates
   useMessageSubscription(currentThreadId, {
@@ -126,12 +127,6 @@ export default function MessagesClient({
       next.set("t", threadId);
       router.push(`${pathname}?${next.toString()}` as Route, { scroll: false });
 
-      // Mark the thread as read when it's opened
-      try {
-        await markThreadAsReadAction(threadId);
-      } catch (error) {
-        console.error("[messages] Failed to mark thread as read", error);
-      }
     },
     [currentThreadId, params, pathname, router, threadLoading]
   );
